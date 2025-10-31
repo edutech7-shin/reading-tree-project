@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState } from 'react'
-import { supabase } from '../../lib/supabase/client'
+import { getSupabaseClient } from '../../lib/supabase/client'
 import Link from 'next/link'
 
 export default function LoginPage() {
@@ -15,6 +15,7 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
     setLoading(true)
+    const supabase = getSupabaseClient()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
     if (error) setError(error.message)
@@ -22,6 +23,7 @@ export default function LoginPage() {
   }
 
   async function onLogout() {
+    const supabase = getSupabaseClient()
     await supabase.auth.signOut()
     window.location.reload()
   }

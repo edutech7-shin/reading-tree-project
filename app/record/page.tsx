@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState } from 'react'
-import { supabase } from '../../lib/supabase/client'
+import { getSupabaseClient } from '../../lib/supabase/client'
 
 export default function RecordPage() {
   const [bookTitle, setBookTitle] = useState('')
@@ -16,6 +16,7 @@ export default function RecordPage() {
     e.preventDefault()
     setMessage(null)
     setSubmitting(true)
+    const supabase = getSupabaseClient()
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {

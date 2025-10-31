@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '../../../lib/supabase/client'
+import { getSupabaseClient } from '../../../lib/supabase/client'
 
 type Row = {
   id: number
@@ -20,6 +20,7 @@ export default function ApprovePage() {
 
   async function load() {
     setLoading(true)
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('book_records')
       .select('id, user_id, book_title, book_author, content_text, content_image_url')
@@ -34,11 +35,13 @@ export default function ApprovePage() {
 
   async function approve(id: number) {
     setError(null)
+    const supabase = getSupabaseClient()
     const { error } = await supabase.rpc('approve_record_and_reward', { p_record_id: id })
     if (error) setError(error.message); else load()
   }
 
   async function reject(id: number) {
+    const supabase = getSupabaseClient()
     const { error } = await supabase.from('book_records').update({ status: 'rejected' }).eq('id', id)
     if (error) setError(error.message); else load()
   }
