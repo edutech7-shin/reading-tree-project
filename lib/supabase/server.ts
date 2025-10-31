@@ -3,9 +3,11 @@ import { createServerClient } from '@supabase/ssr'
 
 export function createSupabaseServerClient() {
   const cookieStore = cookies()
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url as string,
+    anon as string,
     {
       cookies: {
         get(name: string) {
