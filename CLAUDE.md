@@ -152,3 +152,6 @@ await supabase.rpc('approve_record_and_reward', { p_record_id: recordId })
 - **No JavaScript allowed** (`allowJs: false`)
 - **Base URL**: `.` (root-relative imports supported)
 - **Module resolution**: `bundler` (Next.js optimized)
+
+---
+*Last updated: 2025-11-01*
