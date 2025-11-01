@@ -32,12 +32,17 @@ export default function SignupPage() {
 
     const supabase = getSupabaseClient()
 
+    // 프로덕션 URL 사용
+    const redirectUrl = origin.includes('localhost')
+      ? 'http://localhost:3000/'
+      : 'https://reading-tree-project.vercel.app/'
+
     // 회원가입
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${origin}/`,
+        emailRedirectTo: redirectUrl,
         data: {
           nickname: nickname,
           role: role
