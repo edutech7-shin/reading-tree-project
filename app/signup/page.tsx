@@ -1,7 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import Link from 'next/link'
 
@@ -13,6 +13,11 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [origin, setOrigin] = useState('')
+
+  useEffect(() => {
+    setOrigin(window.location.origin)
+  }, [])
 
   async function onSignup(e: React.FormEvent) {
     e.preventDefault()
@@ -49,12 +54,13 @@ export default function SignupPage() {
   }
 
   async function onGoogleSignup() {
+    if (!origin) return
     setError(null)
     const supabase = getSupabaseClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: `${origin}/`,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent'
