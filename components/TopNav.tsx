@@ -9,6 +9,7 @@ export default function TopNav() {
         <Link href="/me">내 나무</Link>
         <span className="spacer" />
         <Link href="/teacher">교사용</Link>
+        <Link href="/login">로그인</Link>
       </nav>
     </header>
   )
