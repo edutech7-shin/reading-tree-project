@@ -61,10 +61,10 @@ export default function SignupPage() {
 
     const supabase = getSupabaseClient()
 
-    // 프로덕션 URL 사용 - callback 라우트로 리다이렉트
+    // Implicit Flow 사용 - 회원가입 페이지로 리다이렉트
     const redirectUrl = origin.includes('localhost')
-      ? 'http://localhost:3000/auth/callback'
-      : 'https://reading-tree-project.vercel.app/auth/callback'
+      ? 'http://localhost:3000/signup'
+      : 'https://reading-tree-project.vercel.app/signup'
 
     // 회원가입
     const { data, error: signUpError } = await supabase.auth.signUp({
