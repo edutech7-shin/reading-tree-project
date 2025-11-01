@@ -22,6 +22,18 @@ export default function LoginPage() {
     else window.location.href = '/'
   }
 
+  async function onGoogleLogin() {
+    setError(null)
+    const supabase = getSupabaseClient()
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`
+      }
+    })
+    if (error) setError(error.message)
+  }
+
   async function onLogout() {
     const supabase = getSupabaseClient()
     await supabase.auth.signOut()
@@ -31,20 +43,31 @@ export default function LoginPage() {
   return (
     <main className="container" style={{ maxWidth: 420 }}>
       <h1>로그인</h1>
+
+      {error && <div style={{ color: 'crimson', marginBottom: 16 }}>{error}</div>}
+
+      <button className="btn primary" onClick={onGoogleLogin} style={{ marginBottom: 16, width: '100%' }}>
+        🔐 Google로 로그인
+      </button>
+
+      <div style={{ textAlign: 'center', margin: '16px 0', color: '#666' }}>또는</div>
+
       <form onSubmit={onLogin} style={{ display: 'grid', gap: 12 }}>
         <input placeholder="이메일" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <input placeholder="비밀번호" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        {error && <div style={{ color: 'crimson' }}>{error}</div>}
         <button className="btn primary" disabled={loading}>
-          {loading ? '로그인 중...' : '로그인'}
+          {loading ? '로그인 중...' : '이메일로 로그인'}
         </button>
       </form>
-      <div style={{ marginTop: 16 }}>
-        <button className="btn" onClick={onLogout}>로그아웃</button>
-      </div>
-      <p style={{ marginTop: 12 }}>
-        <Link className="btn" href="/">메인으로</Link>
+
+      <p style={{ marginTop: 16, textAlign: 'center' }}>
+        계정이 없으신가요? <Link href="/signup" style={{ color: '#0070f3', textDecoration: 'underline' }}>회원가입</Link>
       </p>
+
+      <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+        <button className="btn" onClick={onLogout}>로그아웃</button>
+        <Link className="btn" href="/">메인으로</Link>
+      </div>
     </main>
   )
 }
