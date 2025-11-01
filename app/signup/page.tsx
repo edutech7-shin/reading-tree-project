@@ -77,10 +77,11 @@ export default function SignupPage() {
       ? 'http://localhost:3000/auth/callback'
       : 'https://reading-tree-project.vercel.app/auth/callback'
 
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: redirectUrl,
+        skipBrowserRedirect: false,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent'
