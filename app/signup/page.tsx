@@ -60,13 +60,22 @@ export default function SignupPage() {
   }
 
   async function onGoogleSignup() {
-    if (!origin) return
+    if (!origin) {
+      setError('페이지를 다시 로드해주세요.')
+      return
+    }
     setError(null)
     const supabase = getSupabaseClient()
+
+    // 프로덕션 URL 사용
+    const redirectUrl = origin.includes('localhost')
+      ? 'http://localhost:3000/'
+      : 'https://reading-tree-project.vercel.app/'
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${origin}/`,
+        redirectTo: redirectUrl,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent'
@@ -87,7 +96,12 @@ export default function SignupPage() {
         </div>
       )}
 
-      <button className="btn primary" onClick={onGoogleSignup} style={{ marginBottom: 16, width: '100%' }}>
+      <button
+        className="btn primary"
+        onClick={onGoogleSignup}
+        disabled={!origin}
+        style={{ marginBottom: 16, width: '100%' }}
+      >
         🔐 Google로 가입하기
       </button>
 

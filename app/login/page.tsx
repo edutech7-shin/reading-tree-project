@@ -28,13 +28,22 @@ export default function LoginPage() {
   }
 
   async function onGoogleLogin() {
-    if (!origin) return
+    if (!origin) {
+      setError('페이지를 다시 로드해주세요.')
+      return
+    }
     setError(null)
     const supabase = getSupabaseClient()
+
+    // 프로덕션 URL 사용
+    const redirectUrl = origin.includes('localhost')
+      ? 'http://localhost:3000/'
+      : 'https://reading-tree-project.vercel.app/'
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${origin}/`
+        redirectTo: redirectUrl
       }
     })
     if (error) setError(error.message)
@@ -52,7 +61,12 @@ export default function LoginPage() {
 
       {error && <div style={{ color: 'crimson', marginBottom: 16 }}>{error}</div>}
 
-      <button className="btn primary" onClick={onGoogleLogin} style={{ marginBottom: 16, width: '100%' }}>
+      <button
+        className="btn primary"
+        onClick={onGoogleLogin}
+        disabled={!origin}
+        style={{ marginBottom: 16, width: '100%' }}
+      >
         🔐 Google로 로그인
       </button>
 
