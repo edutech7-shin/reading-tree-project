@@ -21,6 +21,11 @@ export default function SignupPage() {
 
   async function onSignup(e: React.FormEvent) {
     e.preventDefault()
+    if (!origin) {
+      setError('페이지를 다시 로드해주세요.')
+      return
+    }
+
     setError(null)
     setSuccess(false)
     setLoading(true)
@@ -32,6 +37,7 @@ export default function SignupPage() {
       email,
       password,
       options: {
+        emailRedirectTo: `${origin}/`,
         data: {
           nickname: nickname,
           role: role
