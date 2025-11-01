@@ -34,6 +34,6 @@ export async function GET(request: Request) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  // URL to redirect to after sign in process completes
-  return NextResponse.redirect(`${origin}/`)
+  // URL to redirect to after sign in process completes - 내 나무 페이지로 이동
+  return NextResponse.redirect(`${origin}/me`)
 }

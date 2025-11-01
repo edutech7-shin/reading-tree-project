@@ -24,7 +24,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
     if (error) setError(error.message)
-    else window.location.href = '/'
+    else window.location.href = '/me'
   }
 
   async function onGoogleLogin() {
