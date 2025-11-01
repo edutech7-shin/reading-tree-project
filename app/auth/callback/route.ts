@@ -32,6 +32,21 @@ export async function GET(request: Request) {
 
     // Exchange code for session
     await supabase.auth.exchangeCodeForSession(code)
+
+    // 프로필 존재 여부 확인
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      // 프로필이 없으면 설정 페이지로, 있으면 내 나무로
+      if (!profile) {
+        return NextResponse.redirect(`${origin}/setup`)
+      }
+    }
   }
 
   // URL to redirect to after sign in process completes - 내 나무 페이지로 이동
