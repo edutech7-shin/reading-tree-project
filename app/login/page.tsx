@@ -4,7 +4,6 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -12,39 +11,9 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [origin, setOrigin] = useState('')
-  const router = useRouter()
 
   useEffect(() => {
     setOrigin(window.location.origin)
-
-    // OAuth 콜백 처리 (Implicit Flow - 해시 프래그먼트)
-    const handleOAuthCallback = async () => {
-      const hashParams = new URLSearchParams(window.location.hash.substring(1))
-      const accessToken = hashParams.get('access_token')
-      const refreshToken = hashParams.get('refresh_token')
-
-      if (accessToken) {
-        console.log('[Login] OAuth callback detected (Implicit Flow)')
-        const supabase = getSupabaseClient()
-
-        // 세션 설정
-        const { error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || ''
-        })
-
-        if (error) {
-          console.error('[Login] Session set error:', error)
-          setError(error.message)
-        } else {
-          console.log('[Login] Session set successfully, redirecting to /me')
-          // 해시 제거하고 /me로 이동
-          window.location.href = '/me'
-        }
-      }
-    }
-
-    handleOAuthCallback()
   }, [])
 
   async function onLogin(e: React.FormEvent) {
@@ -54,8 +23,18 @@ export default function LoginPage() {
     const supabase = getSupabaseClient()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
-    if (error) setError(error.message)
-    else window.location.href = '/me'
+    if (error) {
+      const message = error.message || '로그인 중 오류가 발생했습니다.'
+      if (message.toLowerCase().includes('email not confirmed')) {
+        setError('이메일 인증이 완료되지 않았습니다. 받은 인증 메일을 열어주세요.')
+      } else if (message.toLowerCase().includes('invalid login credentials')) {
+        setError('이메일 또는 비밀번호가 올바르지 않습니다.')
+      } else {
+        setError(message)
+      }
+    } else {
+      window.location.href = '/me'
+    }
   }
 
   async function onGoogleLogin() {
@@ -75,19 +54,20 @@ export default function LoginPage() {
       const supabase = getSupabaseClient()
       console.log('[Login] Supabase client created')
 
-      // Implicit Flow 사용 - 로그인 페이지로 리다이렉트
       const redirectUrl = origin.includes('localhost')
-        ? 'http://localhost:3000/login'
-        : 'https://reading-tree-project.vercel.app/login'
+        ? 'http://localhost:3000/auth/callback'
+        : `${origin}/auth/callback`
 
       console.log('[Login] Redirect URL:', redirectUrl)
       console.log('[Login] Starting OAuth...')
 
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      // Supabase JS 2.78 typings에는 flowType이 누락되어 있어 any 캐스팅으로 PKCE를 강제한다.
+      const { data, error } = await (supabase.auth as any).signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl
-        }
+        },
+        flowType: 'pkce'
       })
 
       console.log('[Login] OAuth response:', { data, error })
@@ -146,5 +126,3 @@ export default function LoginPage() {
     </main>
   )
 }
-
-
