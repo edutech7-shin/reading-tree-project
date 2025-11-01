@@ -17,6 +17,35 @@ export default function SignupPage() {
 
   useEffect(() => {
     setOrigin(window.location.origin)
+
+    // OAuth 콜백 처리 (Implicit Flow - 해시 프래그먼트)
+    const handleOAuthCallback = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const accessToken = hashParams.get('access_token')
+      const refreshToken = hashParams.get('refresh_token')
+
+      if (accessToken) {
+        console.log('[Signup] OAuth callback detected (Implicit Flow)')
+        const supabase = getSupabaseClient()
+
+        // 세션 설정
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || ''
+        })
+
+        if (error) {
+          console.error('[Signup] Session set error:', error)
+          setError(error.message)
+        } else {
+          console.log('[Signup] Session set successfully, redirecting to /setup')
+          // 프로필 설정 페이지로 이동
+          window.location.href = '/setup'
+        }
+      }
+    }
+
+    handleOAuthCallback()
   }, [])
 
   async function onSignup(e: React.FormEvent) {
@@ -72,16 +101,15 @@ export default function SignupPage() {
     setError(null)
     const supabase = getSupabaseClient()
 
-    // 프로덕션 URL 사용 - callback 라우트로 리다이렉트
+    // Implicit Flow 사용 - 회원가입 페이지로 리다이렉트
     const redirectUrl = origin.includes('localhost')
-      ? 'http://localhost:3000/auth/callback'
-      : 'https://reading-tree-project.vercel.app/auth/callback'
+      ? 'http://localhost:3000/signup'
+      : 'https://reading-tree-project.vercel.app/signup'
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: redirectUrl,
-        skipBrowserRedirect: false,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent'
