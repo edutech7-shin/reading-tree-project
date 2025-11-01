@@ -28,26 +28,50 @@ export default function LoginPage() {
   }
 
   async function onGoogleLogin() {
+    console.log('[Login] Google login clicked')
+    console.log('[Login] Origin:', origin)
+
     if (!origin) {
+      console.error('[Login] Origin not loaded')
       setError('페이지를 다시 로드해주세요.')
       return
     }
+
     setError(null)
-    const supabase = getSupabaseClient()
+    console.log('[Login] Getting Supabase client...')
 
-    // 프로덕션 URL 사용 - callback 라우트로 리다이렉트
-    const redirectUrl = origin.includes('localhost')
-      ? 'http://localhost:3000/auth/callback'
-      : 'https://reading-tree-project.vercel.app/auth/callback'
+    try {
+      const supabase = getSupabaseClient()
+      console.log('[Login] Supabase client created')
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        skipBrowserRedirect: false
+      // 프로덕션 URL 사용 - callback 라우트로 리다이렉트
+      const redirectUrl = origin.includes('localhost')
+        ? 'http://localhost:3000/auth/callback'
+        : 'https://reading-tree-project.vercel.app/auth/callback'
+
+      console.log('[Login] Redirect URL:', redirectUrl)
+      console.log('[Login] Starting OAuth...')
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: false
+        }
+      })
+
+      console.log('[Login] OAuth response:', { data, error })
+
+      if (error) {
+        console.error('[Login] OAuth error:', error)
+        setError(error.message)
+      } else {
+        console.log('[Login] OAuth started successfully')
       }
-    })
-    if (error) setError(error.message)
+    } catch (err) {
+      console.error('[Login] Unexpected error:', err)
+      setError('로그인 중 오류가 발생했습니다.')
+    }
   }
 
   async function onLogout() {
