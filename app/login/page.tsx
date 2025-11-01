@@ -35,10 +35,10 @@ export default function LoginPage() {
     setError(null)
     const supabase = getSupabaseClient()
 
-    // 프로덕션 URL 사용
+    // 프로덕션 URL 사용 - callback 라우트로 리다이렉트
     const redirectUrl = origin.includes('localhost')
-      ? 'http://localhost:3000/'
-      : 'https://reading-tree-project.vercel.app/'
+      ? 'http://localhost:3000/auth/callback'
+      : 'https://reading-tree-project.vercel.app/auth/callback'
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
