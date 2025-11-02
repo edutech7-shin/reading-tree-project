@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '../../lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 export const dynamic = 'force-dynamic'
 
 export default async function MyPage() {
@@ -16,11 +17,43 @@ export default async function MyPage() {
     )
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('nickname, role, level, points')
-    .eq('id', user.id)
-    .maybeSingle()
+  let profile: {
+    nickname: string
+    role: 'student' | 'teacher'
+    level: number
+    points: number
+  } | null = null
+  let profileError: unknown = null
+
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+    const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!url || !serviceRole) {
+      throw new Error('Supabase 서비스 롤 키가 설정되어 있지 않습니다.')
+    }
+
+    const adminClient = createClient(url, serviceRole, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+
+    const { data, error } = await adminClient
+      .from('profiles')
+      .select('nickname, role, level, points')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (error) {
+      profileError = error
+    } else {
+      profile = data
+    }
+  } catch (error) {
+    profileError = error
+  }
 
   const { count: approvedCount } = await supabase
     .from('book_records')
@@ -28,8 +61,8 @@ export default async function MyPage() {
     .eq('user_id', user.id)
     .eq('status', 'approved')
 
-  // 프로필이 없으면 설정 페이지로 리다이렉트
   if (!profile) {
+    console.warn('[MyPage] Profile missing or failed to load:', profileError)
     return (
       <main className="container">
         <h1>내 나무</h1>
@@ -63,5 +96,3 @@ export default async function MyPage() {
     </main>
   )
 }
-
-
