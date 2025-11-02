@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
 
 function getEnv(key: string) {
   const value = process.env[key]
@@ -11,7 +12,8 @@ function getEnv(key: string) {
   return value
 }
 
-function createSupabaseWithCookies(request: NextRequest, response: NextResponse): SupabaseClient {
+function createSupabaseWithCookies(response: NextResponse): SupabaseClient {
+  const cookieStore = cookies()
   const url = getEnv('NEXT_PUBLIC_SUPABASE_URL')
   const anon = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
 
@@ -24,10 +26,10 @@ function createSupabaseWithCookies(request: NextRequest, response: NextResponse)
     {
       cookies: {
         get(name: string) {
-          return request.cookies.get(name)?.value
+          return cookieStore.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
+          cookieStore.set({
             name,
             value,
             ...options,
@@ -39,7 +41,7 @@ function createSupabaseWithCookies(request: NextRequest, response: NextResponse)
           })
         },
         remove(name: string, options: CookieOptions) {
-          request.cookies.set({
+          cookieStore.set({
             name,
             value: '',
             ...options,
@@ -104,7 +106,7 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(`${origin}/me`)
 
     try {
-      const supabase = createSupabaseWithCookies(request, response)
+      const supabase = createSupabaseWithCookies(response)
       console.log('[OAuth Callback] Exchanging code for session...')
       const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
@@ -198,10 +200,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: '세션 토큰이 존재하지 않습니다.' }, { status: 400 })
   }
 
-  const cookieResponse = NextResponse.next()
+  const cookieCapture = NextResponse.next()
 
   try {
-    const supabase = createSupabaseWithCookies(request, cookieResponse)
+    const supabase = createSupabaseWithCookies(cookieCapture)
     const { error } = await supabase.auth.setSession({
       access_token: accessToken,
       refresh_token: refreshToken
@@ -214,7 +216,7 @@ export async function POST(request: NextRequest) {
 
     const { redirectUrl } = await finalizeSession(origin, supabase)
     const finalResponse = NextResponse.json({ success: true, redirectUrl })
-    cookieResponse.cookies.getAll().forEach((cookie) => {
+    cookieCapture.cookies.getAll().forEach((cookie) => {
       finalResponse.cookies.set(cookie)
     })
     return finalResponse
