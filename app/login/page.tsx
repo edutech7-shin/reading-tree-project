@@ -13,13 +13,15 @@ export default function LoginPage() {
 
   async function persistSession(accessToken: string, refreshToken: string | null | undefined) {
     try {
-      const response = await fetch('/auth/callback', {
+      const response = await fetch(new URL('/auth/callback', window.location.origin), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           accessToken,
           refreshToken: refreshToken ?? ''
-        })
+        }),
+        credentials: 'include',
+        cache: 'no-store'
       })
       const result = await response.json()
       if (!response.ok || !result?.success) {
@@ -76,7 +78,11 @@ export default function LoginPage() {
     const supabase = getSupabaseClient()
     await supabase.auth.signOut()
     try {
-      const response = await fetch('/auth/callback', { method: 'DELETE' })
+      const response = await fetch(new URL('/auth/callback', window.location.origin), {
+        method: 'DELETE',
+        credentials: 'include',
+        cache: 'no-store'
+      })
       if (!response.ok) {
         console.warn('[Login] Failed to clear server session')
       }
