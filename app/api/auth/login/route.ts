@@ -4,7 +4,8 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 function getEnv(key: string) {
-  const value = process.env[key]
+  const raw = process.env[key]
+  const value = typeof raw === 'string' ? raw.trim() : ''
   if (!value) {
     throw new Error(`[login api] Missing environment variable: ${key}`)
   }
