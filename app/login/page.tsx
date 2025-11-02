@@ -1,7 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import Link from 'next/link'
 
@@ -10,19 +10,35 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [origin, setOrigin] = useState('')
 
-  useEffect(() => {
-    setOrigin(window.location.origin)
-  }, [])
+  async function persistSession(accessToken: string, refreshToken: string | null | undefined) {
+    try {
+      const response = await fetch('/auth/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accessToken,
+          refreshToken: refreshToken ?? ''
+        })
+      })
+      const result = await response.json()
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.error || '세션 저장에 실패했습니다.')
+      }
+      return typeof result.redirectUrl === 'string' ? result.redirectUrl : '/me'
+    } catch (fetchError) {
+      console.error('[Login] Failed to persist session:', fetchError)
+      setError('로그인 세션을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.')
+      return null
+    }
+  }
 
   async function onLogin(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     setLoading(true)
     const supabase = getSupabaseClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false)
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
       const message = error.message || '로그인 중 오류가 발생했습니다.'
       if (message.toLowerCase().includes('email not confirmed')) {
@@ -32,61 +48,41 @@ export default function LoginPage() {
       } else {
         setError(message)
       }
-    } else {
-      window.location.href = '/me'
-    }
-  }
-
-  async function onGoogleLogin() {
-    console.log('[Login] Google login clicked')
-    console.log('[Login] Origin:', origin)
-
-    if (!origin) {
-      console.error('[Login] Origin not loaded')
-      setError('페이지를 다시 로드해주세요.')
+      setLoading(false)
       return
     }
 
-    setError(null)
-    console.log('[Login] Getting Supabase client...')
-
-    try {
-      const supabase = getSupabaseClient()
-      console.log('[Login] Supabase client created')
-
-      const redirectUrl = origin.includes('localhost')
-        ? 'http://localhost:3000/auth/callback'
-        : `${origin}/auth/callback`
-
-      console.log('[Login] Redirect URL:', redirectUrl)
-      console.log('[Login] Starting OAuth...')
-
-      // Supabase JS 2.78 typings에는 flowType이 누락되어 있어 any 캐스팅으로 PKCE를 강제한다.
-      const { data, error } = await (supabase.auth as any).signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl
-        },
-        flowType: 'pkce'
-      })
-
-      console.log('[Login] OAuth response:', { data, error })
-
-      if (error) {
-        console.error('[Login] OAuth error:', error)
-        setError(error.message)
-      } else {
-        console.log('[Login] OAuth started successfully')
-      }
-    } catch (err) {
-      console.error('[Login] Unexpected error:', err)
-      setError('로그인 중 오류가 발생했습니다.')
+    const session = data?.session ?? (await supabase.auth.getSession()).data.session
+    if (!session) {
+      console.error('[Login] Session missing after sign-in')
+      setError('로그인 세션을 찾을 수 없습니다. 다시 시도해주세요.')
+      setLoading(false)
+      await supabase.auth.signOut()
+      return
     }
+
+    const redirectUrl = await persistSession(session.access_token, session.refresh_token)
+    setLoading(false)
+
+    if (!redirectUrl) {
+      await supabase.auth.signOut()
+      return
+    }
+
+    window.location.href = redirectUrl
   }
 
   async function onLogout() {
     const supabase = getSupabaseClient()
     await supabase.auth.signOut()
+    try {
+      const response = await fetch('/auth/callback', { method: 'DELETE' })
+      if (!response.ok) {
+        console.warn('[Login] Failed to clear server session')
+      }
+    } catch (logoutError) {
+      console.warn('[Login] Logout sync error:', logoutError)
+    }
     window.location.reload()
   }
 
@@ -95,17 +91,6 @@ export default function LoginPage() {
       <h1>로그인</h1>
 
       {error && <div style={{ color: 'crimson', marginBottom: 16 }}>{error}</div>}
-
-      <button
-        className="btn primary"
-        onClick={onGoogleLogin}
-        disabled={!origin}
-        style={{ marginBottom: 16, width: '100%' }}
-      >
-        🔐 Google로 로그인
-      </button>
-
-      <div style={{ textAlign: 'center', margin: '16px 0', color: '#666' }}>또는</div>
 
       <form onSubmit={onLogin} style={{ display: 'grid', gap: 12 }}>
         <input placeholder="이메일" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -123,6 +108,10 @@ export default function LoginPage() {
         <button className="btn" onClick={onLogout}>로그아웃</button>
         <Link className="btn" href="/">메인으로</Link>
       </div>
+
+      <p style={{ marginTop: 24, fontSize: 13, color: '#666' }}>
+        ※ 현재는 이메일과 비밀번호 로그인만 지원합니다.
+      </p>
     </main>
   )
 }

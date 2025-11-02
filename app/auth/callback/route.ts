@@ -225,3 +225,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: '세션 저장 중 오류가 발생했습니다.' }, { status: 500 })
   }
 }
+
+export async function DELETE() {
+  const cookieCapture = NextResponse.next()
+
+  try {
+    const supabase = createSupabaseWithCookies(cookieCapture)
+    const { error } = await supabase.auth.signOut()
+
+    if (error) {
+      console.error('[OAuth Callback] signOut error:', error)
+      return NextResponse.json({ success: false, error: error.message }, { status: 400 })
+    }
+
+    const response = NextResponse.json({ success: true })
+    cookieCapture.cookies.getAll().forEach((cookie) => {
+      response.cookies.set(cookie)
+    })
+    return response
+  } catch (error: any) {
+    console.error('[OAuth Callback] Unexpected DELETE error:', error)
+    return NextResponse.json({ success: false, error: '로그아웃 처리 중 오류가 발생했습니다.' }, { status: 500 })
+  }
+}

@@ -63,33 +63,6 @@ export default function SignupPage() {
     setNickname('')
   }
 
-  async function onGoogleSignup() {
-    if (!origin) {
-      setError('페이지를 다시 로드해주세요.')
-      return
-    }
-    setError(null)
-    const supabase = getSupabaseClient()
-
-    const redirectUrl = origin.includes('localhost')
-      ? 'http://localhost:3000/auth/callback'
-      : `${origin}/auth/callback`
-
-    // Supabase JS 2.78 typings에는 flowType이 없어 any 캐스팅으로 PKCE를 사용한다.
-    const { data, error } = await (supabase.auth as any).signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent'
-        }
-      },
-      flowType: 'pkce'
-    })
-    if (error) setError(error.message)
-  }
-
   return (
     <main className="container" style={{ maxWidth: 420 }}>
       <h1>회원가입</h1>
@@ -100,17 +73,6 @@ export default function SignupPage() {
           회원가입이 완료되었습니다! 이메일을 확인하여 계정을 인증해주세요.
         </div>
       )}
-
-      <button
-        className="btn primary"
-        onClick={onGoogleSignup}
-        disabled={!origin}
-        style={{ marginBottom: 16, width: '100%' }}
-      >
-        🔐 Google로 가입하기
-      </button>
-
-      <div style={{ textAlign: 'center', margin: '16px 0', color: '#666' }}>또는</div>
 
       <form onSubmit={onSignup} style={{ display: 'grid', gap: 12 }}>
         <div>
@@ -180,6 +142,10 @@ export default function SignupPage() {
 
       <p style={{ marginTop: 16, textAlign: 'center' }}>
         이미 계정이 있으신가요? <Link href="/login" style={{ color: '#0070f3', textDecoration: 'underline' }}>로그인</Link>
+      </p>
+
+      <p style={{ marginTop: 16, fontSize: 13, color: '#666' }}>
+        ※ 현재는 이메일과 비밀번호 회원가입만 지원합니다.
       </p>
 
       <div style={{ marginTop: 16 }}>
