@@ -13,7 +13,6 @@ function getEnv(key: string) {
 }
 
 function createSupabaseWithCookies(response: NextResponse): SupabaseClient {
-  const cookieStore = cookies()
   const url = getEnv('NEXT_PUBLIC_SUPABASE_URL')
   const anon = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
 
@@ -26,14 +25,9 @@ function createSupabaseWithCookies(response: NextResponse): SupabaseClient {
     {
       cookies: {
         get(name: string) {
-          return cookieStore.get(name)?.value
+          return cookies().get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          cookieStore.set({
-            name,
-            value,
-            ...options,
-          })
           response.cookies.set({
             name,
             value,
@@ -41,11 +35,6 @@ function createSupabaseWithCookies(response: NextResponse): SupabaseClient {
           })
         },
         remove(name: string, options: CookieOptions) {
-          cookieStore.set({
-            name,
-            value: '',
-            ...options,
-          })
           response.cookies.set({
             name,
             value: '',
