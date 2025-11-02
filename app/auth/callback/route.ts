@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 function getEnv(key: string) {
@@ -55,20 +55,48 @@ async function finalizeSession(origin: string, supabase: SupabaseClient) {
 
   console.log('[OAuth Callback] User confirmed:', user.email)
 
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('id', user.id)
-    .maybeSingle()
+  let profileExists = false
+  let lookupError: any = null
 
-  if (error) {
-    console.error('[OAuth Callback] Profile lookup error:', error)
-    return { redirectUrl: `${origin}/login?error=${encodeURIComponent('프로필 조회 중 오류가 발생했습니다.')}` }
+  try {
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!serviceKey) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured.')
+    }
+    const adminClient = createClient(
+      getEnv('NEXT_PUBLIC_SUPABASE_URL'),
+      serviceKey,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+
+    const { data: profile, error } = await adminClient
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (error) {
+      lookupError = error
+    } else {
+      profileExists = !!profile
+    }
+  } catch (serviceError) {
+    lookupError = serviceError
   }
 
-  console.log('[OAuth Callback] Profile:', profile ? 'exists' : 'not found')
+  if (lookupError) {
+    console.warn('[OAuth Callback] Profile lookup failed, defaulting to /setup:', lookupError)
+    return { redirectUrl: `${origin}/setup` }
+  }
 
-  if (!profile) {
+  console.log('[OAuth Callback] Profile exists:', profileExists)
+
+  if (!profileExists) {
     console.log('[OAuth Callback] Redirecting to /setup')
     return { redirectUrl: `${origin}/setup` }
   }
