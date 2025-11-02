@@ -55,26 +55,29 @@ export default function SetupPage() {
       return
     }
 
-    // 프로필 업데이트 (신규 가입 시 트리거가 기본 레코드를 생성함)
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({
-        nickname: nickname,
-        role: role,
-        level: 1,
-        points: 0
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nickname, role }),
+        cache: 'no-store'
       })
-      .eq('id', user.id)
 
-    setLoading(false)
+      const result = await response.json()
+      setLoading(false)
 
-    if (updateError) {
-      setError(`프로필 저장 실패: ${updateError.message}`)
-      return
+      if (!response.ok || !result?.success) {
+        setError(`프로필 저장 실패: ${result?.error || '서버 오류가 발생했습니다.'}`)
+        return
+      }
+
+      // 성공하면 내 나무로 이동
+      router.push('/me')
+    } catch (apiError) {
+      console.error('[Setup] Failed to save profile:', apiError)
+      setLoading(false)
+      setError('프로필 저장 중 네트워크 오류가 발생했습니다.')
     }
-
-    // 성공하면 내 나무로 이동
-    router.push('/me')
   }
 
   return (
