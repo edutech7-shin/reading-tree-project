@@ -55,21 +55,21 @@ export default function SetupPage() {
       return
     }
 
-    // 프로필 생성
-    const { error: insertError } = await supabase
+    // 프로필 업데이트 (신규 가입 시 트리거가 기본 레코드를 생성함)
+    const { error: updateError } = await supabase
       .from('profiles')
-      .insert({
-        id: user.id,
+      .update({
         nickname: nickname,
         role: role,
         level: 1,
         points: 0
       })
+      .eq('id', user.id)
 
     setLoading(false)
 
-    if (insertError) {
-      setError(`프로필 생성 실패: ${insertError.message}`)
+    if (updateError) {
+      setError(`프로필 저장 실패: ${updateError.message}`)
       return
     }
 
