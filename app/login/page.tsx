@@ -13,7 +13,10 @@ export default function LoginPage() {
 
   async function persistSession(accessToken: string, refreshToken: string | null | undefined) {
     try {
-      const response = await fetch(new URL('/auth/callback', window.location.origin), {
+      const base = window.location.origin.replace(/\/$/, '')
+      const callbackUrl = `${base}/auth/callback`
+
+      const response = await fetch(callbackUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -78,7 +81,9 @@ export default function LoginPage() {
     const supabase = getSupabaseClient()
     await supabase.auth.signOut()
     try {
-      const response = await fetch(new URL('/auth/callback', window.location.origin), {
+      const base = window.location.origin.replace(/\/$/, '')
+      const callbackUrl = `${base}/auth/callback`
+      const response = await fetch(callbackUrl, {
         method: 'DELETE',
         credentials: 'include',
         cache: 'no-store'
