@@ -79,15 +79,22 @@ export async function GET(request: NextRequest) {
     console.log('[Book Search] Aladin API URL:', apiUrl.toString())
     
     // 등록된 도메인을 Referer로 전송 (알라딘 API 요구사항)
-    const refererUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXT_PUBLIC_VERCEL_URL || 'https://reading-tree-project.vercel.app'
+    // 요청이 실제로 어디서 오는지 확인
+    const requestOrigin = request.headers.get('origin') || request.headers.get('referer') || ''
+    const refererUrl = requestOrigin && requestOrigin.includes('reading-tree-project.vercel.app')
+      ? requestOrigin
+      : process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}`
+        : 'https://reading-tree-project.vercel.app'
+    
+    console.log('[Book Search] Request origin:', requestOrigin)
+    console.log('[Book Search] Using Referer:', refererUrl)
     
     const aladinResponse = await fetch(apiUrl.toString(), {
       headers: {
         'Accept': 'application/xml, text/xml',
         'Referer': refererUrl,
-        'User-Agent': 'Mozilla/5.0'
+        'User-Agent': 'Mozilla/5.0 (compatible; ReadingTree/1.0)'
       }
     })
 
@@ -102,6 +109,10 @@ export async function GET(request: NextRequest) {
     
     // 에러 메시지 확인 (XML 파싱 전에)
     if (responseText.includes('API출력이 금지된 회원입니다')) {
+      const isLocalhost = requestOrigin.includes('localhost') || requestOrigin.includes('127.0.0.1')
+      if (isLocalhost) {
+        throw new Error('알라딘 API는 로컬 개발 환경에서 사용할 수 없습니다. Vercel 배포 환경(reading-tree-project.vercel.app)에서만 작동합니다.')
+      }
       throw new Error('알라딘 API 사용 권한이 없습니다. 등록된 도메인(reading-tree-project.vercel.app)에서만 호출 가능합니다.')
     }
     
