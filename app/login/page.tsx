@@ -1,7 +1,8 @@
 'use client'
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { getSupabaseClient } from '../../lib/supabase/client'
 import Link from 'next/link'
 
 export default function LoginPage() {
@@ -9,54 +10,50 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [origin, setOrigin] = useState('')
+
+  useEffect(() => {
+    setOrigin(window.location.origin)
+  }, [])
 
   async function onLogin(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     setLoading(true)
+    const supabase = getSupabaseClient()
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    setLoading(false)
+    if (error) setError(error.message)
+    else window.location.href = '/me'
+  }
 
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include',
-        cache: 'no-store'
-      })
-
-      const result = await response.json()
-
-      if (!response.ok || !result?.success) {
-        const message = result?.error || '로그인에 실패했습니다. 잠시 후 다시 시도해주세요.'
-        setError(message)
-        setLoading(false)
-        return
-      }
-
-      const redirectUrl = typeof result.redirectUrl === 'string' ? result.redirectUrl : '/me'
-      window.location.href = redirectUrl
-    } catch (fetchError) {
-      console.error('[Login] unexpected error:', fetchError)
-      setError('로그인 도중 오류가 발생했습니다. 네트워크 상태를 확인해주세요.')
-      setLoading(false)
+  async function onGoogleLogin() {
+    if (!origin) {
+      setError('페이지를 다시 로드해주세요.')
+      return
     }
+    setError(null)
+    const supabase = getSupabaseClient()
+
+    // 프로덕션 URL 사용 - callback 라우트로 리다이렉트
+    const redirectUrl = origin.includes('localhost')
+      ? 'http://localhost:3000/auth/callback'
+      : 'https://reading-tree-project.vercel.app/auth/callback'
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl,
+        skipBrowserRedirect: false
+      }
+    })
+    if (error) setError(error.message)
   }
 
   async function onLogout() {
-    setError(null)
-    try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-        cache: 'no-store'
-      })
-    } catch (logoutError) {
-      console.warn('[Login] logout error:', logoutError)
-    } finally {
-      window.location.reload()
-    }
+    const supabase = getSupabaseClient()
+    await supabase.auth.signOut()
+    window.location.reload()
   }
 
   return (
@@ -65,23 +62,20 @@ export default function LoginPage() {
 
       {error && <div style={{ color: 'crimson', marginBottom: 16 }}>{error}</div>}
 
+      <button
+        className="btn primary"
+        onClick={onGoogleLogin}
+        disabled={!origin}
+        style={{ marginBottom: 16, width: '100%' }}
+      >
+        🔐 Google로 로그인
+      </button>
+
+      <div style={{ textAlign: 'center', margin: '16px 0', color: '#666' }}>또는</div>
+
       <form onSubmit={onLogin} style={{ display: 'grid', gap: 12 }}>
-        <input
-          placeholder="이메일"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          autoComplete="email"
-        />
-        <input
-          placeholder="비밀번호"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          autoComplete="current-password"
-        />
+        <input placeholder="이메일" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <input placeholder="비밀번호" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         <button className="btn primary" disabled={loading}>
           {loading ? '로그인 중...' : '이메일로 로그인'}
         </button>
@@ -92,13 +86,11 @@ export default function LoginPage() {
       </p>
 
       <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
-        <button className="btn" type="button" onClick={onLogout}>로그아웃</button>
+        <button className="btn" onClick={onLogout}>로그아웃</button>
         <Link className="btn" href="/">메인으로</Link>
       </div>
-
-      <p style={{ marginTop: 24, fontSize: 13, color: '#666' }}>
-        ※ 현재는 이메일과 비밀번호 로그인만 지원합니다.
-      </p>
     </main>
   )
 }
+
+
