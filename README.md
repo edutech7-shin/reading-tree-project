@@ -18,3 +18,4 @@
 
 ## 라이선스
 MIT
+# Vercel redeploy trigger
