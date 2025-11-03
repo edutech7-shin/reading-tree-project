@@ -3,14 +3,22 @@ export const dynamic = 'force-dynamic'
 
 import { useState } from 'react'
 import { getSupabaseClient } from '../../lib/supabase/client'
+import BookSearch from '../../components/BookSearch'
 
 export default function RecordPage() {
   const [bookTitle, setBookTitle] = useState('')
   const [bookAuthor, setBookAuthor] = useState('')
+  const [bookCoverUrl, setBookCoverUrl] = useState<string | null>(null)
   const [contentText, setContentText] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+
+  function handleBookSelect(book: { title: string; author: string; coverUrl: string | null }) {
+    setBookTitle(book.title)
+    setBookAuthor(book.author)
+    setBookCoverUrl(book.coverUrl)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -42,7 +50,7 @@ export default function RecordPage() {
       user_id: user.id,
       book_title: bookTitle || null,
       book_author: bookAuthor || null,
-      book_cover_url: null,
+      book_cover_url: bookCoverUrl,
       content_text: contentText || null,
       content_image_url: contentImageUrl,
       status: 'pending'
@@ -51,7 +59,7 @@ export default function RecordPage() {
     setSubmitting(false)
     if (insertError) setMessage(`제출 실패: ${insertError.message}`)
     else {
-      setBookTitle(''); setBookAuthor(''); setContentText(''); setImageFile(null)
+      setBookTitle(''); setBookAuthor(''); setBookCoverUrl(null); setContentText(''); setImageFile(null)
       setMessage('제출되었습니다. 승인 대기 중입니다!')
     }
   }
@@ -61,12 +69,23 @@ export default function RecordPage() {
       <h1>독서 기록하기</h1>
       <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 12 }}>
         <div style={{ display: 'grid', gap: 8 }}>
+          <label>책 정보</label>
+          <BookSearch onSelect={handleBookSelect} />
+          {bookCoverUrl && (
+            <img
+              src={bookCoverUrl}
+              alt={bookTitle}
+              style={{ width: 100, height: 140, objectFit: 'cover', borderRadius: 4, marginTop: 8 }}
+            />
+          )}
+        </div>
+        <div style={{ display: 'grid', gap: 8 }}>
           <label>책 제목</label>
-          <input value={bookTitle} onChange={(e) => setBookTitle(e.target.value)} placeholder="예: 해리포터" />
+          <input value={bookTitle} onChange={(e) => setBookTitle(e.target.value)} placeholder="예: 해리포터 또는 검색으로 입력" />
         </div>
         <div style={{ display: 'grid', gap: 8 }}>
           <label>저자</label>
-          <input value={bookAuthor} onChange={(e) => setBookAuthor(e.target.value)} placeholder="예: J.K. 롤링" />
+          <input value={bookAuthor} onChange={(e) => setBookAuthor(e.target.value)} placeholder="예: J.K. 롤링 또는 검색으로 입력" />
         </div>
         <div style={{ display: 'grid', gap: 8 }}>
           <label>감상(텍스트)</label>

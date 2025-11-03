@@ -1,9 +1,23 @@
 import { createSupabaseServerClient } from '../../../lib/supabase/server'
+import CreateStudentWrapper from './CreateStudentWrapper'
 
 export const dynamic = 'force-dynamic'
 
 export default async function StudentsPage() {
   const supabase = createSupabaseServerClient()
+  
+  // 교사 권한 확인
+  const { data: { user } } = await supabase.auth.getUser()
+  let isTeacher = false
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+    isTeacher = profile?.role === 'teacher'
+  }
+
   const { data: students } = await supabase
     .from('profiles')
     .select('id, nickname, role, level, points')
@@ -27,7 +41,12 @@ export default async function StudentsPage() {
 
   return (
     <main className="container">
-      <h1>학생 관리</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h1 style={{ margin: 0 }}>학생 관리</h1>
+        {isTeacher && (
+          <CreateStudentWrapper />
+        )}
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
         {studentsWithLeaves.map((s) => (
           <div className="card" key={s.id}>
@@ -37,6 +56,11 @@ export default async function StudentsPage() {
             <div>물방울: 💧 {s.points}점</div>
           </div>
         ))}
+        {studentsWithLeaves.length === 0 && (
+          <div className="card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 24, color: '#999' }}>
+            등록된 학생이 없습니다.
+          </div>
+        )}
       </div>
     </main>
   )
