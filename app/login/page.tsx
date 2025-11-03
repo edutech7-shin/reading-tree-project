@@ -1,7 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import Link from 'next/link'
 
@@ -10,11 +10,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [origin, setOrigin] = useState('')
-
-  useEffect(() => {
-    setOrigin(window.location.origin)
-  }, [])
 
   async function onLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -27,28 +22,29 @@ export default function LoginPage() {
     else window.location.href = '/me'
   }
 
-  async function onGoogleLogin() {
-    if (!origin) {
-      setError('페이지를 다시 로드해주세요.')
-      return
-    }
-    setError(null)
-    const supabase = getSupabaseClient()
+  // 구글 로그인은 일시적으로 비활성화
+  // async function onGoogleLogin() {
+  //   if (!origin) {
+  //     setError('페이지를 다시 로드해주세요.')
+  //     return
+  //   }
+  //   setError(null)
+  //   const supabase = getSupabaseClient()
 
-    // 프로덕션 URL 사용 - callback 라우트로 리다이렉트
-    const redirectUrl = origin.includes('localhost')
-      ? 'http://localhost:3000/auth/callback'
-      : 'https://reading-tree-project.vercel.app/auth/callback'
+  //   // 프로덕션 URL 사용 - callback 라우트로 리다이렉트
+  //   const redirectUrl = origin.includes('localhost')
+  //     ? 'http://localhost:3000/auth/callback'
+  //     : 'https://reading-tree-project.vercel.app/auth/callback'
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        skipBrowserRedirect: false
-      }
-    })
-    if (error) setError(error.message)
-  }
+  //   const { data, error } = await supabase.auth.signInWithOAuth({
+  //     provider: 'google',
+  //     options: {
+  //       redirectTo: redirectUrl,
+  //       skipBrowserRedirect: false
+  //     }
+  //   })
+  //   if (error) setError(error.message)
+  // }
 
   async function onLogout() {
     const supabase = getSupabaseClient()
@@ -62,7 +58,8 @@ export default function LoginPage() {
 
       {error && <div style={{ color: 'crimson', marginBottom: 16 }}>{error}</div>}
 
-      <button
+      {/* 구글 로그인은 일시적으로 비활성화 */}
+      {/* <button
         className="btn primary"
         onClick={onGoogleLogin}
         disabled={!origin}
@@ -71,7 +68,7 @@ export default function LoginPage() {
         🔐 Google로 로그인
       </button>
 
-      <div style={{ textAlign: 'center', margin: '16px 0', color: '#666' }}>또는</div>
+      <div style={{ textAlign: 'center', margin: '16px 0', color: '#666' }}>또는</div> */}
 
       <form onSubmit={onLogin} style={{ display: 'grid', gap: 12 }}>
         <input placeholder="이메일" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
