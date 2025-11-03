@@ -100,14 +100,21 @@ export async function GET(request: NextRequest) {
     console.log('[Book Search] Using Referer (registered):', registeredDomain)
     
     // 알라딘 API 호출 시에는 항상 등록된 http:// URL을 Referer로 사용
-    // (Vercel은 https://로 리다이렉트하지만, 알라딘은 등록된 정확한 http:// URL을 요구)
+    // 서버 사이드 호출이므로 실제 요청 출처를 알라딘에 전달하기 위해 추가 헤더 사용
+    // 알라딘 API는 요청이 등록된 도메인에서 왔는지 확인하기 위해 Referer를 체크
     const aladinResponse = await fetch(apiUrl.toString(), {
+      method: 'GET',
       headers: {
-        'Accept': 'application/xml, text/xml',
-        'Referer': registeredDomain, // 항상 등록된 http:// URL 사용
-        'Origin': registeredDomain,  // Origin도 등록된 http:// URL 사용
-        'User-Agent': 'Mozilla/5.0 (compatible; ReadingTree/1.0)'
-      }
+        'Accept': 'application/xml, text/xml, */*',
+        'Referer': registeredDomain,
+        'Origin': registeredDomain,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      },
+      // redirect: 'follow' - 기본값
+      // credentials: 'omit' - 기본값
     })
 
     if (!aladinResponse.ok) {
@@ -131,7 +138,16 @@ export async function GET(request: NextRequest) {
         throw new Error(`알라딘 API 사용 권한이 없습니다. 요청 도메인(${requestHost})이 등록된 도메인(reading-tree-project.vercel.app)과 일치하지 않습니다.`)
       }
       
-      throw new Error('알라딘 API 사용 권한이 없습니다. 알라딘 관리자 페이지에서 도메인 등록 상태를 확인하세요. (등록된 URL: http://reading-tree-project.vercel.app)')
+      // 서버 사이드 호출 시 Referer가 제대로 전달되지 않을 수 있음
+      // 알라딘 API는 브라우저에서 직접 호출할 때만 Referer를 확인할 수 있음
+      console.error('[Book Search] Aladin API domain restriction error')
+      console.error('[Book Search] Registered domain:', registeredDomain)
+      console.error('[Book Search] Request hostname:', requestHost)
+      console.error('[Book Search] Request origin:', requestOrigin)
+      
+      throw new Error(`알라딘 API 사용 권한 오류. 서버 사이드 호출 시 Referer 헤더 제한으로 인해 작동하지 않을 수 있습니다. 
+알라딘 고객센터에 서버 사이드 호출 방법을 문의하시거나, 브라우저에서 직접 호출하는 방식을 고려해보세요.
+등록된 URL: ${registeredDomain}`)
     }
     
     // XML 파싱
