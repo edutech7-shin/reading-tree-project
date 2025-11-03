@@ -78,23 +78,34 @@ export async function GET(request: NextRequest) {
 
     console.log('[Book Search] Aladin API URL:', apiUrl.toString())
     
-    // 알라딘 API에 등록된 정확한 URL 사용 (http://reading-tree-project.vercel.app)
-    // Vercel은 자동으로 https로 리다이렉트하지만, 알라딘은 등록된 정확한 URL을 요구
+    // 알라딘 API에 등록된 URL (http://만 지원, https는 자동으로 http로 등록됨)
+    // 실제 요청은 https://로 올 수 있지만, 알라딘에는 등록된 http://를 전송해야 함
     const registeredDomain = 'http://reading-tree-project.vercel.app'
     
     // 요청 출처 확인 (디버깅용)
     const requestOrigin = request.headers.get('origin') || request.headers.get('referer') || ''
     const requestUrl = new URL(request.url)
     
+    // 요청이 https://로 와도, 알라딘에는 등록된 http://를 사용
+    // 실제 요청 URL과 등록된 도메인이 일치하는지 확인 (프로토콜 무시)
+    const requestHost = requestUrl.hostname || ''
+    const registeredHost = new URL(registeredDomain).hostname
+    const isCorrectDomain = requestHost === registeredHost || requestHost.includes('reading-tree-project.vercel.app')
+    
     console.log('[Book Search] Request origin:', requestOrigin)
     console.log('[Book Search] Request URL:', requestUrl.toString())
-    console.log('[Book Search] Using Referer:', registeredDomain)
+    console.log('[Book Search] Request hostname:', requestHost)
+    console.log('[Book Search] Registered hostname:', registeredHost)
+    console.log('[Book Search] Domain match:', isCorrectDomain)
+    console.log('[Book Search] Using Referer (registered):', registeredDomain)
     
+    // 알라딘 API 호출 시에는 항상 등록된 http:// URL을 Referer로 사용
+    // (Vercel은 https://로 리다이렉트하지만, 알라딘은 등록된 정확한 http:// URL을 요구)
     const aladinResponse = await fetch(apiUrl.toString(), {
       headers: {
         'Accept': 'application/xml, text/xml',
-        'Referer': registeredDomain, // 등록된 정확한 URL 사용
-        'Origin': registeredDomain,  // Origin 헤더도 추가
+        'Referer': registeredDomain, // 항상 등록된 http:// URL 사용
+        'Origin': registeredDomain,  // Origin도 등록된 http:// URL 사용
         'User-Agent': 'Mozilla/5.0 (compatible; ReadingTree/1.0)'
       }
     })
@@ -110,11 +121,17 @@ export async function GET(request: NextRequest) {
     
     // 에러 메시지 확인 (XML 파싱 전에)
     if (responseText.includes('API출력이 금지된 회원입니다')) {
-      const isLocalhost = requestOrigin.includes('localhost') || requestOrigin.includes('127.0.0.1')
+      const isLocalhost = requestHost.includes('localhost') || requestHost.includes('127.0.0.1')
       if (isLocalhost) {
         throw new Error('알라딘 API는 로컬 개발 환경에서 사용할 수 없습니다. Vercel 배포 환경(reading-tree-project.vercel.app)에서만 작동합니다.')
       }
-      throw new Error('알라딘 API 사용 권한이 없습니다. 등록된 도메인(reading-tree-project.vercel.app)에서만 호출 가능합니다.')
+      
+      // 도메인은 맞지만 여전히 오류가 발생하는 경우
+      if (!isCorrectDomain) {
+        throw new Error(`알라딘 API 사용 권한이 없습니다. 요청 도메인(${requestHost})이 등록된 도메인(reading-tree-project.vercel.app)과 일치하지 않습니다.`)
+      }
+      
+      throw new Error('알라딘 API 사용 권한이 없습니다. 알라딘 관리자 페이지에서 도메인 등록 상태를 확인하세요. (등록된 URL: http://reading-tree-project.vercel.app)')
     }
     
     // XML 파싱
