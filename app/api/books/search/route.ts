@@ -57,7 +57,10 @@ export async function GET(request: NextRequest) {
     const ALADIN_API_KEY = process.env.ALADIN_API_KEY
     if (!ALADIN_API_KEY) {
       console.warn('[Book Search] ALADIN_API_KEY is not set. Returning empty results.')
-      return NextResponse.json({ books: [] })
+      return NextResponse.json({ 
+        books: [], 
+        error: 'ALADIN_API_KEY 환경 변수가 설정되지 않았습니다.' 
+      })
     }
 
     // 알라딘 API 호출
@@ -71,6 +74,8 @@ export async function GET(request: NextRequest) {
     apiUrl.searchParams.set('Output', 'JS')
     apiUrl.searchParams.set('Version', '20131101')
 
+    console.log('[Book Search] Aladin API URL:', apiUrl.toString())
+    
     const aladinResponse = await fetch(apiUrl.toString(), {
       headers: {
         'Accept': 'application/json'
@@ -78,10 +83,32 @@ export async function GET(request: NextRequest) {
     })
 
     if (!aladinResponse.ok) {
+      console.error('[Book Search] Aladin API HTTP error:', aladinResponse.status, aladinResponse.statusText)
       throw new Error(`알라딘 API 호출 실패: ${aladinResponse.status}`)
     }
 
-    const aladinData: AladinResponse = await aladinResponse.json()
+    // 알라딘 API는 때때로 JSONP 형식으로 반환할 수 있으므로, 텍스트로 먼저 받아서 처리
+    const responseText = await aladinResponse.text()
+    console.log('[Book Search] Aladin API response (first 500 chars):', responseText.substring(0, 500))
+    
+    let aladinData: AladinResponse
+    try {
+      // JSON 파싱 시도
+      aladinData = JSON.parse(responseText)
+    } catch (parseError) {
+      console.error('[Book Search] Failed to parse JSON response:', parseError)
+      // JSONP 형식인 경우 처리 (예: callback({...}))
+      if (responseText.includes('(') && responseText.includes(')')) {
+        const jsonMatch = responseText.match(/\{.*\}/s)
+        if (jsonMatch) {
+          aladinData = JSON.parse(jsonMatch[0])
+        } else {
+          throw new Error('알라딘 API 응답 형식이 올바르지 않습니다.')
+        }
+      } else {
+        throw new Error('알라딘 API 응답을 파싱할 수 없습니다.')
+      }
+    }
 
     // 에러 응답 처리
     if (aladinData.error || aladinData.errorMessage) {

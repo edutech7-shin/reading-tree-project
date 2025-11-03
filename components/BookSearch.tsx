@@ -25,19 +25,31 @@ export default function BookSearch({ onSelect }: Props) {
 
     setSearching(true)
     setError(null)
+    setResults([])
 
     try {
-      // TODO: 실제 API 연동 (알라딘 또는 도서관 정보나루)
-      // 현재는 기본 구조만 제공
+      console.log('[BookSearch] Searching for:', query)
       const response = await fetch(`/api/books/search?q=${encodeURIComponent(query)}`)
       
       if (!response.ok) {
-        throw new Error('검색에 실패했습니다.')
+        const errorData = await response.json().catch(() => ({ error: '검색에 실패했습니다.' }))
+        throw new Error(errorData.error || `검색 실패 (${response.status})`)
       }
 
       const data = await response.json()
-      setResults(data.books || [])
+      console.log('[BookSearch] Response:', data)
+      
+      if (data.error) {
+        setError(data.error)
+        setResults([])
+      } else {
+        setResults(data.books || [])
+        if (!data.books || data.books.length === 0) {
+          setError('검색 결과가 없습니다.')
+        }
+      }
     } catch (err: any) {
+      console.error('[BookSearch] Error:', err)
       setError(err.message || '검색 중 오류가 발생했습니다.')
       setResults([])
     } finally {
@@ -108,7 +120,28 @@ export default function BookSearch({ onSelect }: Props) {
               </button>
             </div>
 
-            {error && <div style={{ color: 'crimson', marginBottom: 12 }}>{error}</div>}
+            {error && (
+              <div style={{ 
+                color: 'crimson', 
+                marginBottom: 12, 
+                padding: 8, 
+                backgroundColor: '#fee', 
+                borderRadius: 4 
+              }}>
+                {error}
+              </div>
+            )}
+
+            {!searching && results.length === 0 && !error && query && (
+              <div style={{ 
+                color: '#666', 
+                marginBottom: 12, 
+                padding: 8, 
+                textAlign: 'center' 
+              }}>
+                검색 결과가 없습니다.
+              </div>
+            )}
 
             {results.length > 0 && (
               <div style={{ display: 'grid', gap: 8, maxHeight: '400px', overflow: 'auto' }}>
