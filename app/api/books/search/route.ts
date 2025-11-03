@@ -78,22 +78,23 @@ export async function GET(request: NextRequest) {
 
     console.log('[Book Search] Aladin API URL:', apiUrl.toString())
     
-    // 등록된 도메인을 Referer로 전송 (알라딘 API 요구사항)
-    // 요청이 실제로 어디서 오는지 확인
+    // 알라딘 API에 등록된 정확한 URL 사용 (http://reading-tree-project.vercel.app)
+    // Vercel은 자동으로 https로 리다이렉트하지만, 알라딘은 등록된 정확한 URL을 요구
+    const registeredDomain = 'http://reading-tree-project.vercel.app'
+    
+    // 요청 출처 확인 (디버깅용)
     const requestOrigin = request.headers.get('origin') || request.headers.get('referer') || ''
-    const refererUrl = requestOrigin && requestOrigin.includes('reading-tree-project.vercel.app')
-      ? requestOrigin
-      : process.env.VERCEL_URL 
-        ? `https://${process.env.VERCEL_URL}`
-        : 'https://reading-tree-project.vercel.app'
+    const requestUrl = new URL(request.url)
     
     console.log('[Book Search] Request origin:', requestOrigin)
-    console.log('[Book Search] Using Referer:', refererUrl)
+    console.log('[Book Search] Request URL:', requestUrl.toString())
+    console.log('[Book Search] Using Referer:', registeredDomain)
     
     const aladinResponse = await fetch(apiUrl.toString(), {
       headers: {
         'Accept': 'application/xml, text/xml',
-        'Referer': refererUrl,
+        'Referer': registeredDomain, // 등록된 정확한 URL 사용
+        'Origin': registeredDomain,  // Origin 헤더도 추가
         'User-Agent': 'Mozilla/5.0 (compatible; ReadingTree/1.0)'
       }
     })
