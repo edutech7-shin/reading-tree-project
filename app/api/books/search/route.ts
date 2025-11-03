@@ -162,7 +162,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 결과를 캐시에 저장하고 반환 형식으로 변환
-    const books = aladinData.item.map((item) => {
+    const books = aladinData.item.map((item: AladinBookItem) => {
       // ISBN은 isbn13 우선, 없으면 isbn 사용
       const isbn = item.isbn13 || item.isbn || ''
       
