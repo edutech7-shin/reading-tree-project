@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
+import { XMLParser } from 'fast-xml-parser'
 
 export const dynamic = 'force-dynamic'
 
@@ -64,6 +65,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 알라딘 API 호출
+    // 서버 사이드 호출은 Output=XML을 사용해야 함 (JS는 브라우저에서만 가능)
     const apiUrl = new URL('http://www.aladin.co.kr/ttb/api/ItemSearch.aspx')
     apiUrl.searchParams.set('TTBKey', ALADIN_API_KEY)
     apiUrl.searchParams.set('Query', query)
@@ -71,14 +73,21 @@ export async function GET(request: NextRequest) {
     apiUrl.searchParams.set('MaxResults', '10')
     apiUrl.searchParams.set('Start', '1')
     apiUrl.searchParams.set('SearchTarget', 'Book')
-    apiUrl.searchParams.set('Output', 'JS')
+    apiUrl.searchParams.set('Output', 'XML') // 서버 사이드에서는 XML 사용
     apiUrl.searchParams.set('Version', '20131101')
 
     console.log('[Book Search] Aladin API URL:', apiUrl.toString())
     
+    // 등록된 도메인을 Referer로 전송 (알라딘 API 요구사항)
+    const refererUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXT_PUBLIC_VERCEL_URL || 'https://reading-tree-project.vercel.app'
+    
     const aladinResponse = await fetch(apiUrl.toString(), {
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/xml, text/xml',
+        'Referer': refererUrl,
+        'User-Agent': 'Mozilla/5.0'
       }
     })
 
@@ -87,27 +96,55 @@ export async function GET(request: NextRequest) {
       throw new Error(`알라딘 API 호출 실패: ${aladinResponse.status}`)
     }
 
-    // 알라딘 API는 때때로 JSONP 형식으로 반환할 수 있으므로, 텍스트로 먼저 받아서 처리
+    // XML 응답을 텍스트로 받아서 파싱
     const responseText = await aladinResponse.text()
     console.log('[Book Search] Aladin API response (first 500 chars):', responseText.substring(0, 500))
     
-    let aladinData: AladinResponse
+    // 에러 메시지 확인 (XML 파싱 전에)
+    if (responseText.includes('API출력이 금지된 회원입니다')) {
+      throw new Error('알라딘 API 사용 권한이 없습니다. 등록된 도메인(reading-tree-project.vercel.app)에서만 호출 가능합니다.')
+    }
+    
+    // XML 파싱
+    let aladinData: any
     try {
-      // JSON 파싱 시도
-      aladinData = JSON.parse(responseText)
-    } catch (parseError) {
-      console.error('[Book Search] Failed to parse JSON response:', parseError)
-      // JSONP 형식인 경우 처리 (예: callback({...}))
-      if (responseText.includes('(') && responseText.includes(')')) {
-        const jsonMatch = responseText.match(/\{.*\}/s)
-        if (jsonMatch) {
-          aladinData = JSON.parse(jsonMatch[0])
-        } else {
-          throw new Error('알라딘 API 응답 형식이 올바르지 않습니다.')
-        }
-      } else {
-        throw new Error('알라딘 API 응답을 파싱할 수 없습니다.')
+      const parser = new XMLParser({
+        ignoreAttributes: false,
+        attributeNamePrefix: '@_'
+      })
+      const result = parser.parse(responseText)
+      
+      // 알라딘 XML 응답 구조: <object><item>...</item></object>
+      const objectData = result.object || result
+      
+      // 에러 체크
+      if (objectData.error) {
+        throw new Error(objectData.error || '알라딘 API 에러')
       }
+      
+      // item 배열 추출 (단일 객체일 수도 있고 배열일 수도 있음)
+      const items = Array.isArray(objectData.item) 
+        ? objectData.item 
+        : objectData.item 
+          ? [objectData.item] 
+          : []
+      
+      const itemArray: AladinBookItem[] = items.map((item: any) => ({
+        title: item.title || '',
+        author: item.author || '',
+        isbn: item.isbn || '',
+        isbn13: item.isbn13 || item.isbn || '',
+        cover: item.cover || '',
+        description: item.description || ''
+      }))
+      
+      aladinData = {
+        item: itemArray,
+        totalResults: itemArray.length
+      }
+    } catch (parseError: any) {
+      console.error('[Book Search] Failed to parse XML response:', parseError)
+      throw new Error(parseError.message || '알라딘 API 응답을 파싱할 수 없습니다.')
     }
 
     // 에러 응답 처리
