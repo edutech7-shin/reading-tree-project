@@ -189,7 +189,7 @@ export async function GET(request: NextRequest) {
           description: item.description || null,
           updated_at: new Date().toISOString()
         }
-      }).filter((item): item is NonNullable<typeof item> => item !== null)
+      }).filter((item: any): item is NonNullable<typeof item> => item !== null)
 
       if (cacheInserts.length > 0) {
         // upsert로 중복 방지
