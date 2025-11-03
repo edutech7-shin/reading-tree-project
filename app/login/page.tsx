@@ -15,11 +15,29 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
     setLoading(true)
-    const supabase = getSupabaseClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false)
-    if (error) setError(error.message)
-    else window.location.href = '/me'
+    
+    try {
+      const supabase = getSupabaseClient()
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      
+      if (error) {
+        setError(error.message)
+        setLoading(false)
+        return
+      }
+      
+      // 로그인 성공
+      if (data?.user) {
+        window.location.href = '/me'
+      } else {
+        setError('로그인에 실패했습니다. 다시 시도해주세요.')
+        setLoading(false)
+      }
+    } catch (clientError: any) {
+      console.error('[Login] Client initialization error:', clientError)
+      setError(clientError?.message || 'Supabase 클라이언트 초기화 실패. 환경변수를 확인하세요.')
+      setLoading(false)
+    }
   }
 
   // 구글 로그인은 일시적으로 비활성화
