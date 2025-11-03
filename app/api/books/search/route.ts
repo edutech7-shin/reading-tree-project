@@ -177,7 +177,7 @@ export async function GET(request: NextRequest) {
     // 캐시에 저장 (upsert)
     try {
       // 각 책 정보를 캐시에 저장
-      const cacheInserts = aladinData.item.map((item) => {
+      const cacheInserts = aladinData.item.map((item: AladinBookItem) => {
         const isbn = item.isbn13 || item.isbn || ''
         if (!isbn) return null // ISBN이 없으면 캐시 불가
         
