@@ -82,13 +82,19 @@ export default function RecordPage() {
         let errorMessage = '이미지 업로드 실패'
         if (error.message.includes('Invalid key')) {
           errorMessage = '파일명에 사용할 수 없는 문자가 포함되어 있습니다. 파일명을 변경해주세요.'
-        } else if (error.message.includes('not found') || error.message.includes('row-level security')) {
-          errorMessage = '저장소 버킷이 설정되지 않았거나 권한이 없습니다. 관리자에게 문의해주세요.'
+        } else if (error.message.includes('not found') || error.message.includes('row-level security') || error.message.includes('RLS')) {
+          errorMessage = `저장소 권한 오류: ${error.message}. Storage 버킷의 RLS 정책을 확인해주세요.`
         } else if (error.message.includes('size') || error.message.includes('too large')) {
           errorMessage = '파일 크기가 너무 큽니다. 5MB 이하의 이미지를 선택해주세요.'
         } else {
           errorMessage = `이미지 업로드 실패: ${error.message}`
         }
+        
+        console.error('[Record] Upload error details:', {
+          message: error.message,
+          statusCode: error.statusCode,
+          error
+        })
         
         setMessage(errorMessage)
         return

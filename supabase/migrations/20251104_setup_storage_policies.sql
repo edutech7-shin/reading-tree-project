@@ -8,13 +8,14 @@ for select
 using (bucket_id = 'reading-uploads');
 
 -- 업로드 정책: 인증된 사용자가 자신의 폴더(user_id)에만 업로드 가능
+-- 경로 형식: {user_id}/{timestamp}_{filename}
 create policy if not exists "reading-uploads authenticated upload"
 on storage.objects
 for insert
 with check (
   bucket_id = 'reading-uploads' 
   and auth.role() = 'authenticated'
-  and (storage.foldername(name))[1] = auth.uid()::text
+  and (string_to_array(name, '/'))[1] = auth.uid()::text
 );
 
 -- 업데이트 정책: 본인이 업로드한 파일만 수정 가능
@@ -24,7 +25,7 @@ for update
 using (
   bucket_id = 'reading-uploads' 
   and auth.role() = 'authenticated'
-  and (storage.foldername(name))[1] = auth.uid()::text
+  and (string_to_array(name, '/'))[1] = auth.uid()::text
 );
 
 -- 삭제 정책: 본인이 업로드한 파일만 삭제 가능
@@ -34,6 +35,6 @@ for delete
 using (
   bucket_id = 'reading-uploads' 
   and auth.role() = 'authenticated'
-  and (storage.foldername(name))[1] = auth.uid()::text
+  and (string_to_array(name, '/'))[1] = auth.uid()::text
 );
 
