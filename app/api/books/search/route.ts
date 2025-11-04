@@ -95,22 +95,54 @@ export async function GET(request: NextRequest) {
     apiUrl.searchParams.set('pageSize', '10')
     apiUrl.searchParams.set('format', 'json') // JSON 형식 요청
 
-    console.log('[Book Search] Library API URL:', apiUrl.toString())
-    
-    // Accept 헤더 제거 - API가 자체적으로 format 파라미터로 처리
-    const libraryResponse = await fetch(apiUrl.toString(), {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; ReadingTree/1.0)'
-      }
+    const finalUrl = apiUrl.toString()
+    console.log('[Book Search] Library API URL:', finalUrl)
+    console.log('[Book Search] Request params:', {
+      authKey: LIBRARY_API_KEY ? `${LIBRARY_API_KEY.substring(0, 10)}...` : 'MISSING',
+      keyword: query,
+      pageNo: '1',
+      pageSize: '10',
+      format: 'json'
     })
+    
+    // API 호출 시작 시간 기록
+    const startTime = Date.now()
+    
+    let libraryResponse: Response
+    try {
+      // Accept 헤더 제거 - API가 자체적으로 format 파라미터로 처리
+      libraryResponse = await fetch(finalUrl, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; ReadingTree/1.0)'
+        }
+      })
+      
+      const duration = Date.now() - startTime
+      console.log('[Book Search] API call completed:', {
+        status: libraryResponse.status,
+        statusText: libraryResponse.statusText,
+        duration: `${duration}ms`,
+        headers: Object.fromEntries(libraryResponse.headers.entries())
+      })
+    } catch (fetchError: any) {
+      const duration = Date.now() - startTime
+      console.error('[Book Search] Fetch error:', {
+        message: fetchError.message,
+        stack: fetchError.stack,
+        duration: `${duration}ms`,
+        url: finalUrl
+      })
+      throw new Error(`API 호출 실패: ${fetchError.message}`)
+    }
 
     if (!libraryResponse.ok) {
       const errorText = await libraryResponse.text().catch(() => '')
       console.error('[Book Search] Library API HTTP error:', {
         status: libraryResponse.status,
         statusText: libraryResponse.statusText,
-        body: errorText.substring(0, 500)
+        body: errorText.substring(0, 1000),
+        url: finalUrl
       })
       
       // 406 에러는 Accept 헤더 문제일 수 있음
@@ -121,7 +153,18 @@ export async function GET(request: NextRequest) {
         })
       }
       
-      throw new Error(`도서관 정보나루 API 호출 실패: ${libraryResponse.status}`)
+      // 400 에러는 파라미터 문제일 수 있음
+      if (libraryResponse.status === 400) {
+        return NextResponse.json({ 
+          books: [],
+          error: `API 파라미터 오류: ${errorText.substring(0, 200)}`
+        })
+      }
+      
+      return NextResponse.json({ 
+        books: [],
+        error: `도서관 정보나루 API 호출 실패 (${libraryResponse.status}): ${errorText.substring(0, 200)}`
+      })
     }
 
     // JSON 응답 파싱
