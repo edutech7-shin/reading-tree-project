@@ -125,7 +125,16 @@ export default function RecordPage() {
             </small>
           )}
         </div>
-        {message && <div>{message}</div>}
+        {message && (
+          <div style={{ 
+            padding: 12, 
+            borderRadius: 4,
+            backgroundColor: message.includes('실패') || message.includes('오류') ? '#fee' : '#efe',
+            color: message.includes('실패') || message.includes('오류') ? '#c33' : '#363'
+          }}>
+            {message}
+          </div>
+        )}
         <button className="btn primary" disabled={submitting} type="submit">
           {submitting ? '제출 중...' : '제출하기'}
         </button>
