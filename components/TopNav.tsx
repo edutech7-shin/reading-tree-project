@@ -48,16 +48,24 @@ export default function TopNav() {
       
       // 세션 변경 시 역할도 다시 확인
       if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .maybeSingle()
-        
-        setIsTeacher(profile?.role === 'teacher')
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .maybeSingle()
+          
+          setIsTeacher(profile?.role === 'teacher')
+        } catch (error) {
+          console.error('[TopNav] Profile fetch failed:', error)
+          setIsTeacher(false)
+        }
       } else {
         setIsTeacher(false)
       }
+      
+      // 리스너에서도 로딩 상태 업데이트 (초기 로딩이 완료된 후라도)
+      setLoading(false)
     })
 
     return () => {
