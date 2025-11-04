@@ -39,11 +39,14 @@ export default function ApprovePage() {
     const supabase = getSupabaseClient()
     
     // 먼저 승인 처리
-    const { error: rpcError } = await supabase.rpc('approve_record_and_reward', { p_record_id: id })
+    console.log('[Approve] Calling approve_record_and_reward with id:', id)
+    const { data, error: rpcError } = await supabase.rpc('approve_record_and_reward', { p_record_id: id })
     if (rpcError) {
-      setError(rpcError.message)
+      console.error('[Approve] RPC error:', rpcError)
+      setError(`승인 실패: ${rpcError.message}${rpcError.details ? ` (${rpcError.details})` : ''}${rpcError.hint ? ` 힌트: ${rpcError.hint}` : ''}`)
       return
     }
+    console.log('[Approve] RPC success:', data)
     
     // 코멘트가 있으면 업데이트
     const comment = comments[id]?.trim()
