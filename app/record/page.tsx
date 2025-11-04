@@ -119,10 +119,16 @@ export default function RecordPage() {
             accept="image/*" 
             onChange={(e) => setImageFile(e.target.files?.[0] || null)} 
           />
-          <small>주의: Supabase Storage 버킷 'reading-uploads'가 필요합니다.</small>
+          {imageFile && (
+            <small style={{ color: '#666' }}>
+              선택된 파일: {imageFile.name} ({(imageFile.size / 1024).toFixed(1)} KB)
+            </small>
+          )}
         </div>
         {message && <div>{message}</div>}
-        <button className="btn primary" disabled={submitting}>{submitting ? '제출 중...' : '제출하기'}</button>
+        <button className="btn primary" disabled={submitting} type="submit">
+          {submitting ? '제출 중...' : '제출하기'}
+        </button>
       </form>
     </main>
   )
