@@ -13,7 +13,6 @@ export default function TopNav() {
 
   useEffect(() => {
     let mounted = true
-    let loadingComplete = false
     
     async function checkAuth() {
       try {
@@ -48,7 +47,6 @@ export default function TopNav() {
         }
       } finally {
         if (mounted) {
-          loadingComplete = true
           setLoading(false)
         }
       }
@@ -86,18 +84,12 @@ export default function TopNav() {
           setIsTeacher(false)
         }
       }
-      
-      // 리스너에서도 로딩 상태 업데이트 (초기 로딩이 완료된 후라도)
-      if (mounted && loadingComplete) {
-        setLoading(false)
-      }
     })
 
     // 안전장치: 3초 후에도 로딩이 끝나지 않으면 강제로 종료
     const timeoutId = setTimeout(() => {
-      if (mounted && !loadingComplete) {
+      if (mounted) {
         console.warn('[TopNav] Loading timeout, forcing completion')
-        loadingComplete = true
         setLoading(false)
       }
     }, 3000)
