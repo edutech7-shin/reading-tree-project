@@ -23,37 +23,55 @@ export default function ApprovePage() {
   async function load() {
     setLoading(true)
     const supabase = getSupabaseClient()
-    const { data, error } = await supabase
+    
+    // 먼저 기록을 가져오고
+    const { data: records, error: recordsError } = await supabase
       .from('book_records')
-      .select(`
-        id, 
-        user_id, 
-        book_title, 
-        book_author, 
-        content_text, 
-        content_image_url,
-        profiles:user_id(nickname)
-      `)
+      .select('id, user_id, book_title, book_author, content_text, content_image_url')
       .eq('status', 'pending')
       .order('id', { ascending: false })
-    setLoading(false)
-    if (error) {
-      setError(error.message)
-      console.error('[Approve] Load error:', error)
-    } else {
-      // profiles 데이터를 평탄화
-      setRows((data as any[]).map(row => ({
-        id: row.id,
-        user_id: row.user_id,
-        book_title: row.book_title,
-        book_author: row.book_author,
-        content_text: row.content_text,
-        content_image_url: row.content_image_url,
-        user_nickname: Array.isArray(row.profiles) 
-          ? row.profiles[0]?.nickname || null
-          : row.profiles?.nickname || null
-      })))
+    
+    if (recordsError) {
+      setError(recordsError.message)
+      console.error('[Approve] Load error:', recordsError)
+      setLoading(false)
+      return
     }
+    
+    if (!records || records.length === 0) {
+      setRows([])
+      setLoading(false)
+      return
+    }
+    
+    // 각 기록의 user_id로 프로필 정보 가져오기
+    const userIds = [...new Set(records.map(r => r.user_id))]
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, nickname')
+      .in('id', userIds)
+    
+    if (profilesError) {
+      console.error('[Approve] Profiles load error:', profilesError)
+    }
+    
+    // 프로필 맵 생성
+    const profileMap = new Map(
+      (profiles || []).map(p => [p.id, p.nickname])
+    )
+    
+    // 기록과 프로필 정보 결합
+    setRows(records.map(record => ({
+      id: record.id,
+      user_id: record.user_id,
+      book_title: record.book_title,
+      book_author: record.book_author,
+      content_text: record.content_text,
+      content_image_url: record.content_image_url,
+      user_nickname: profileMap.get(record.user_id) || null
+    })))
+    
+    setLoading(false)
   }
 
   useEffect(() => { load() }, [])
