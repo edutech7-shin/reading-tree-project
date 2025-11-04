@@ -268,12 +268,10 @@ async function createTestData() {
     .maybeSingle()
 
   if (!existingTree) {
-    const { data: allApproved } = await supabase
+    const { count: totalLeaves } = await supabase
       .from('book_records')
-      .select('id', { count: 'exact', head: true })
+      .select('*', { count: 'exact', head: true })
       .eq('status', 'approved')
-
-    const totalLeaves = allApproved?.count ?? 0
     
     const { error: treeError } = await supabase
       .from('class_trees')
@@ -291,12 +289,10 @@ async function createTestData() {
     }
   } else {
     // 기존 나무의 잎사귀 수 업데이트
-    const { data: allApproved } = await supabase
+    const { count: totalLeaves } = await supabase
       .from('book_records')
-      .select('id', { count: 'exact', head: true })
+      .select('*', { count: 'exact', head: true })
       .eq('status', 'approved')
-
-    const totalLeaves = allApproved?.count ?? 0
     
     await supabase
       .from('class_trees')
