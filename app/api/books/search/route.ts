@@ -5,35 +5,35 @@ import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 export const dynamic = 'force-dynamic'
 
 // 도서관 정보나루 API 응답 타입 (srchBooks)
+// 메뉴얼 기준: response.docs[].doc[] 구조에서 각 doc는 직접 book 정보를 포함
+type BookDoc = {
+  bookname?: string
+  authors?: string
+  isbn13?: string
+  publisher?: string
+  publication_year?: string
+  bookImageURL?: string
+  bookDtlUrl?: string
+  loan_count?: number
+  // 기타 필드들
+  [key: string]: any
+}
+
 type LibraryResponse = {
   response?: {
-    resultNum?: number
+    request?: {
+      keyword?: string
+      pageNo?: number
+      pageSize?: number
+    }
+    numFound?: number  // 전체 검색결과 건수 (메뉴얼 기준)
+    resultNum?: number  // fallback
     docs?: Array<{
-      doc?: Array<{
-        book?: {
-          bookname?: string
-          authors?: string
-          isbn?: string
-          isbn13?: string
-          bookImageURL?: string
-          description?: string
-          publisher?: string
-          pubYear?: string
-        }
-      }>
+      doc?: BookDoc  // 각 doc는 단일 객체 (배열이 아님!)
     }>
     libs?: {
       lib?: Array<{
-        book?: {
-          bookname?: string
-          authors?: string
-          isbn?: string
-          isbn13?: string
-          bookImageURL?: string
-          description?: string
-          publisher?: string
-          pubYear?: string
-        }
+        book?: BookDoc  // srchDtlList 형식
       }>
     }
     error?: {
@@ -220,11 +220,11 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 결과 추출 - 다양한 응답 형식 지원
-    const resultNum = libraryData.response?.resultNum || 0
+    // 결과 추출 - 메뉴얼 기준 응답 구조 처리
+    const numFound = libraryData.response?.numFound || libraryData.response?.resultNum || 0
     console.log('[Book Search] Response structure:', {
       hasResponse: !!libraryData.response,
-      resultNum,
+      numFound,
       hasDocs: !!libraryData.response?.docs,
       hasLibs: !!libraryData.response?.libs,
       responseKeys: libraryData.response ? Object.keys(libraryData.response) : []
@@ -232,31 +232,35 @@ export async function GET(request: NextRequest) {
     
     let books: Array<{ title: string; author: string; coverUrl: string | null; isbn: string }> = []
     
-    // 방법 1: docs 배열 (srchBooks 일반 형식)
+    // 방법 1: docs 배열 (srchBooks 표준 형식 - 실제 API 응답 구조)
+    // 구조: response.docs[] - 각 요소는 { doc: BookDoc } 형태
+    // doc는 단일 객체이지 배열이 아님!
     const docs = libraryData.response?.docs
     if (docs && Array.isArray(docs) && docs.length > 0) {
       console.log('[Book Search] Processing docs array, length:', docs.length)
-      for (const doc of docs) {
-        if (doc.doc && Array.isArray(doc.doc)) {
-          for (const item of doc.doc) {
-            const book = item.book
-            if (!book || !book.bookname) continue
-            
-            const isbn = book.isbn13 || book.isbn || ''
-            if (!isbn) continue
-            
-            books.push({
-              title: book.bookname || '',
-              author: book.authors || '',
-              coverUrl: book.bookImageURL || null,
-              isbn: isbn
-            })
-          }
+      for (const docWrapper of docs) {
+        const bookDoc = docWrapper.doc
+        if (!bookDoc || !bookDoc.bookname) {
+          console.log('[Book Search] Skipping doc without bookname:', bookDoc)
+          continue
         }
+        
+        const isbn = bookDoc.isbn13 || ''
+        if (!isbn) {
+          console.log('[Book Search] Skipping doc without ISBN:', bookDoc.bookname)
+          continue
+        }
+        
+        books.push({
+          title: bookDoc.bookname || '',
+          author: bookDoc.authors || '',
+          coverUrl: bookDoc.bookImageURL || null,
+          isbn: isbn
+        })
       }
     }
     
-    // 방법 2: libs 구조 (srchDtlList 형식)
+    // 방법 2: libs 구조 (srchDtlList 형식 - fallback)
     if (books.length === 0) {
       const libs = libraryData.response?.libs?.lib
       if (libs && Array.isArray(libs) && libs.length > 0) {
@@ -265,7 +269,7 @@ export async function GET(request: NextRequest) {
           const book = lib.book
           if (!book || !book.bookname) continue
           
-          const isbn = book.isbn13 || book.isbn || ''
+          const isbn = book.isbn13 || ''
           if (!isbn) continue
           
           books.push({
@@ -278,10 +282,10 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // 방법 3: 직접 book 배열 체크 (다른 형식일 수 있음)
-    if (books.length === 0 && libraryData.response) {
+    // 방법 3: 응답 구조가 예상과 다를 경우 재귀 탐색
+    if (books.length === 0 && libraryData.response && numFound > 0) {
       console.log('[Book Search] Trying to find books in alternative structure')
-      // 응답 전체를 탐색하여 book 객체 찾기
+      // 응답 전체를 탐색하여 bookname을 가진 객체 찾기
       const findBooks = (obj: any, depth = 0): any[] => {
         if (depth > 5) return [] // 깊이 제한
         if (!obj || typeof obj !== 'object') return []
@@ -289,7 +293,7 @@ export async function GET(request: NextRequest) {
         const found: any[] = []
         if (Array.isArray(obj)) {
           for (const item of obj) {
-            if (item && typeof item === 'object' && item.bookname) {
+            if (item && typeof item === 'object' && item.bookname && item.isbn13) {
               found.push(item)
             } else {
               found.push(...findBooks(item, depth + 1))
@@ -308,15 +312,15 @@ export async function GET(request: NextRequest) {
       const foundBooks = findBooks(libraryData.response)
       console.log('[Book Search] Found books via recursive search:', foundBooks.length)
       
-      for (const book of foundBooks) {
-        if (!book.bookname) continue
-        const isbn = book.isbn13 || book.isbn || ''
+      for (const bookDoc of foundBooks) {
+        if (!bookDoc.bookname) continue
+        const isbn = bookDoc.isbn13 || ''
         if (!isbn) continue
         
         books.push({
-          title: book.bookname || '',
-          author: book.authors || '',
-          coverUrl: book.bookImageURL || null,
+          title: bookDoc.bookname || '',
+          author: bookDoc.authors || '',
+          coverUrl: bookDoc.bookImageURL || null,
           isbn: isbn
         })
       }
@@ -324,15 +328,22 @@ export async function GET(request: NextRequest) {
     
     // 결과가 없을 때 처리
     if (books.length === 0) {
-      if (resultNum === 0) {
-        console.warn('[Book Search] No results found. API approval may be pending.')
+      if (numFound === 0) {
+        console.warn('[Book Search] No results found. numFound:', numFound)
         return NextResponse.json({ 
           books: [],
-          error: '검색 결과가 없습니다. API 사용 승인이 완료되었는지 확인해주세요.'
+          error: '검색 결과가 없습니다. 다른 검색어를 시도해보세요.'
         })
       }
-      return NextResponse.json({ books: [] })
+      // numFound가 있지만 파싱 실패한 경우
+      console.warn('[Book Search] Found results (numFound:', numFound, ') but failed to parse. Response structure may be different.')
+      return NextResponse.json({ 
+        books: [],
+        error: `검색 결과는 있지만 파싱에 실패했습니다. (전체 결과: ${numFound}건)`
+      })
     }
+    
+    console.log('[Book Search] Successfully parsed', books.length, 'books from', numFound, 'total results')
 
     // 캐시에 저장 (upsert)
     try {

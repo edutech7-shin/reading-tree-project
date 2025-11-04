@@ -55,8 +55,10 @@ export default function TreeSettings({ treeId, currentTarget, className }: Props
       
       <div style={{ display: 'grid', gap: 12 }}>
         <div>
-          <label style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>반 이름</label>
+          <label htmlFor="tree-class-name" style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>반 이름</label>
           <input
+            id="tree-class-name"
+            name="tree-class-name"
             type="text"
             value={classNameInput}
             onChange={(e) => setClassNameInput(e.target.value)}
@@ -66,8 +68,10 @@ export default function TreeSettings({ treeId, currentTarget, className }: Props
         </div>
 
         <div>
-          <label style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>다음 레벨업 목표 (잎사귀 수)</label>
+          <label htmlFor="tree-level-target" style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>다음 레벨업 목표 (잎사귀 수)</label>
           <input
+            id="tree-level-target"
+            name="tree-level-target"
             type="number"
             min="1"
             value={target}

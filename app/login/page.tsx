@@ -101,8 +101,30 @@ export default function LoginPage() {
       <div style={{ textAlign: 'center', margin: '16px 0', color: '#666' }}>또는</div>
 
       <form onSubmit={onLogin} style={{ display: 'grid', gap: 12 }}>
-        <input placeholder="이메일" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <input placeholder="비밀번호" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <div>
+          <label htmlFor="login-email" style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>이메일</label>
+          <input 
+            id="login-email"
+            name="email"
+            placeholder="이메일" 
+            type="email" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+            required 
+          />
+        </div>
+        <div>
+          <label htmlFor="login-password" style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>비밀번호</label>
+          <input 
+            id="login-password"
+            name="password"
+            placeholder="비밀번호" 
+            type="password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
+          />
+        </div>
         <button className="btn primary" disabled={loading}>
           {loading ? '로그인 중...' : '이메일로 로그인'}
         </button>

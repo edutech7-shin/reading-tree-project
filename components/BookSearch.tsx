@@ -107,7 +107,10 @@ export default function BookSearch({ onSelect }: Props) {
             <h3 style={{ marginTop: 0 }}>책 검색</h3>
 
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              <label htmlFor="book-search-query" style={{ display: 'none' }}>책 제목 또는 저자</label>
               <input
+                id="book-search-query"
+                name="book-search-query"
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}

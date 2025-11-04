@@ -80,20 +80,45 @@ export default function RecordPage() {
           )}
         </div>
         <div style={{ display: 'grid', gap: 8 }}>
-          <label>책 제목</label>
-          <input value={bookTitle} onChange={(e) => setBookTitle(e.target.value)} placeholder="예: 해리포터 또는 검색으로 입력" />
+          <label htmlFor="book-title">책 제목</label>
+          <input 
+            id="book-title"
+            name="book-title"
+            value={bookTitle} 
+            onChange={(e) => setBookTitle(e.target.value)} 
+            placeholder="예: 해리포터 또는 검색으로 입력" 
+          />
         </div>
         <div style={{ display: 'grid', gap: 8 }}>
-          <label>저자</label>
-          <input value={bookAuthor} onChange={(e) => setBookAuthor(e.target.value)} placeholder="예: J.K. 롤링 또는 검색으로 입력" />
+          <label htmlFor="book-author">저자</label>
+          <input 
+            id="book-author"
+            name="book-author"
+            value={bookAuthor} 
+            onChange={(e) => setBookAuthor(e.target.value)} 
+            placeholder="예: J.K. 롤링 또는 검색으로 입력" 
+          />
         </div>
         <div style={{ display: 'grid', gap: 8 }}>
-          <label>감상(텍스트)</label>
-          <textarea value={contentText} onChange={(e) => setContentText(e.target.value)} rows={6} placeholder="느낀 점을 적어보세요" />
+          <label htmlFor="content-text">감상(텍스트)</label>
+          <textarea 
+            id="content-text"
+            name="content-text"
+            value={contentText} 
+            onChange={(e) => setContentText(e.target.value)} 
+            rows={6} 
+            placeholder="느낀 점을 적어보세요" 
+          />
         </div>
         <div style={{ display: 'grid', gap: 8 }}>
-          <label>사진 첨부(선택)</label>
-          <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
+          <label htmlFor="image-file">사진 첨부(선택)</label>
+          <input 
+            id="image-file"
+            name="image-file"
+            type="file" 
+            accept="image/*" 
+            onChange={(e) => setImageFile(e.target.files?.[0] || null)} 
+          />
           <small>주의: Supabase Storage 버킷 'reading-uploads'가 필요합니다.</small>
         </div>
         {message && <div>{message}</div>}
