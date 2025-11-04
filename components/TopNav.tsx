@@ -12,10 +12,16 @@ export default function TopNav() {
   const router = useRouter()
 
   useEffect(() => {
+    let mounted = true
+    let loadingComplete = false
+    
     async function checkAuth() {
       try {
         const supabase = getSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()
+        
+        if (!mounted) return
+        
         setIsLoggedIn(!!session)
         
         // 로그인된 경우 역할 확인
@@ -26,16 +32,25 @@ export default function TopNav() {
             .eq('id', session.user.id)
             .maybeSingle()
           
-          setIsTeacher(profile?.role === 'teacher')
+          if (mounted) {
+            setIsTeacher(profile?.role === 'teacher')
+          }
         } else {
-          setIsTeacher(false)
+          if (mounted) {
+            setIsTeacher(false)
+          }
         }
       } catch (error) {
         console.error('[TopNav] Auth check failed:', error)
-        setIsLoggedIn(false)
-        setIsTeacher(false)
+        if (mounted) {
+          setIsLoggedIn(false)
+          setIsTeacher(false)
+        }
       } finally {
-        setLoading(false)
+        if (mounted) {
+          loadingComplete = true
+          setLoading(false)
+        }
       }
     }
 
@@ -44,6 +59,8 @@ export default function TopNav() {
     // 세션 변경 감지를 위한 리스너
     const supabase = getSupabaseClient()
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return
+      
       setIsLoggedIn(!!session)
       
       // 세션 변경 시 역할도 다시 확인
@@ -55,20 +72,39 @@ export default function TopNav() {
             .eq('id', session.user.id)
             .maybeSingle()
           
-          setIsTeacher(profile?.role === 'teacher')
+          if (mounted) {
+            setIsTeacher(profile?.role === 'teacher')
+          }
         } catch (error) {
           console.error('[TopNav] Profile fetch failed:', error)
-          setIsTeacher(false)
+          if (mounted) {
+            setIsTeacher(false)
+          }
         }
       } else {
-        setIsTeacher(false)
+        if (mounted) {
+          setIsTeacher(false)
+        }
       }
       
       // 리스너에서도 로딩 상태 업데이트 (초기 로딩이 완료된 후라도)
-      setLoading(false)
+      if (mounted && loadingComplete) {
+        setLoading(false)
+      }
     })
 
+    // 안전장치: 3초 후에도 로딩이 끝나지 않으면 강제로 종료
+    const timeoutId = setTimeout(() => {
+      if (mounted && !loadingComplete) {
+        console.warn('[TopNav] Loading timeout, forcing completion')
+        loadingComplete = true
+        setLoading(false)
+      }
+    }, 3000)
+
     return () => {
+      mounted = false
+      clearTimeout(timeoutId)
       subscription.unsubscribe()
     }
   }, [])
