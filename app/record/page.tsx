@@ -35,15 +35,51 @@ export default function RecordPage() {
 
     let contentImageUrl: string | null = null
     if (imageFile) {
-      const path = `${user.id}/${Date.now()}_${imageFile.name}`
+      // 파일명을 URL-safe하게 변환 (한글, 특수문자 처리)
+      const sanitizeFileName = (filename: string): string => {
+        // 확장자 추출
+        const lastDot = filename.lastIndexOf('.')
+        const ext = lastDot > 0 ? filename.substring(lastDot) : ''
+        const nameWithoutExt = lastDot > 0 ? filename.substring(0, lastDot) : filename
+        
+        // 한글, 공백, 특수문자를 언더스코어로 변환하고 길이 제한
+        const sanitized = nameWithoutExt
+          .replace(/[^\w\-_.]/g, '_') // 한글, 특수문자를 언더스코어로
+          .replace(/_+/g, '_') // 연속된 언더스코어를 하나로
+          .substring(0, 100) // 길이 제한
+          .replace(/^_+|_+$/g, '') // 앞뒤 언더스코어 제거
+        
+        return sanitized + ext
+      }
+      
+      const sanitizedFileName = sanitizeFileName(imageFile.name)
+      const path = `${user.id}/${Date.now()}_${sanitizedFileName}`
+      
+      console.log('[Record] Uploading image:', { original: imageFile.name, sanitized: sanitizedFileName, path })
+      
       const { data, error } = await supabase.storage.from('reading-uploads').upload(path, imageFile)
       if (error) {
         setSubmitting(false)
-        setMessage(`이미지 업로드 실패: ${error.message}`)
+        console.error('[Record] Image upload error:', error)
+        
+        // 에러 타입별 친화적 메시지
+        let errorMessage = '이미지 업로드 실패'
+        if (error.message.includes('Invalid key')) {
+          errorMessage = '파일명에 사용할 수 없는 문자가 포함되어 있습니다. 파일명을 변경해주세요.'
+        } else if (error.message.includes('not found')) {
+          errorMessage = '저장소 버킷이 설정되지 않았습니다. 관리자에게 문의해주세요.'
+        } else if (error.message.includes('size')) {
+          errorMessage = '파일 크기가 너무 큽니다. 더 작은 이미지를 선택해주세요.'
+        } else {
+          errorMessage = `이미지 업로드 실패: ${error.message}`
+        }
+        
+        setMessage(errorMessage)
         return
       }
       const { data: urlData } = supabase.storage.from('reading-uploads').getPublicUrl(data.path)
       contentImageUrl = urlData.publicUrl
+      console.log('[Record] Image uploaded successfully:', contentImageUrl)
     }
 
     const { error: insertError } = await supabase.from('book_records').insert({
