@@ -25,14 +25,21 @@ export default function TopNav() {
         
         // 로그인된 경우 역할 확인
         if (session?.user) {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', session.user.id)
             .maybeSingle()
           
+          if (profileError) {
+            console.error('[TopNav] Profile fetch error:', profileError)
+          }
+          
+          const isTeacherRole = profile?.role === 'teacher'
+          console.log('[TopNav] User role:', profile?.role, 'isTeacher:', isTeacherRole)
+          
           if (mounted) {
-            setIsTeacher(profile?.role === 'teacher')
+            setIsTeacher(isTeacherRole)
           }
         } else {
           if (mounted) {
@@ -64,14 +71,21 @@ export default function TopNav() {
       // 세션 변경 시 역할도 다시 확인
       if (session?.user) {
         try {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', session.user.id)
             .maybeSingle()
           
+          if (profileError) {
+            console.error('[TopNav] Profile fetch error (listener):', profileError)
+          }
+          
+          const isTeacherRole = profile?.role === 'teacher'
+          console.log('[TopNav] User role (listener):', profile?.role, 'isTeacher:', isTeacherRole)
+          
           if (mounted) {
-            setIsTeacher(profile?.role === 'teacher')
+            setIsTeacher(isTeacherRole)
           }
         } catch (error) {
           console.error('[TopNav] Profile fetch failed:', error)
@@ -121,7 +135,7 @@ export default function TopNav() {
         <Link href="/record">기록하기</Link>
         <Link href="/me">내 나무</Link>
         <span className="spacer" />
-        {isLoggedIn && isTeacher && (
+        {!loading && isLoggedIn && isTeacher && (
           <Link href="/teacher">대시보드</Link>
         )}
         {loading ? (
