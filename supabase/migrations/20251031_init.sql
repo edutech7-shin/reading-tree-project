@@ -154,15 +154,20 @@ begin
   update public.profiles set points = points + 10 where id = v_user_id;
 
   -- 반 나무는 단일 행 사용 가정: 첫 행에 +1
-  update public.class_trees set current_leaves = current_leaves + 1;
+  -- Supabase에서는 WHERE 절이 필수이므로 서브쿼리 사용
+  update public.class_trees 
+    set current_leaves = current_leaves + 1
+    where id = (select id from public.class_trees order by id limit 1);
 
   -- 레벨업 체크
-  select current_leaves, level_up_target into v_leaves, v_target from public.class_trees limit 1;
+  select current_leaves, level_up_target into v_leaves, v_target 
+    from public.class_trees 
+    order by id limit 1;
   if v_leaves >= v_target then
     update public.class_trees
       set current_level = current_level + 1,
           current_leaves = 0
-    ;
+      where id = (select id from public.class_trees order by id limit 1);
   end if;
 end;
 $$;

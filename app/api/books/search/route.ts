@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 도서관 정보나루 API 키 확인
-    const LIBRARY_API_KEY = process.env.LIBRARY_API_KEY
+    const LIBRARY_API_KEY = process.env.LIBRARY_API_KEY?.trim() // 공백과 줄바꿈 제거
     console.log('[Book Search] Environment check:', {
       LIBRARY_API_KEY: LIBRARY_API_KEY ? `${LIBRARY_API_KEY.substring(0, 10)}...` : 'NOT SET',
       LIBRARY_API_KEY_LENGTH: LIBRARY_API_KEY?.length || 0,
@@ -88,14 +88,19 @@ export async function GET(request: NextRequest) {
     }
     
     // API 키 형식 검증 (64자리 hex 문자열)
-    if (LIBRARY_API_KEY.length !== 64) {
-      console.warn('[Book Search] LIBRARY_API_KEY length is unusual:', LIBRARY_API_KEY.length)
+    // 공백이나 줄바꿈 제거 후 검증
+    const cleanApiKey = LIBRARY_API_KEY.replace(/\s+/g, '')
+    if (cleanApiKey.length !== 64) {
+      console.warn('[Book Search] LIBRARY_API_KEY length is unusual:', cleanApiKey.length, '(expected 64)')
     }
+    
+    // 정리된 API 키 사용
+    const finalApiKey = cleanApiKey
 
     // 도서관 정보나루 API 호출 - 일반 도서 검색 API 사용
     // srchBooks API가 더 간단하고 안정적입니다
     const apiUrl = new URL('http://data4library.kr/api/srchBooks')
-    apiUrl.searchParams.set('authKey', LIBRARY_API_KEY)
+    apiUrl.searchParams.set('authKey', finalApiKey) // 정리된 API 키 사용
     apiUrl.searchParams.set('keyword', query) // srchBooks는 keyword 파라미터 사용
     apiUrl.searchParams.set('pageNo', '1')
     apiUrl.searchParams.set('pageSize', '10')
@@ -104,7 +109,8 @@ export async function GET(request: NextRequest) {
     const finalUrl = apiUrl.toString()
     console.log('[Book Search] Library API URL:', finalUrl)
     console.log('[Book Search] Request params:', {
-      authKey: LIBRARY_API_KEY ? `${LIBRARY_API_KEY.substring(0, 10)}...` : 'MISSING',
+      authKey: finalApiKey ? `${finalApiKey.substring(0, 10)}...` : 'MISSING',
+      authKeyLength: finalApiKey.length,
       keyword: query,
       pageNo: '1',
       pageSize: '10',
