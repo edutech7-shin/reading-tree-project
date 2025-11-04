@@ -125,11 +125,41 @@ export async function GET(request: NextRequest) {
     }
 
     // JSON 응답 파싱
-    const libraryData: LibraryResponse = await libraryResponse.json()
-    console.log('[Book Search] Library API response:', JSON.stringify(libraryData).substring(0, 1000))
+    let libraryData: LibraryResponse
+    try {
+      const responseText = await libraryResponse.text()
+      console.log('[Book Search] Library API raw response (first 2000 chars):', responseText.substring(0, 2000))
+      
+      // 빈 응답 체크
+      if (!responseText.trim()) {
+        console.error('[Book Search] Empty response from API')
+        return NextResponse.json({ 
+          books: [],
+          error: 'API가 빈 응답을 반환했습니다. API 사용 승인 상태를 확인해주세요.'
+        })
+      }
+      
+      libraryData = JSON.parse(responseText)
+      console.log('[Book Search] Library API parsed response:', JSON.stringify(libraryData).substring(0, 2000))
+    } catch (parseError: any) {
+      console.error('[Book Search] JSON parse error:', parseError)
+      return NextResponse.json({ 
+        books: [],
+        error: `API 응답 파싱 오류: ${parseError.message}. API 사용 승인 상태를 확인해주세요.`
+      })
+    }
+
+    // 응답 구조 확인
+    if (!libraryData.response) {
+      console.error('[Book Search] Invalid response structure:', libraryData)
+      return NextResponse.json({ 
+        books: [],
+        error: 'API 응답 형식이 올바르지 않습니다. API 사용 승인 상태를 확인해주세요.'
+      })
+    }
 
     // 에러 응답 처리
-    if (libraryData.response?.error) {
+    if (libraryData.response.error) {
       const errorMessage = libraryData.response.error.message || '검색 중 오류가 발생했습니다.'
       console.error('[Book Search] Library API error:', errorMessage)
       
@@ -236,7 +266,20 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ books })
   } catch (error: any) {
-    console.error('[Book Search] Error:', error)
+    console.error('[Book Search] Error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
+    
+    // 네트워크 에러인지 확인
+    if (error.message?.includes('fetch') || error.message?.includes('network')) {
+      return NextResponse.json({ 
+        error: '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.',
+        books: []
+      }, { status: 500 })
+    }
+    
     return NextResponse.json({ 
       error: error.message || '검색 중 오류가 발생했습니다.',
       books: []
