@@ -209,6 +209,18 @@ export default async function MyPage() {
                       <strong>교사 코멘트:</strong> {record.teacher_comment}
                     </div>
                   )}
+                  {/* 수정 버튼 - 승인 대기 중이거나 반려된 기록만 */}
+                  {(record.status === 'pending' || record.status === 'rejected') && (
+                    <div style={{ marginTop: 8 }}>
+                      <Link 
+                        href={`/record/edit/${record.id}`}
+                        className="btn"
+                        style={{ fontSize: 13, padding: '6px 12px' }}
+                      >
+                        ✏️ 수정하기
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
