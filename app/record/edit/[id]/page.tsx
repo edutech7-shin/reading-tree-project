@@ -3,8 +3,8 @@ export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { getSupabaseClient } from '../../../lib/supabase/client'
-import BookSearch from '../../../components/BookSearch'
+import { getSupabaseClient } from '../../../../lib/supabase/client'
+import BookSearch from '../../../../components/BookSearch'
 
 export default function EditRecordPage() {
   const params = useParams()
