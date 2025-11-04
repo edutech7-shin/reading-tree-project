@@ -106,7 +106,21 @@ export async function GET(request: NextRequest) {
     })
 
     if (!libraryResponse.ok) {
-      console.error('[Book Search] Library API HTTP error:', libraryResponse.status, libraryResponse.statusText)
+      const errorText = await libraryResponse.text().catch(() => '')
+      console.error('[Book Search] Library API HTTP error:', {
+        status: libraryResponse.status,
+        statusText: libraryResponse.statusText,
+        body: errorText.substring(0, 500)
+      })
+      
+      // 406 에러는 Accept 헤더 문제일 수 있음
+      if (libraryResponse.status === 406) {
+        return NextResponse.json({ 
+          books: [],
+          error: 'API 요청 형식 오류입니다. Accept 헤더를 확인해주세요.'
+        })
+      }
+      
       throw new Error(`도서관 정보나루 API 호출 실패: ${libraryResponse.status}`)
     }
 
