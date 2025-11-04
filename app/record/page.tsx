@@ -13,6 +13,9 @@ export default function RecordPage() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [fileError, setFileError] = useState<string | null>(null)
+
+  const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
   function handleBookSelect(book: { title: string; author: string; coverUrl: string | null }) {
     setBookTitle(book.title)
@@ -35,6 +38,19 @@ export default function RecordPage() {
 
     let contentImageUrl: string | null = null
     if (imageFile) {
+      // 클라이언트 측에서 한 번 더 검증 (보안)
+      if (!imageFile.type.startsWith('image/')) {
+        setSubmitting(false)
+        setMessage('이미지 파일만 업로드 가능합니다.')
+        return
+      }
+      
+      if (imageFile.size > MAX_FILE_SIZE) {
+        setSubmitting(false)
+        setMessage(`파일 크기가 5MB를 초과합니다. (현재: ${(imageFile.size / 1024 / 1024).toFixed(2)}MB)`)
+        return
+      }
+      
       // 파일명을 URL-safe하게 변환 (한글, 특수문자 처리)
       const sanitizeFileName = (filename: string): string => {
         // 확장자 추출
@@ -66,10 +82,10 @@ export default function RecordPage() {
         let errorMessage = '이미지 업로드 실패'
         if (error.message.includes('Invalid key')) {
           errorMessage = '파일명에 사용할 수 없는 문자가 포함되어 있습니다. 파일명을 변경해주세요.'
-        } else if (error.message.includes('not found')) {
-          errorMessage = '저장소 버킷이 설정되지 않았습니다. 관리자에게 문의해주세요.'
-        } else if (error.message.includes('size')) {
-          errorMessage = '파일 크기가 너무 큽니다. 더 작은 이미지를 선택해주세요.'
+        } else if (error.message.includes('not found') || error.message.includes('row-level security')) {
+          errorMessage = '저장소 버킷이 설정되지 않았거나 권한이 없습니다. 관리자에게 문의해주세요.'
+        } else if (error.message.includes('size') || error.message.includes('too large')) {
+          errorMessage = '파일 크기가 너무 큽니다. 5MB 이하의 이미지를 선택해주세요.'
         } else {
           errorMessage = `이미지 업로드 실패: ${error.message}`
         }
@@ -153,9 +169,40 @@ export default function RecordPage() {
             name="image-file"
             type="file" 
             accept="image/*" 
-            onChange={(e) => setImageFile(e.target.files?.[0] || null)} 
+            onChange={(e) => {
+              const file = e.target.files?.[0] || null
+              setFileError(null)
+              
+              if (file) {
+                // 파일 타입 검증
+                if (!file.type.startsWith('image/')) {
+                  setFileError('이미지 파일만 업로드 가능합니다.')
+                  setImageFile(null)
+                  e.target.value = '' // 입력 초기화
+                  return
+                }
+                
+                // 파일 크기 검증
+                if (file.size > MAX_FILE_SIZE) {
+                  setFileError(`파일 크기가 5MB를 초과합니다. (현재: ${(file.size / 1024 / 1024).toFixed(2)}MB)`)
+                  setImageFile(null)
+                  e.target.value = '' // 입력 초기화
+                  return
+                }
+              }
+              
+              setImageFile(file)
+            }} 
           />
-          {imageFile && (
+          <small style={{ color: '#666', fontSize: 12 }}>
+            이미지 파일만 업로드 가능하며, 최대 5MB까지 업로드할 수 있습니다.
+          </small>
+          {fileError && (
+            <small style={{ color: '#c33', fontSize: 12 }}>
+              {fileError}
+            </small>
+          )}
+          {imageFile && !fileError && (
             <small style={{ color: '#666' }}>
               선택된 파일: {imageFile.name} ({(imageFile.size / 1024).toFixed(1)} KB)
             </small>
