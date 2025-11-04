@@ -177,15 +177,22 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 결과 추출 - srchBooks API 응답 형식 처리
+    // 결과 추출 - 다양한 응답 형식 지원
     const resultNum = libraryData.response?.resultNum || 0
+    console.log('[Book Search] Response structure:', {
+      hasResponse: !!libraryData.response,
+      resultNum,
+      hasDocs: !!libraryData.response?.docs,
+      hasLibs: !!libraryData.response?.libs,
+      responseKeys: libraryData.response ? Object.keys(libraryData.response) : []
+    })
     
-    // srchBooks는 docs 배열을 사용합니다
-    const docs = libraryData.response?.docs
     let books: Array<{ title: string; author: string; coverUrl: string | null; isbn: string }> = []
     
+    // 방법 1: docs 배열 (srchBooks 일반 형식)
+    const docs = libraryData.response?.docs
     if (docs && Array.isArray(docs) && docs.length > 0) {
-      // docs 배열에서 도서 정보 추출
+      console.log('[Book Search] Processing docs array, length:', docs.length)
       for (const doc of docs) {
         if (doc.doc && Array.isArray(doc.doc)) {
           for (const item of doc.doc) {
@@ -204,10 +211,13 @@ export async function GET(request: NextRequest) {
           }
         }
       }
-    } else {
-      // fallback: libs 구조도 지원 (srchDtlList 형식)
+    }
+    
+    // 방법 2: libs 구조 (srchDtlList 형식)
+    if (books.length === 0) {
       const libs = libraryData.response?.libs?.lib
       if (libs && Array.isArray(libs) && libs.length > 0) {
+        console.log('[Book Search] Processing libs array, length:', libs.length)
         for (const lib of libs) {
           const book = lib.book
           if (!book || !book.bookname) continue
@@ -222,6 +232,50 @@ export async function GET(request: NextRequest) {
             isbn: isbn
           })
         }
+      }
+    }
+    
+    // 방법 3: 직접 book 배열 체크 (다른 형식일 수 있음)
+    if (books.length === 0 && libraryData.response) {
+      console.log('[Book Search] Trying to find books in alternative structure')
+      // 응답 전체를 탐색하여 book 객체 찾기
+      const findBooks = (obj: any, depth = 0): any[] => {
+        if (depth > 5) return [] // 깊이 제한
+        if (!obj || typeof obj !== 'object') return []
+        
+        const found: any[] = []
+        if (Array.isArray(obj)) {
+          for (const item of obj) {
+            if (item && typeof item === 'object' && item.bookname) {
+              found.push(item)
+            } else {
+              found.push(...findBooks(item, depth + 1))
+            }
+          }
+        } else {
+          for (const key in obj) {
+            if (obj[key] && typeof obj[key] === 'object') {
+              found.push(...findBooks(obj[key], depth + 1))
+            }
+          }
+        }
+        return found
+      }
+      
+      const foundBooks = findBooks(libraryData.response)
+      console.log('[Book Search] Found books via recursive search:', foundBooks.length)
+      
+      for (const book of foundBooks) {
+        if (!book.bookname) continue
+        const isbn = book.isbn13 || book.isbn || ''
+        if (!isbn) continue
+        
+        books.push({
+          title: book.bookname || '',
+          author: book.authors || '',
+          coverUrl: book.bookImageURL || null,
+          isbn: isbn
+        })
       }
     }
     
