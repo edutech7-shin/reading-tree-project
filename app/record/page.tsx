@@ -90,11 +90,10 @@ export default function RecordPage() {
           errorMessage = `이미지 업로드 실패: ${error.message}`
         }
         
-        console.error('[Record] Upload error details:', {
-          message: error.message,
-          statusCode: error.statusCode,
-          error
-        })
+             console.error('[Record] Upload error details:', {
+               message: error.message,
+               error
+             })
         
         setMessage(errorMessage)
         return
