@@ -11,6 +11,7 @@ type Row = {
   book_author: string | null
   content_text: string | null
   content_image_url: string | null
+  user_nickname?: string | null
 }
 
 export default function ApprovePage() {
@@ -24,12 +25,19 @@ export default function ApprovePage() {
     const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('book_records')
-      .select('id, user_id, book_title, book_author, content_text, content_image_url')
+      .select('id, user_id, book_title, book_author, content_text, content_image_url, profiles!book_records_user_id_fkey(nickname)')
       .eq('status', 'pending')
       .order('id', { ascending: false })
     setLoading(false)
-    if (error) setError(error.message)
-    else setRows(data as Row[])
+    if (error) {
+      setError(error.message)
+    } else {
+      // profiles 데이터를 평탄화
+      setRows((data as any[]).map(row => ({
+        ...row,
+        user_nickname: row.profiles?.nickname || null
+      })))
+    }
   }
 
   useEffect(() => { load() }, [])
@@ -75,6 +83,19 @@ export default function ApprovePage() {
     const supabase = getSupabaseClient()
     const comment = comments[id]?.trim() || null
     
+    // 먼저 기록 정보 가져오기 (알림 생성용)
+    const { data: record } = await supabase
+      .from('book_records')
+      .select('user_id, book_title')
+      .eq('id', id)
+      .single()
+    
+    if (!record) {
+      setError('기록을 찾을 수 없습니다.')
+      return
+    }
+    
+    // 기록 반려 처리
     const { error } = await supabase
       .from('book_records')
       .update({ status: 'rejected', teacher_comment: comment })
@@ -83,6 +104,24 @@ export default function ApprovePage() {
     if (error) {
       setError(error.message)
       return
+    }
+    
+    // 반려 알림 생성
+    const rejectionMessage = comment 
+      ? `"${record.book_title || '독서 기록'}"이 반려되었습니다. 반려 사유: ${comment}`
+      : `"${record.book_title || '독서 기록'}"이 반려되었습니다.`
+    
+    const { error: notifError } = await supabase.rpc('create_notification', {
+      p_user_id: record.user_id,
+      p_type: 'rejection',
+      p_title: '❌ 독서 기록이 반려되었어요',
+      p_message: rejectionMessage,
+      p_related_record_id: id
+    })
+    
+    if (notifError) {
+      console.error('[Reject] Notification creation failed:', notifError)
+      // 알림 생성 실패해도 반려는 처리되었으므로 계속 진행
     }
     
     // 코멘트 상태 초기화
@@ -102,7 +141,12 @@ export default function ApprovePage() {
       <div style={{ display: 'grid', gap: 12 }}>
         {rows.map(r => (
           <div className="card" key={r.id}>
-            <div style={{ fontWeight: 600 }}>{r.book_title ?? '(제목 없음)'} <small>{r.book_author}</small></div>
+            <div style={{ fontWeight: 600 }}>
+              {r.book_title ?? '(제목 없음)'} <small>{r.book_author}</small>
+              {r.user_nickname && (
+                <small style={{ color: '#666', marginLeft: 8 }}>({r.user_nickname})</small>
+              )}
+            </div>
             {r.content_text && <p style={{ marginTop: 8 }}>{r.content_text}</p>}
             {r.content_image_url && (
               <a className="btn" style={{ marginTop: 8 }} href={r.content_image_url} target="_blank" rel="noreferrer">이미지 보기</a>

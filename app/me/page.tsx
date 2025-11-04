@@ -33,10 +33,18 @@ export default async function MyPage() {
   // 내 독서 기록 목록 가져오기
   const { data: readingRecords } = await supabase
     .from('book_records')
-    .select('id, book_title, book_author, book_cover_url, content_text, status, created_at')
+    .select('id, book_title, book_author, book_cover_url, content_text, status, teacher_comment, created_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(20)
+
+  // 알림 가져오기
+  const { data: notifications } = await supabase
+    .from('notifications')
+    .select('id, type, title, message, is_read, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(10)
 
   // 프로필이 없으면 설정 페이지로 리다이렉트
   if (!profile) {
@@ -59,9 +67,63 @@ export default async function MyPage() {
     )
   }
 
+  const unreadCount = notifications?.filter(n => !n.is_read).length ?? 0
+
   return (
     <main className="container">
       <h1>내 나무</h1>
+      
+      {/* 알림 섹션 */}
+      {notifications && notifications.length > 0 && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ margin: 0 }}>알림</h3>
+            {unreadCount > 0 && (
+              <span style={{ 
+                backgroundColor: '#dc3545', 
+                color: 'white', 
+                borderRadius: '12px', 
+                padding: '2px 8px', 
+                fontSize: 12,
+                fontWeight: 600
+              }}>
+                {unreadCount}개
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {notifications.map((notification) => (
+              <div
+                key={notification.id}
+                style={{
+                  padding: 12,
+                  border: '1px solid #eee',
+                  borderRadius: 8,
+                  backgroundColor: notification.is_read ? '#f9f9f9' : '#fff',
+                  opacity: notification.is_read ? 0.7 : 1
+                }}
+              >
+                <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                  {notification.title}
+                </div>
+                <div style={{ fontSize: 14, color: '#666', marginBottom: 4 }}>
+                  {notification.message}
+                </div>
+                <div style={{ fontSize: 12, color: '#999' }}>
+                  {new Date(notification.created_at).toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="card">
         <div>이메일: {user.email}</div>
         <div>이름: {profile.nickname}</div>
@@ -112,6 +174,32 @@ export default async function MyPage() {
                     {record.status === 'pending' && '⏳ 승인 대기'}
                     {record.status === 'rejected' && '❌ 반려됨'}
                   </div>
+                  {record.status === 'rejected' && record.teacher_comment && (
+                    <div style={{ 
+                      marginTop: 8, 
+                      padding: 8, 
+                      backgroundColor: '#fff3cd', 
+                      border: '1px solid #ffc107',
+                      borderRadius: 4,
+                      fontSize: 13,
+                      color: '#856404'
+                    }}>
+                      <strong>반려 사유:</strong> {record.teacher_comment}
+                    </div>
+                  )}
+                  {record.status === 'approved' && record.teacher_comment && (
+                    <div style={{ 
+                      marginTop: 8, 
+                      padding: 8, 
+                      backgroundColor: '#d4edda', 
+                      border: '1px solid #28a745',
+                      borderRadius: 4,
+                      fontSize: 13,
+                      color: '#155724'
+                    }}>
+                      <strong>교사 코멘트:</strong> {record.teacher_comment}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
