@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
     const LIBRARY_API_KEY = process.env.LIBRARY_API_KEY
     console.log('[Book Search] Environment check:', {
       LIBRARY_API_KEY: LIBRARY_API_KEY ? `${LIBRARY_API_KEY.substring(0, 10)}...` : 'NOT SET',
+      LIBRARY_API_KEY_LENGTH: LIBRARY_API_KEY?.length || 0,
       allEnvKeys: Object.keys(process.env).filter(k => k.includes('LIBRARY') || k.includes('ALADIN'))
     })
     
@@ -84,6 +85,11 @@ export async function GET(request: NextRequest) {
         books: [], 
         error: 'LIBRARY_API_KEY 환경 변수가 설정되지 않았습니다. Vercel 환경 변수를 확인하고 재배포하세요.' 
       })
+    }
+    
+    // API 키 형식 검증 (64자리 hex 문자열)
+    if (LIBRARY_API_KEY.length !== 64) {
+      console.warn('[Book Search] LIBRARY_API_KEY length is unusual:', LIBRARY_API_KEY.length)
     }
 
     // 도서관 정보나루 API 호출 - 일반 도서 검색 API 사용
