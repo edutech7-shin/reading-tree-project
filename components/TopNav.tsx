@@ -48,6 +48,20 @@ export default function TopNav() {
             
             if (profileError) {
               console.error('[TopNav] Profile fetch error:', profileError)
+              // 프로필 조회 실패 시 false로 설정
+              if (mounted) {
+                setIsTeacher(false)
+              }
+              return
+            }
+            
+            // 프로필이 없는 경우도 처리
+            if (!profile) {
+              console.warn('[TopNav] Profile not found for user:', session.user.id)
+              if (mounted) {
+                setIsTeacher(false)
+              }
+              return
             }
             
             const isTeacherRole = profile?.role === 'teacher'
@@ -90,6 +104,8 @@ export default function TopNav() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return
       
+      console.log('[TopNav] Auth state changed:', event, 'hasSession:', !!session)
+      
       setIsLoggedIn(!!session)
       
       // 세션 변경 시 역할도 다시 확인
@@ -105,6 +121,20 @@ export default function TopNav() {
           
           if (profileError) {
             console.error('[TopNav] Profile fetch error (listener):', profileError)
+            // 프로필 조회 실패 시 재시도하지 않고 false로 설정
+            if (mounted) {
+              setIsTeacher(false)
+            }
+            return
+          }
+          
+          // 프로필이 없는 경우도 처리
+          if (!profile) {
+            console.warn('[TopNav] Profile not found for user:', session.user.id)
+            if (mounted) {
+              setIsTeacher(false)
+            }
+            return
           }
           
           const isTeacherRole = profile?.role === 'teacher'
@@ -120,6 +150,7 @@ export default function TopNav() {
           }
         }
       } else {
+        console.log('[TopNav] No session in listener')
         if (mounted) {
           setIsTeacher(false)
         }
@@ -144,12 +175,22 @@ export default function TopNav() {
   async function handleLogout() {
     try {
       console.log('[TopNav] Logout initiated')
-      const supabase = getSupabaseClient()
-      const { error } = await supabase.auth.signOut()
       
-      if (error) {
-        console.error('[TopNav] Logout error:', error)
-        return
+      // 서버 사이드 로그아웃 API 호출
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      const result = await response.json()
+      
+      if (!result.success) {
+        console.error('[TopNav] Logout API error:', result.error)
+        // API 실패 시 클라이언트 사이드에서도 시도
+        const supabase = getSupabaseClient()
+        await supabase.auth.signOut()
       }
       
       console.log('[TopNav] Logout successful, redirecting...')
@@ -159,6 +200,14 @@ export default function TopNav() {
       window.location.href = '/'
     } catch (error) {
       console.error('[TopNav] Logout failed:', error)
+      // 에러 발생 시에도 강제로 리다이렉트
+      try {
+        const supabase = getSupabaseClient()
+        await supabase.auth.signOut()
+      } catch (signOutError) {
+        console.error('[TopNav] signOut fallback failed:', signOutError)
+      }
+      window.location.href = '/'
     }
   }
 
