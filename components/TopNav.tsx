@@ -143,12 +143,20 @@ export default function TopNav() {
 
   async function handleLogout() {
     try {
+      console.log('[TopNav] Logout initiated')
       const supabase = getSupabaseClient()
-      await supabase.auth.signOut()
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        console.error('[TopNav] Logout error:', error)
+        return
+      }
+      
+      console.log('[TopNav] Logout successful, redirecting...')
       setIsLoggedIn(false)
       setIsTeacher(false)
-      router.push('/')
-      router.refresh()
+      // 페이지 전체 새로고침으로 세션 상태 완전히 초기화
+      window.location.href = '/'
     } catch (error) {
       console.error('[TopNav] Logout failed:', error)
     }
@@ -160,35 +168,31 @@ export default function TopNav() {
         <Link href="/">우리 반 나무</Link>
         <Link href="/record">기록하기</Link>
         <Link href="/me">내 나무</Link>
+        {!loading && isLoggedIn && isTeacher && (
+          <Link href="/teacher">대시보드</Link>
+        )}
         <span className="spacer" />
         {loading ? (
           <span style={{ color: '#999', fontSize: '14px' }}>로딩...</span>
+        ) : isLoggedIn ? (
+          <button
+            onClick={handleLogout}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#111',
+              textDecoration: 'none',
+              fontSize: 'inherit',
+              fontFamily: 'inherit',
+              padding: 0
+            }}
+            className="nav-link"
+          >
+            로그아웃
+          </button>
         ) : (
-          <>
-            {isLoggedIn && isTeacher && (
-              <Link href="/teacher">대시보드</Link>
-            )}
-            {isLoggedIn ? (
-              <button
-                onClick={handleLogout}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#111',
-                  textDecoration: 'none',
-                  fontSize: 'inherit',
-                  fontFamily: 'inherit',
-                  padding: 0
-                }}
-                className="nav-link"
-              >
-                로그아웃
-              </button>
-            ) : (
-              <Link href="/login">로그인</Link>
-            )}
-          </>
+          <Link href="/login">로그인</Link>
         )}
       </nav>
     </header>
