@@ -1,11 +1,29 @@
 import { createSupabaseServerClient } from '../../lib/supabase/server'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import TreeSettings from '../../components/TreeSettings'
 
 export const dynamic = 'force-dynamic'
 
 export default async function TeacherDashboard() {
   const supabase = createSupabaseServerClient()
+  
+  // 교사 권한 확인
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    redirect('/login')
+  }
+  
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+  
+  if (profile?.role !== 'teacher') {
+    redirect('/me')
+  }
+  
   const { count: pendingCount } = await supabase
     .from('book_records')
     .select('*', { count: 'exact', head: true })

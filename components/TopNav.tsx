@@ -9,6 +9,7 @@ export default function TopNav() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isTeacher, setIsTeacher] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [profileChecked, setProfileChecked] = useState(false)
   const router = useRouter()
 
   // 디버깅: 렌더링 시 상태 확인
@@ -69,6 +70,7 @@ export default function TopNav() {
             
             if (mounted) {
               setIsTeacher(isTeacherRole)
+              setProfileChecked(true)
               console.log('[TopNav] Set isTeacher to:', isTeacherRole)
             }
           } catch (profileErr) {
@@ -106,10 +108,18 @@ export default function TopNav() {
       
       console.log('[TopNav] Auth state changed:', event, 'hasSession:', !!session)
       
+      // SIGNED_OUT 이벤트 시에만 상태 초기화
+      if (event === 'SIGNED_OUT') {
+        setIsLoggedIn(false)
+        setIsTeacher(false)
+        setProfileChecked(false)
+        return
+      }
+      
       setIsLoggedIn(!!session)
       
-      // 세션 변경 시 역할도 다시 확인
-      if (session?.user) {
+      // 세션 변경 시 역할도 다시 확인 (초기 로드가 완료된 후에만)
+      if (session?.user && profileChecked) {
         try {
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
@@ -142,6 +152,7 @@ export default function TopNav() {
           
           if (mounted) {
             setIsTeacher(isTeacherRole)
+            setProfileChecked(true)
           }
         } catch (error) {
           console.error('[TopNav] Profile fetch failed:', error)
