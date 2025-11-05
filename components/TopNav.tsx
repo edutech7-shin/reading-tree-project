@@ -11,6 +11,11 @@ export default function TopNav() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
+  // 디버깅: 렌더링 시 상태 확인
+  useEffect(() => {
+    console.log('[TopNav Render] loading:', loading, 'isLoggedIn:', isLoggedIn, 'isTeacher:', isTeacher)
+  }, [loading, isLoggedIn, isTeacher])
+
   useEffect(() => {
     let mounted = true
     
@@ -31,12 +36,14 @@ export default function TopNav() {
             .eq('id', session.user.id)
             .maybeSingle()
           
+          console.log('[TopNav] Profile query result:', { profile, profileError, userId: session.user.id })
+          
           if (profileError) {
             console.error('[TopNav] Profile fetch error:', profileError)
           }
           
           const isTeacherRole = profile?.role === 'teacher'
-          console.log('[TopNav] User role:', profile?.role, 'isTeacher:', isTeacherRole)
+          console.log('[TopNav] User role:', profile?.role, 'role type:', typeof profile?.role, 'isTeacher:', isTeacherRole)
           
           if (mounted) {
             setIsTeacher(isTeacherRole)
@@ -77,12 +84,14 @@ export default function TopNav() {
             .eq('id', session.user.id)
             .maybeSingle()
           
+          console.log('[TopNav] Profile query result (listener):', { profile, profileError, userId: session.user.id })
+          
           if (profileError) {
             console.error('[TopNav] Profile fetch error (listener):', profileError)
           }
           
           const isTeacherRole = profile?.role === 'teacher'
-          console.log('[TopNav] User role (listener):', profile?.role, 'isTeacher:', isTeacherRole)
+          console.log('[TopNav] User role (listener):', profile?.role, 'role type:', typeof profile?.role, 'isTeacher:', isTeacherRole)
           
           if (mounted) {
             setIsTeacher(isTeacherRole)
@@ -135,30 +144,34 @@ export default function TopNav() {
         <Link href="/record">기록하기</Link>
         <Link href="/me">내 나무</Link>
         <span className="spacer" />
-        {!loading && isLoggedIn && isTeacher && (
-          <Link href="/teacher">대시보드</Link>
-        )}
         {loading ? (
           <span style={{ color: '#999', fontSize: '14px' }}>로딩...</span>
-        ) : isLoggedIn ? (
-          <button
-            onClick={handleLogout}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: '#111',
-              textDecoration: 'none',
-              fontSize: 'inherit',
-              fontFamily: 'inherit',
-              padding: 0
-            }}
-            className="nav-link"
-          >
-            로그아웃
-          </button>
         ) : (
-          <Link href="/login">로그인</Link>
+          <>
+            {isLoggedIn && isTeacher && (
+              <Link href="/teacher">대시보드</Link>
+            )}
+            {isLoggedIn ? (
+              <button
+                onClick={handleLogout}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#111',
+                  textDecoration: 'none',
+                  fontSize: 'inherit',
+                  fontFamily: 'inherit',
+                  padding: 0
+                }}
+                className="nav-link"
+              >
+                로그아웃
+              </button>
+            ) : (
+              <Link href="/login">로그인</Link>
+            )}
+          </>
         )}
       </nav>
     </header>
