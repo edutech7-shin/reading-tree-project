@@ -21,34 +21,50 @@ export default function TopNav() {
     
     async function checkAuth() {
       try {
+        console.log('[TopNav] checkAuth started')
         const supabase = getSupabaseClient()
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
-        if (!mounted) return
+        console.log('[TopNav] Session check:', { hasSession: !!session, hasUser: !!session?.user, sessionError, userId: session?.user?.id })
+        
+        if (!mounted) {
+          console.log('[TopNav] Component unmounted, aborting')
+          return
+        }
         
         setIsLoggedIn(!!session)
         
         // 로그인된 경우 역할 확인
         if (session?.user) {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .maybeSingle()
-          
-          console.log('[TopNav] Profile query result:', { profile, profileError, userId: session.user.id })
-          
-          if (profileError) {
-            console.error('[TopNav] Profile fetch error:', profileError)
-          }
-          
-          const isTeacherRole = profile?.role === 'teacher'
-          console.log('[TopNav] User role:', profile?.role, 'role type:', typeof profile?.role, 'isTeacher:', isTeacherRole)
-          
-          if (mounted) {
-            setIsTeacher(isTeacherRole)
+          console.log('[TopNav] User found, fetching profile...', session.user.id)
+          try {
+            const { data: profile, error: profileError } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .maybeSingle()
+            
+            console.log('[TopNav] Profile query result:', { profile, profileError, userId: session.user.id })
+            
+            if (profileError) {
+              console.error('[TopNav] Profile fetch error:', profileError)
+            }
+            
+            const isTeacherRole = profile?.role === 'teacher'
+            console.log('[TopNav] User role:', profile?.role, 'role type:', typeof profile?.role, 'isTeacher:', isTeacherRole)
+            
+            if (mounted) {
+              setIsTeacher(isTeacherRole)
+              console.log('[TopNav] Set isTeacher to:', isTeacherRole)
+            }
+          } catch (profileErr) {
+            console.error('[TopNav] Profile fetch exception:', profileErr)
+            if (mounted) {
+              setIsTeacher(false)
+            }
           }
         } else {
+          console.log('[TopNav] No user session')
           if (mounted) {
             setIsTeacher(false)
           }
@@ -61,6 +77,7 @@ export default function TopNav() {
         }
       } finally {
         if (mounted) {
+          console.log('[TopNav] Setting loading to false')
           setLoading(false)
         }
       }
