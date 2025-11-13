@@ -82,7 +82,8 @@ export default async function AdminDashboardPage() {
 
   const [
     { data: teacherRows, error: teacherError },
-    { data: studentRows, error: studentError }
+    { data: studentRows, error: studentError },
+    { data: profileRows, error: profileListError }
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -94,6 +95,11 @@ export default async function AdminDashboardPage() {
       .from('class_students')
       .select('id, teacher_id, student_number, name, level, leaves, coins, gems, created_at')
       .order('created_at', { ascending: false })
+      .returns<ClassStudent[]>(),
+    supabase
+      .from('class_students')
+      .select('id, teacher_id, student_number, name, level, created_at')
+      .order('student_number', { ascending: true })
       .returns<ClassStudent[]>()
   ])
 
@@ -102,11 +108,15 @@ export default async function AdminDashboardPage() {
   }
 
   if (studentError) {
-    throw new Error('학생 목록을 불러올 수 없습니다.')
+    throw new Error('학생 class_students 목록을 불러올 수 없습니다.')
+  }
+
+  if (profileListError) {
+    throw new Error('학생 전체 목록을 불러올 수 없습니다.')
   }
 
   const teachers = teacherRows ?? []
-  const students = studentRows ?? []
+  const students = profileRows ?? []
 
   const studentCountByTeacher = students.reduce<Record<string, number>>((acc, student) => {
     acc[student.teacher_id] = (acc[student.teacher_id] ?? 0) + 1
@@ -125,8 +135,6 @@ export default async function AdminDashboardPage() {
 
   const totalCoins = students.reduce((sum, student) => sum + (student.coins ?? 0), 0)
   const totalGems = students.reduce((sum, student) => sum + (student.gems ?? 0), 0)
-
-  const recentStudents = students.slice(0, 20)
 
   async function approveTeacher(formData: FormData) {
     'use server'
@@ -248,13 +256,13 @@ export default async function AdminDashboardPage() {
 
         <section className={styles.tableSection}>
           <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>최근 학생 등록</h2>
+            <h2 className={styles.sectionTitle}>전체 학생 목록</h2>
             <p className={styles.sectionHint}>
-              가장 최근에 추가된 학생 20명을 표시합니다.
+              현재 등록된 모든 학생을 표시합니다.
             </p>
           </div>
 
-          {recentStudents.length === 0 ? (
+          {students.length === 0 ? (
             <div className={styles.emptyState}>아직 등록된 학생이 없습니다.</div>
           ) : (
             <div className={styles.tableWrapper}>
@@ -264,31 +272,26 @@ export default async function AdminDashboardPage() {
                     <th>학생 정보</th>
                     <th>담당 교사</th>
                     <th>레벨</th>
-                    <th>골드 / 보석</th>
                     <th>등록일</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recentStudents.map((student) => {
+                  {students.map((student) => {
                     const teacher = teachers.find((item) => item.id === student.teacher_id)
                     return (
                       <tr key={student.id}>
                         <td>
                           <div className={styles.studentRow}>
                             <span className={styles.studentName}>
-                              {student.name} ({student.student_number}번)
+                              {student.name} ({student.student_number ?? '-'}번)
                             </span>
                             <span className={styles.studentMeta}>
-                              잎사귀 {numberFormatter.format(student.leaves)}개
+                              잎사귀 {numberFormatter.format(student.leaves ?? 0)}개
                             </span>
                           </div>
                         </td>
                         <td>{teacher?.name ?? '미배정'}</td>
-                        <td>Lv.{student.level}</td>
-                        <td>
-                          {numberFormatter.format(student.coins)} /{' '}
-                          {numberFormatter.format(student.gems)}
-                        </td>
+                        <td>Lv.{student.level ?? 1}</td>
                         <td>{formatDateTime(student.created_at)}</td>
                       </tr>
                     )
