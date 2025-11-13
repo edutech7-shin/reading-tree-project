@@ -17,7 +17,7 @@ function getEnv(key: string) {
 type CreateStudentBody = {
   email: string
   password: string
-  nickname: string
+  name: string
 }
 
 export async function POST(request: NextRequest) {
@@ -48,9 +48,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '잘못된 요청입니다.' }, { status: 400 })
     }
 
-    const { email, password, nickname } = body
+    const { email, password, name } = body
 
-    if (!email || !password || !nickname) {
+    if (!email || !password || !name) {
       return NextResponse.json({ success: false, error: '이메일, 비밀번호, 이름을 모두 입력해주세요.' }, { status: 400 })
     }
 
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       password,
       email_confirm: true, // 이메일 인증 자동 완료
       user_metadata: {
-        nickname,
+        name,
         role: 'student'
       }
     })
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       .from('profiles')
       .upsert({
         id: newUser.user.id,
-        nickname,
+        name,
         role: 'student',
         level: 1,
         points: 0

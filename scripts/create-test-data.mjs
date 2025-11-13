@@ -50,11 +50,11 @@ function getEnv(key) {
 
 // 테스트용 학생 데이터
 const STUDENTS = [
-  { email: 'student1@test.com', password: 'test1234', nickname: '김철수' },
-  { email: 'student2@test.com', password: 'test1234', nickname: '이영희' },
-  { email: 'student3@test.com', password: 'test1234', nickname: '박민수' },
-  { email: 'student4@test.com', password: 'test1234', nickname: '최지은' },
-  { email: 'student5@test.com', password: 'test1234', nickname: '정준호' }
+  { email: 'student1@test.com', password: 'test1234', name: '김철수' },
+  { email: 'student2@test.com', password: 'test1234', name: '이영희' },
+  { email: 'student3@test.com', password: 'test1234', name: '박민수' },
+  { email: 'student4@test.com', password: 'test1234', name: '최지은' },
+  { email: 'student5@test.com', password: 'test1234', name: '정준호' }
 ]
 
 // 더미 독서 기록 데이터
@@ -102,7 +102,7 @@ async function createTestData() {
   // 학생 계정 생성
   const createdStudents = []
   for (const student of STUDENTS) {
-    console.log(`[create-test-data] ${student.nickname} (${student.email}) 계정 생성 중...`)
+    console.log(`[create-test-data] ${student.name} (${student.email}) 계정 생성 중...`)
     
     // 기존 계정 확인
     const { data: listData } = await supabase.auth.admin.listUsers({
@@ -117,7 +117,7 @@ async function createTestData() {
         password: student.password,
         email_confirm: true,
         user_metadata: {
-          nickname: student.nickname,
+          name: student.name,
           role: 'student'
         }
       })
@@ -142,7 +142,7 @@ async function createTestData() {
       .from('profiles')
       .upsert({
         id: user.id,
-        nickname: student.nickname,
+        name: student.name,
         role: 'student',
         level: 1,
         points: 0
@@ -230,9 +230,9 @@ async function createTestData() {
       .insert(records)
 
     if (insertError) {
-      console.error(`  ❌ ${student.nickname}의 기록 생성 실패: ${insertError.message}`)
+      console.error(`  ❌ ${student.name}의 기록 생성 실패: ${insertError.message}`)
     } else {
-      console.log(`  ✅ ${student.nickname}: ${records.length}개 기록 생성`)
+      console.log(`  ✅ ${student.name}: ${records.length}개 기록 생성`)
       console.log(`     - 승인됨: ${approvedCount}개`)
       console.log(`     - 승인 대기: ${pendingCount}개`)
       console.log(`     - 반려됨: ${rejectedCount}개`)
@@ -256,7 +256,7 @@ async function createTestData() {
       .update({ points })
       .eq('id', student.userId)
 
-    console.log(`  ✅ ${student.nickname}: ${points}점 (승인 기록 ${count ?? 0}개)`)
+    console.log(`  ✅ ${student.name}: ${points}점 (승인 기록 ${count ?? 0}개)`)
   }
 
   // 반 나무 초기화 (없으면 생성)
@@ -306,7 +306,7 @@ async function createTestData() {
   console.log('\n생성된 계정 정보:')
   console.log('='.repeat(50))
   STUDENTS.forEach((s, i) => {
-    console.log(`${i + 1}. ${s.nickname}`)
+    console.log(`${i + 1}. ${s.name}`)
     console.log(`   이메일: ${s.email}`)
     console.log(`   비밀번호: ${s.password}`)
     console.log('')

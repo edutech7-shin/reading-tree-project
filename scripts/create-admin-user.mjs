@@ -86,8 +86,8 @@ async function ensureAdminUser() {
       password: TEMP_PASSWORD,
       email_confirm: true,
       user_metadata: {
-        nickname: '관리자',
-        role: 'teacher'
+        name: '관리자',
+        role: 'admin'
       }
     })
 
@@ -103,8 +103,8 @@ async function ensureAdminUser() {
       email_confirm: true,
       user_metadata: {
         ...(user.user_metadata || {}),
-        nickname: '관리자',
-        role: 'teacher'
+        name: '관리자',
+        role: 'admin'
       }
     })
     if (error) {
@@ -135,7 +135,7 @@ async function ensureAdminUser() {
   if (profile) {
     const { error } = await supabase
       .from('profiles')
-      .update({ nickname: '관리자', role: 'teacher' })
+      .update({ name: '관리자', role: 'admin' })
       .eq('id', user.id)
     if (error) {
       console.error('[create-admin-user] 프로필 업데이트 실패:', error)
@@ -144,7 +144,7 @@ async function ensureAdminUser() {
   } else {
     const { error } = await supabase
       .from('profiles')
-      .insert({ id: user.id, nickname: '관리자', role: 'teacher' })
+      .insert({ id: user.id, name: '관리자', role: 'admin' })
     if (error) {
       console.error('[create-admin-user] 프로필 생성 실패:', error)
       process.exit(1)

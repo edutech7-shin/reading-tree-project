@@ -3,8 +3,6 @@ import type { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createSupabaseServerClient } from '../../../lib/supabase/server'
 
-type ProfileRole = 'student' | 'teacher'
-
 function getEnv(key: string) {
   const value = process.env[key]
   if (!value) {
@@ -14,7 +12,7 @@ function getEnv(key: string) {
 }
 
 export async function POST(request: NextRequest) {
-  let body: { nickname?: string; role?: ProfileRole }
+  let body: { name?: string }
 
   try {
     body = await request.json()
@@ -22,14 +20,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: '잘못된 요청입니다.' }, { status: 400 })
   }
 
-  const nickname = typeof body.nickname === 'string' ? body.nickname.trim() : ''
-  const role = body.role
+  const name = typeof body.name === 'string' ? body.name.trim() : ''
 
-  if (!nickname) {
-    return NextResponse.json({ success: false, error: '닉네임을 입력해주세요.' }, { status: 400 })
-  }
-  if (role !== 'student' && role !== 'teacher') {
-    return NextResponse.json({ success: false, error: '올바른 역할을 선택해주세요.' }, { status: 400 })
+  if (!name) {
+    return NextResponse.json({ success: false, error: '이름을 입력해주세요.' }, { status: 400 })
   }
 
   const supabase = createSupabaseServerClient()
@@ -60,8 +54,8 @@ export async function POST(request: NextRequest) {
   const { error } = await adminClient
     .from('profiles')
     .update({
-      nickname,
-      role,
+      name,
+      role: 'teacher',
       level: 1,
       points: 0
     })

@@ -85,7 +85,7 @@ async function testLoginFlow() {
     }
 
     console.log(`   ✅ 프로필 ${profiles.length}개 발견`)
-    console.log(`   - 닉네임: ${profiles[0].nickname}`)
+    console.log(`   - 이름: ${profiles[0].name}`)
     console.log(`   - 역할: ${profiles[0].role}`)
     console.log(`   - 레벨: ${profiles[0].level}`)
     console.log(`   - 포인트: ${profiles[0].points}`)

@@ -4,7 +4,7 @@ import styles from './dashboard.module.css'
 
 type TeacherProfile = {
   id: string
-  nickname: string | null
+  name: string | null
   username: string | null
   created_at: string
 }
@@ -64,7 +64,7 @@ export default async function AdminDashboardPage() {
 
   const { data: adminProfile, error: profileError } = await supabase
     .from('profiles')
-    .select('role, nickname')
+    .select('role, name')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -78,7 +78,7 @@ export default async function AdminDashboardPage() {
   ] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, nickname, username, created_at')
+      .select('id, name, username, created_at')
       .eq('role', 'teacher')
       .order('created_at', { ascending: false })
       .returns<TeacherProfile[]>(),
@@ -181,7 +181,7 @@ export default async function AdminDashboardPage() {
                 <tbody>
                   {teachers.map((teacher) => (
                     <tr key={teacher.id}>
-                      <td>{teacher.nickname ?? '이름 없음'}</td>
+                      <td>{teacher.name ?? '이름 없음'}</td>
                       <td>
                         <span className={styles.tag}>
                           {teacher.username ?? '아이디 없음'}
@@ -234,7 +234,7 @@ export default async function AdminDashboardPage() {
                             </span>
                           </div>
                         </td>
-                        <td>{teacher?.nickname ?? '미배정'}</td>
+                        <td>{teacher?.name ?? '미배정'}</td>
                         <td>Lv.{student.level}</td>
                         <td>
                           {numberFormatter.format(student.coins)} /{' '}

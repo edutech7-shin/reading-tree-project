@@ -6,8 +6,7 @@ import { getSupabaseClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 export default function SetupPage() {
-  const [nickname, setNickname] = useState('')
-  const [role, setRole] = useState<'student' | 'teacher'>('student')
+  const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -59,7 +58,7 @@ export default function SetupPage() {
       const response = await fetch('/api/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nickname, role }),
+        body: JSON.stringify({ name }),
         cache: 'no-store'
       })
 
@@ -95,40 +94,14 @@ export default function SetupPage() {
 
       <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 12 }}>
         <div>
-          <label style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>닉네임</label>
+          <label style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>이름</label>
           <input
             placeholder="홍길동"
             type="text"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             required
           />
-        </div>
-
-        <div>
-          <label style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>역할</label>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <input
-                type="radio"
-                name="role"
-                value="student"
-                checked={role === 'student'}
-                onChange={(e) => setRole('student')}
-              />
-              학생
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <input
-                type="radio"
-                name="role"
-                value="teacher"
-                checked={role === 'teacher'}
-                onChange={(e) => setRole('teacher')}
-              />
-              교사
-            </label>
-          </div>
         </div>
 
         <button className="btn primary" disabled={loading}>

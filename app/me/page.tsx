@@ -20,7 +20,7 @@ export default async function MyPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('nickname, role, level, points')
+    .select('name, role, level, points')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -62,7 +62,7 @@ export default async function MyPage() {
             ⚠️ 프로필이 생성되지 않았습니다.
           </p>
           <p style={{ fontSize: 14, marginTop: 8 }}>
-            역할(학생/교사)과 닉네임을 설정해주세요.
+            이름을 설정해주세요.
           </p>
           <a href="/setup" className="btn primary" style={{ marginTop: 16, display: 'inline-block' }}>
             프로필 설정하기
@@ -135,8 +135,8 @@ export default async function MyPage() {
 
       <div className="card">
         <div>이메일: {user.email}</div>
-        <div>이름: {profile.nickname}</div>
-        <div>역할: {profile.role === 'teacher' ? '교사' : '학생'}</div>
+        <div>이름: {profile.name}</div>
+        <div>역할: {profile.role === 'admin' ? '관리자' : '교사'}</div>
         <div>개인 레벨: {profile.level}</div>
         <div>내 잎사귀: 🍃 {approvedCount ?? 0}개</div>
         <div>내 물방울: 💧 {profile.points}점</div>

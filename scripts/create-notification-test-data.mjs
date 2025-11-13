@@ -83,7 +83,7 @@ async function createNotificationTestData() {
   // 학생 계정 가져오기
   const { data: students } = await supabase
     .from('profiles')
-    .select('id, nickname')
+    .select('id, name')
     .eq('role', 'student')
     .limit(3)
 
@@ -130,7 +130,7 @@ async function createNotificationTestData() {
     const record = insertedRecords[i]
     const student = students.find(s => s.id === record.user_id)
     console.log(`${i + 1}. ${record.book_title}`)
-    console.log(`   학생: ${student?.nickname || '알 수 없음'}`)
+    console.log(`   학생: ${student?.name || '알 수 없음'}`)
     console.log(`   기록 ID: ${record.id}`)
     console.log('')
   }

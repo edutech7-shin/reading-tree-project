@@ -79,9 +79,9 @@ async function createTestDataForKim() {
   // 김철수 학생 찾기
   const { data: students } = await supabase
     .from('profiles')
-    .select('id, nickname')
+    .select('id, name')
     .eq('role', 'student')
-    .eq('nickname', '김철수')
+    .eq('name', '김철수')
     .limit(1)
 
   if (!students || students.length === 0) {
@@ -90,7 +90,7 @@ async function createTestDataForKim() {
   }
 
   const student = students[0]
-  console.log(`[create-test-data] 학생 발견: ${student.nickname} (${student.id})\n`)
+  console.log(`[create-test-data] 학생 발견: ${student.name} (${student.id})\n`)
 
   // 김철수 학생에게 승인 대기 중인 기록 2개 생성
   const records = TEST_BOOKS.map((book, index) => ({
@@ -119,7 +119,7 @@ async function createTestDataForKim() {
   
   insertedRecords.forEach((record, index) => {
     console.log(`${index + 1}. ${record.book_title}`)
-    console.log(`   학생: ${student.nickname}`)
+    console.log(`   학생: ${student.name}`)
     console.log(`   기록 ID: ${record.id}`)
     console.log(`   상태: 승인 대기`)
     console.log('')

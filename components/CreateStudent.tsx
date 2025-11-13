@@ -11,7 +11,7 @@ export default function CreateStudent({ onCreated }: Props) {
   const [showModal, setShowModal] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [nickname, setNickname] = useState('')
+  const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -33,7 +33,7 @@ export default function CreateStudent({ onCreated }: Props) {
       const response = await fetch('/api/teacher/create-student', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, nickname })
+        body: JSON.stringify({ email, password, name })
       })
 
       const result = await response.json()
@@ -45,7 +45,7 @@ export default function CreateStudent({ onCreated }: Props) {
       setSuccess(true)
       setEmail('')
       setPassword('')
-      setNickname('')
+      setName('')
       
       setTimeout(() => {
         setShowModal(false)
@@ -152,11 +152,11 @@ export default function CreateStudent({ onCreated }: Props) {
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>이름 (닉네임)</label>
+                <label style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>학생 이름</label>
                 <input
                   type="text"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   placeholder="홍길동"
                   required
                   disabled={loading || success}

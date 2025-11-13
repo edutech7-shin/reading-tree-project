@@ -8,8 +8,7 @@ import Link from 'next/link'
 export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [nickname, setNickname] = useState('')
-  const [role, setRole] = useState<'student' | 'teacher'>('student')
+  const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -43,8 +42,8 @@ export default function SignupPage() {
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          nickname: nickname,
-          role: role
+          name,
+          role: 'teacher'
         }
       }
     })
@@ -60,7 +59,7 @@ export default function SignupPage() {
     setSuccess(true)
     setEmail('')
     setPassword('')
-    setNickname('')
+    setName('')
   }
 
   return (
@@ -99,40 +98,14 @@ export default function SignupPage() {
         </div>
 
         <div>
-          <label style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>닉네임</label>
+          <label style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>이름</label>
           <input
             placeholder="홍길동"
             type="text"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             required
           />
-        </div>
-
-        <div>
-          <label style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>역할</label>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <input
-                type="radio"
-                name="role"
-                value="student"
-                checked={role === 'student'}
-                onChange={(e) => setRole('student')}
-              />
-              학생
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <input
-                type="radio"
-                name="role"
-                value="teacher"
-                checked={role === 'teacher'}
-                onChange={(e) => setRole('teacher')}
-              />
-              교사
-            </label>
-          </div>
         </div>
 
         <button className="btn primary" disabled={loading}>

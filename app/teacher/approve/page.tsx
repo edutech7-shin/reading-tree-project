@@ -11,7 +11,7 @@ type Row = {
   book_author: string | null
   content_text: string | null
   content_image_url: string | null
-  user_nickname?: string | null
+  user_name?: string | null
 }
 
 export default function ApprovePage() {
@@ -48,7 +48,7 @@ export default function ApprovePage() {
     const userIds = [...new Set(records.map(r => r.user_id))]
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, nickname')
+      .select('id, name')
       .in('id', userIds)
     
     if (profilesError) {
@@ -57,7 +57,7 @@ export default function ApprovePage() {
     
     // 프로필 맵 생성
     const profileMap = new Map(
-      (profiles || []).map(p => [p.id, p.nickname])
+      (profiles || []).map(p => [p.id, p.name])
     )
     
     // 기록과 프로필 정보 결합
@@ -68,7 +68,7 @@ export default function ApprovePage() {
       book_author: record.book_author,
       content_text: record.content_text,
       content_image_url: record.content_image_url,
-      user_nickname: profileMap.get(record.user_id) || null
+      user_name: profileMap.get(record.user_id) || null
     })))
     
     setLoading(false)
@@ -179,9 +179,9 @@ export default function ApprovePage() {
               {r.book_title ?? '(제목 없음)'}
               {r.book_author && <small style={{ color: '#666', marginLeft: 8 }}>{r.book_author}</small>}
             </div>
-            {r.user_nickname && (
+            {r.user_name && (
               <div style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>
-                👤 학생: <strong>{r.user_nickname}</strong>
+                👤 학생: <strong>{r.user_name}</strong>
               </div>
             )}
             {r.content_text && <p style={{ marginTop: 8 }}>{r.content_text}</p>}
