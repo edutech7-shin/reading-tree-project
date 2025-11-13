@@ -19,6 +19,13 @@ export default async function MyPage() {
     )
   }
 
+  const appMetadataRoleRaw = typeof user?.app_metadata?.role === 'string'
+    ? user.app_metadata.role
+    : Array.isArray(user?.app_metadata?.roles)
+      ? user.app_metadata.roles[0]
+      : null
+  const appMetadataRole = appMetadataRoleRaw ? appMetadataRoleRaw.trim().toLowerCase() : null
+
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('name, role, level, points, status')
@@ -30,7 +37,7 @@ export default async function MyPage() {
   }
 
   const normalizedStatus = (profile?.status ?? '').trim().toLowerCase()
-  const normalizedRole = (profile?.role ?? '').trim().toLowerCase()
+  const normalizedRole = (profile?.role ?? appMetadataRole ?? '').trim().toLowerCase()
 
   const { count: approvedCount } = await supabase
     .from('book_records')
@@ -61,6 +68,9 @@ export default async function MyPage() {
 
   // 프로필이 없으면 설정 페이지로 리다이렉트
   if (!profile) {
+    if (normalizedRole === 'admin' || appMetadataRole === 'admin') {
+      redirect('/admin/dashboard')
+    }
     return (
       <main className="container">
         <h1>내 나무</h1>
