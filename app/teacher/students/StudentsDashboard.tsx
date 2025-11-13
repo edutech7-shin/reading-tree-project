@@ -2,7 +2,12 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { addStudentsByNamesAction, deleteStudentsAction } from './actions'
+import {
+  addStudentsByNamesAction,
+  addStudentsByNumberListAction,
+  addStudentsByNumberRangeAction,
+  deleteStudentsAction
+} from './actions'
 import styles from './students.module.css'
 import { AddStudentDialog } from './AddStudentDialog'
 import { DeleteStudentDialog } from './DeleteStudentDialog'
@@ -52,11 +57,43 @@ export function StudentsDashboard({ students }: Props) {
     }
   }, [students])
 
-  const handleAddStudents = async (input: string) => {
+  const handleAddStudentsByNames = async (input: string) => {
     try {
       setIsPending(true)
       setAddError(null)
       await addStudentsByNamesAction(input)
+      setIsAddOpen(false)
+      router.refresh()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '학생을 추가할 수 없습니다.'
+      setAddError(message)
+      throw error
+    } finally {
+      setIsPending(false)
+    }
+  }
+
+  const handleAddStudentsByNumberRange = async (firstNumber: number, lastNumber: number) => {
+    try {
+      setIsPending(true)
+      setAddError(null)
+      await addStudentsByNumberRangeAction(firstNumber, lastNumber)
+      setIsAddOpen(false)
+      router.refresh()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '학생을 추가할 수 없습니다.'
+      setAddError(message)
+      throw error
+    } finally {
+      setIsPending(false)
+    }
+  }
+
+  const handleAddStudentsByNumberList = async (numbers: number[]) => {
+    try {
+      setIsPending(true)
+      setAddError(null)
+      await addStudentsByNumberListAction(numbers)
       setIsAddOpen(false)
       router.refresh()
     } catch (error) {
@@ -168,7 +205,9 @@ export function StudentsDashboard({ students }: Props) {
       <AddStudentDialog
         open={isAddOpen}
         onOpenChange={setIsAddOpen}
-        onSubmit={handleAddStudents}
+        onSubmitNames={handleAddStudentsByNames}
+        onSubmitRange={handleAddStudentsByNumberRange}
+        onSubmitNumbers={handleAddStudentsByNumberList}
         isPending={isPending}
         error={addError}
         onErrorClear={() => setAddError(null)}

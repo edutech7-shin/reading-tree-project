@@ -339,6 +339,11 @@
   line-height: 1.5;
 }
 
+.hint {
+  font-size: 12px;
+  color: #61708d;
+}
+
 .inputLabel {
   display: flex;
   flex-direction: column;
@@ -354,6 +359,38 @@
   padding: 16px;
   font-size: 14px;
   resize: vertical;
+}
+
+.rangeRow {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.rangeField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 160px;
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.numberInput {
+  border: 1px solid #d0d5dd;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 14px;
+}
+
+.bulletList {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: #64748b;
 }
 
 .errorMessage {
@@ -487,6 +524,10 @@
   .header {
     grid-template-columns: 1fr;
     gap: 20px;
+  }
+
+  .rangeRow {
+    flex-direction: column;
   }
 
   .controls {
