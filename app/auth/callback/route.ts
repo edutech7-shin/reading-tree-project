@@ -56,7 +56,7 @@ async function finalizeSession(origin: string, supabase: SupabaseClient) {
 
   console.log('[OAuth Callback] User confirmed:', user.email)
 
-  let profileExists = false
+  let redirectTarget = `${origin}/me`
   let lookupError: any = null
 
   try {
@@ -77,14 +77,16 @@ async function finalizeSession(origin: string, supabase: SupabaseClient) {
 
     const { data: profile, error } = await adminClient
       .from('profiles')
-      .select('id')
+      .select('id, role')
       .eq('id', user.id)
       .maybeSingle()
 
     if (error) {
       lookupError = error
     } else {
-      profileExists = !!profile
+      if (profile?.role === 'admin') {
+        redirectTarget = `${origin}/admin/dashboard`
+      }
     }
   } catch (serviceError) {
     lookupError = serviceError
@@ -95,7 +97,7 @@ async function finalizeSession(origin: string, supabase: SupabaseClient) {
     return { redirectUrl: `${origin}/me` }
   }
 
-  return { redirectUrl: `${origin}/me` }
+  return { redirectUrl: redirectTarget }
 }
 
 export async function GET(request: NextRequest) {

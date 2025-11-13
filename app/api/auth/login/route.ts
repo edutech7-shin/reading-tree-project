@@ -86,7 +86,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '사용자 정보를 확인하지 못했습니다.' }, { status: 500 })
     }
 
-    const finalResponse = NextResponse.json({ success: true, redirectUrl: '/me' })
+    let redirectUrl = '/me'
+    try {
+      const adminClient = createAdminClient()
+      const { data: profile } = await adminClient
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle()
+      if (profile?.role === 'admin') {
+        redirectUrl = '/admin/dashboard'
+      }
+    } catch (profileError) {
+      console.warn('[login api] profile role lookup failed:', profileError)
+    }
+
+    const finalResponse = NextResponse.json({ success: true, redirectUrl })
     cookieResponse.cookies.getAll().forEach((cookie) => {
       finalResponse.cookies.set(cookie)
     })
