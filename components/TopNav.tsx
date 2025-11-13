@@ -35,15 +35,6 @@ export default function TopNav() {
         }
         
         setIsLoggedIn(!!session)
-        const metadataRoleRaw = typeof session?.user?.app_metadata?.role === 'string'
-          ? session.user.app_metadata.role
-          : Array.isArray(session?.user?.app_metadata?.roles)
-            ? session?.user?.app_metadata?.roles?.[0]
-            : null
-        const metadataRole = metadataRoleRaw ? metadataRoleRaw.trim().toLowerCase() : null
-        if (metadataRole === 'admin') {
-          setUserRole('admin')
-        }
         
         // 로그인된 경우 역할 확인
         if (session?.user) {
@@ -129,16 +120,6 @@ export default function TopNav() {
       }
       
       setIsLoggedIn(!!session)
-      
-      const metadataRoleRaw = typeof session?.user?.app_metadata?.role === 'string'
-        ? session.user.app_metadata.role
-        : Array.isArray(session?.user?.app_metadata?.roles)
-          ? session.user.app_metadata.roles?.[0]
-          : null
-      const metadataRole = metadataRoleRaw ? metadataRoleRaw.trim().toLowerCase() : null
-      if (metadataRole === 'admin') {
-        setUserRole('admin')
-      }
       
       // 세션 변경 시 역할도 다시 확인 (초기 로드가 완료된 후에만)
       if (session?.user && profileChecked) {
