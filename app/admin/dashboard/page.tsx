@@ -64,13 +64,26 @@ export default async function AdminDashboardPage() {
     redirect('/login')
   }
 
+  const appMetadataRoleRaw = typeof user?.app_metadata?.role === 'string'
+    ? user.app_metadata.role
+    : Array.isArray(user?.app_metadata?.roles)
+      ? user.app_metadata.roles[0]
+      : null
+  const appMetadataRole = appMetadataRoleRaw ? appMetadataRoleRaw.trim().toLowerCase() : null
+
   const { data: adminProfile, error: profileError } = await supabase
     .from('profiles')
     .select('role, name')
     .eq('id', user.id)
     .maybeSingle()
 
-  if (profileError || adminProfile?.role !== 'admin') {
+  const normalizedProfileRole = typeof adminProfile?.role === 'string'
+    ? adminProfile.role.trim().toLowerCase()
+    : null
+
+  const isAdmin = normalizedProfileRole === 'admin' || appMetadataRole === 'admin'
+
+  if (profileError || !isAdmin) {
     redirect('/')
   }
 
