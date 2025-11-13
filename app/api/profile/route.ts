@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
     .update({
       name,
       role: 'teacher',
+      status: 'active',
       level: 1,
       points: 0
     })

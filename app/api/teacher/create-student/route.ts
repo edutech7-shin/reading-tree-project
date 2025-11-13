@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
         id: newUser.user.id,
         name,
         role: 'student',
+        status: 'active',
         level: 1,
         points: 0
       })

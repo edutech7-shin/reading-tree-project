@@ -91,15 +91,8 @@ async function finalizeSession(origin: string, supabase: SupabaseClient) {
   }
 
   if (lookupError) {
-    console.warn('[OAuth Callback] Profile lookup failed, defaulting to /setup:', lookupError)
-    return { redirectUrl: `${origin}/setup` }
-  }
-
-  console.log('[OAuth Callback] Profile exists:', profileExists)
-
-  if (!profileExists) {
-    console.log('[OAuth Callback] Redirecting to /setup')
-    return { redirectUrl: `${origin}/setup` }
+    console.warn('[OAuth Callback] Profile lookup failed, defaulting to /me:', lookupError)
+    return { redirectUrl: `${origin}/me` }
   }
 
   return { redirectUrl: `${origin}/me` }

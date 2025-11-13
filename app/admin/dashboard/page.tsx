@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { createSupabaseServerClient } from '../../lib/supabase/server'
 import styles from './dashboard.module.css'
 
@@ -7,6 +8,7 @@ type TeacherProfile = {
   name: string | null
   username: string | null
   created_at: string
+  status: string
 }
 
 type ClassStudent = {
@@ -78,7 +80,7 @@ export default async function AdminDashboardPage() {
   ] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, name, username, created_at')
+      .select('id, name, username, created_at, status')
       .eq('role', 'teacher')
       .order('created_at', { ascending: false })
       .returns<TeacherProfile[]>(),
@@ -119,6 +121,34 @@ export default async function AdminDashboardPage() {
   const totalGems = students.reduce((sum, student) => sum + (student.gems ?? 0), 0)
 
   const recentStudents = students.slice(0, 20)
+
+  async function approveTeacher(formData: FormData) {
+    'use server'
+    const teacherId = formData.get('teacherId')
+    if (typeof teacherId !== 'string' || !teacherId) {
+      return
+    }
+    const supabaseAction = createSupabaseServerClient()
+    const {
+      data: { user }
+    } = await supabaseAction.auth.getUser()
+    if (!user) {
+      redirect('/login')
+    }
+    const { data: profile } = await supabaseAction
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (profile?.role !== 'admin') {
+      redirect('/')
+    }
+    await supabaseAction
+      .from('profiles')
+      .update({ status: 'active' })
+      .eq('id', teacherId)
+    revalidatePath('/admin/dashboard')
+  }
 
   return (
     <div className={styles.page}>
@@ -172,10 +202,12 @@ export default async function AdminDashboardPage() {
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th>닉네임</th>
+                    <th>이름</th>
                     <th>계정</th>
                     <th>학생 수</th>
+                    <th>상태</th>
                     <th>가입일</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -188,7 +220,18 @@ export default async function AdminDashboardPage() {
                         </span>
                       </td>
                       <td>{numberFormatter.format(studentCountByTeacher[teacher.id] ?? 0)}</td>
+                      <td>{teacher.status === 'active' ? '활성' : teacher.status === 'suspended' ? '중지' : '승인 대기'}</td>
                       <td>{formatDate(teacher.created_at)}</td>
+                      <td>
+                        {teacher.status !== 'active' && (
+                          <form action={approveTeacher}>
+                            <input type='hidden' name='teacherId' value={teacher.id} />
+                            <button type='submit' className={styles.tag}>
+                              승인하기
+                            </button>
+                          </form>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

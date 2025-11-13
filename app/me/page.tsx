@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from '../../lib/supabase/server'
+                                                                                                                          import { createSupabaseServerClient } from '../../lib/supabase/server'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -20,7 +20,7 @@ export default async function MyPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('name, role, level, points')
+    .select('name, role, level, points, status')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -58,15 +58,32 @@ export default async function MyPage() {
         <h1>내 나무</h1>
         <div className="card">
           <p>이메일: {user.email}</p>
-          <p style={{ color: 'orange', marginTop: 12 }}>
-            ⚠️ 프로필이 생성되지 않았습니다.
+          <p style={{ color: '#f97316', marginTop: 12 }}>
+            ⚠️ 관리자 승인 대기 중입니다.
           </p>
           <p style={{ fontSize: 14, marginTop: 8 }}>
-            이름을 설정해주세요.
+            관리자가 가입을 승인하면 Reading Tree를 사용할 수 있습니다. 승인 완료 시 안내 메일을 전송할 예정입니다.
           </p>
           <a href="/setup" className="btn primary" style={{ marginTop: 16, display: 'inline-block' }}>
-            프로필 설정하기
+            승인 안내 보기
           </a>
+        </div>
+      </main>
+    )
+  }
+
+  if (profile.status !== 'active') {
+    return (
+      <main className="container">
+        <h1>내 나무</h1>
+        <div className="card">
+          <p>이메일: {user.email}</p>
+          <p style={{ color: '#f97316', marginTop: 12 }}>
+            ⚠️ 관리자 승인 대기 중입니다.
+          </p>
+          <p style={{ fontSize: 14, marginTop: 8 }}>
+            관리자 승인 이후 서비스 사용이 가능합니다. 승인이 완료되면 이메일로 알려드릴게요.
+          </p>
         </div>
       </main>
     )

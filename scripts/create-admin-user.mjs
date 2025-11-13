@@ -135,7 +135,7 @@ async function ensureAdminUser() {
   if (profile) {
     const { error } = await supabase
       .from('profiles')
-      .update({ name: '관리자', role: 'admin' })
+      .update({ name: '관리자', role: 'admin', status: 'active' })
       .eq('id', user.id)
     if (error) {
       console.error('[create-admin-user] 프로필 업데이트 실패:', error)
@@ -144,7 +144,7 @@ async function ensureAdminUser() {
   } else {
     const { error } = await supabase
       .from('profiles')
-      .insert({ id: user.id, name: '관리자', role: 'admin' })
+      .insert({ id: user.id, name: '관리자', role: 'admin', status: 'active' })
     if (error) {
       console.error('[create-admin-user] 프로필 생성 실패:', error)
       process.exit(1)

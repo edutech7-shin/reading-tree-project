@@ -118,7 +118,8 @@ async function createTestData() {
         email_confirm: true,
         user_metadata: {
           name: student.name,
-          role: 'student'
+          role: 'student',
+          status: 'active'
         }
       })
       
@@ -144,6 +145,7 @@ async function createTestData() {
         id: user.id,
         name: student.name,
         role: 'student',
+        status: 'active',
         level: 1,
         points: 0
       }, { onConflict: 'id' })

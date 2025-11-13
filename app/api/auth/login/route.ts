@@ -86,24 +86,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '사용자 정보를 확인하지 못했습니다.' }, { status: 500 })
     }
 
-    let redirectPath = '/me'
-    try {
-      const admin = createAdminClient()
-      const { data: profile } = await admin
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle()
-
-      if (!profile) {
-        redirectPath = '/setup'
-      }
-    } catch (profileError) {
-      console.warn('[login api] profile lookup failed:', profileError)
-      redirectPath = '/setup'
-    }
-
-    const finalResponse = NextResponse.json({ success: true, redirectUrl: redirectPath })
+    const finalResponse = NextResponse.json({ success: true, redirectUrl: '/me' })
     cookieResponse.cookies.getAll().forEach((cookie) => {
       finalResponse.cookies.set(cookie)
     })
