@@ -8,6 +8,7 @@ import { getSupabaseClient } from '../lib/supabase/client'
 export default function TopNav() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isTeacher, setIsTeacher] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [profileChecked, setProfileChecked] = useState(false)
   const router = useRouter()
@@ -65,11 +66,13 @@ export default function TopNav() {
               return
             }
             
-            const isTeacherRole = profile?.role === 'teacher'
-            console.log('[TopNav] User role:', profile?.role, 'role type:', typeof profile?.role, 'isTeacher:', isTeacherRole)
+            const rawRole = typeof profile?.role === 'string' ? profile.role.trim().toLowerCase() : null
+            const isTeacherRole = rawRole === 'teacher'
+            console.log('[TopNav] User role:', profile?.role, 'normalized:', rawRole, 'isTeacher:', isTeacherRole)
             
             if (mounted) {
               setIsTeacher(isTeacherRole)
+              setUserRole(rawRole)
               setProfileChecked(true)
               console.log('[TopNav] Set isTeacher to:', isTeacherRole)
             }
@@ -147,11 +150,13 @@ export default function TopNav() {
             return
           }
           
-          const isTeacherRole = profile?.role === 'teacher'
-          console.log('[TopNav] User role (listener):', profile?.role, 'role type:', typeof profile?.role, 'isTeacher:', isTeacherRole)
+          const rawRole = typeof profile?.role === 'string' ? profile.role.trim().toLowerCase() : null
+          const isTeacherRole = rawRole === 'teacher'
+          console.log('[TopNav] User role (listener):', profile?.role, 'normalized:', rawRole, 'isTeacher:', isTeacherRole)
           
           if (mounted) {
             setIsTeacher(isTeacherRole)
+            setUserRole(rawRole)
             setProfileChecked(true)
           }
         } catch (error) {
@@ -228,6 +233,9 @@ export default function TopNav() {
         <Link href="/">우리 반 나무</Link>
         <Link href="/record">기록하기</Link>
         <Link href="/me">내 나무</Link>
+        {!loading && isLoggedIn && userRole === 'admin' && (
+          <Link href="/admin/dashboard">관리자</Link>
+        )}
         {!loading && isLoggedIn && isTeacher && (
           <Link href="/teacher">대시보드</Link>
         )}
