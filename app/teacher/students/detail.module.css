@@ -1,0 +1,300 @@
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+.profileCard {
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  color: #ffffff;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 24px 72px rgba(30, 64, 175, 0.35);
+  display: grid;
+  gap: 24px;
+}
+
+.profileRow {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.avatarCircle {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  font-weight: 700;
+}
+
+.profileInfo {
+  flex: 1;
+  min-width: 240px;
+}
+
+.profileNameRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.studentName {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.tagGroup {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  background: rgba(15, 23, 42, 0.15);
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.profileMeta {
+  margin-top: 8px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.levelInfo {
+  margin-top: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progressBar {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+  position: relative;
+}
+
+.progressFill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #facc15, #f97316);
+}
+
+.progressScale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.statCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.statCard {
+  background: rgba(15, 23, 42, 0.1);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  backdrop-filter: blur(6px);
+}
+
+.statLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+}
+
+.statValue {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.tabBar {
+  display: flex;
+  gap: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 12px;
+}
+
+.tabButton {
+  border: none;
+  background: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: #64748b;
+  padding: 8px 12px;
+  cursor: not-allowed;
+}
+
+.tabButtonActive {
+  color: #1d4ed8;
+  position: relative;
+  cursor: default;
+}
+
+.tabButtonActive::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -13px;
+  height: 3px;
+  background: linear-gradient(90deg, #1d4ed8, #60a5fa);
+  border-radius: 999px;
+}
+
+.section {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 12px 40px rgba(15, 30, 80, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.viewAllButton {
+  border: none;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.activityList {
+  display: grid;
+  gap: 12px;
+}
+
+.activityItem {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.activityBadge {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: #e0e7ff;
+  color: #312e81;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.activityContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.activityTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.activityMeta {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.activityPoints {
+  font-size: 14px;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+.activityPointsNegative {
+  color: #dc2626;
+}
+
+.emptyActivities {
+  background: #f8fafc;
+  border-radius: 18px;
+  padding: 24px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .profileCard {
+    padding: 24px;
+  }
+
+  .avatarCircle {
+    width: 80px;
+    height: 80px;
+    font-size: 32px;
+  }
+}
+

@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   addStudentsByNamesAction,
@@ -180,20 +181,27 @@ export function StudentsDashboard({ students }: Props) {
 
       <div className={styles.grid}>
         {students.map((student) => (
-          <article key={student.id} className={styles.card}>
-            <span className={styles.badge}>{student.studentNumber}번</span>
-            <div className={styles.avatarWrapper}>
-              <span className={styles.avatar} data-variant={student.avatarType}>
-                {student.name.slice(0, 1)}
-              </span>
-            </div>
-            <h2 className={styles.name}>{student.name}</h2>
-            <p className={styles.tier}>{resolveTier(student.level)}</p>
-            {showLevel && (
-              <span className={styles.levelBadge}>Lv.{student.level}</span>
-            )}
-            <span className={styles.leafBadge}>🍃 {student.leaves}</span>
-          </article>
+          <Link
+            key={student.id}
+            href={`/teacher/students/${student.id}`}
+            className={styles.cardLink}
+            aria-label={`${student.studentNumber}번 ${student.name} 상세 보기`}
+          >
+            <article className={styles.card}>
+              <span className={styles.badge}>{student.studentNumber}번</span>
+              <div className={styles.avatarWrapper}>
+                <span className={styles.avatar} data-variant={student.avatarType}>
+                  {student.name.slice(0, 1)}
+                </span>
+              </div>
+              <h2 className={styles.name}>{student.name}</h2>
+              <p className={styles.tier}>{resolveTier(student.level)}</p>
+              {showLevel && (
+                <span className={styles.levelBadge}>Lv.{student.level}</span>
+              )}
+              <span className={styles.leafBadge}>🍃 {student.leaves}</span>
+            </article>
+          </Link>
         ))}
         {students.length === 0 && (
           <div className={styles.empty}>
