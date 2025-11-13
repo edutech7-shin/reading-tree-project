@@ -1,19 +1,14 @@
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createSupabaseServerClient } from '../../../lib/supabase/server'
+import { createSupabaseServiceClient } from '../../../lib/supabase/service'
 import styles from './dashboard.module.css'
 
 type TeacherProfile = {
   id: string
   name: string | null
-  email: string | null
   created_at: string
-  last_login_at: string | null
   status: string
-  classes: Array<{
-    id: string
-    class_name: string
-  }>
 }
 
 type ClassStudent = {
@@ -85,23 +80,18 @@ export default async function AdminDashboardPage() {
     redirect('/')
   }
 
+  const serviceClient = createSupabaseServiceClient()
+
   const [
     { data: teacherRows, error: teacherError },
     { data: studentRows, error: studentError },
-    { data: profileRows, error: profileListError }
+    { data: profileRows, error: profileListError },
+    { data: authUsersData, error: authUsersError }
   ] = await Promise.all([
     supabase
       .from('profiles')
-      .select(`
-        id,
-        name,
-        email,
-        created_at,
-        status,
-        classes:teacher_profiles ( id, class_name )
-      `)
+      .select('id, name, created_at, status')
       .eq('role', 'teacher')
-      .eq('status', 'active')
       .order('created_at', { ascending: false })
       .returns<TeacherProfile[]>(),
     supabase
@@ -113,10 +103,9 @@ export default async function AdminDashboardPage() {
       .from('class_students')
       .select('id, teacher_id, student_number, name, level, created_at')
       .order('student_number', { ascending: true })
-      .returns<ClassStudent[]>()
+      .returns<ClassStudent[]>(),
+    serviceClient.auth.admin.listUsers({ page: 1, perPage: 1000 })
   ])
-
-  const { data: authUsers, error: authErrorList } = await supabase.auth.admin.listUsers()
 
   if (teacherError) {
     throw new Error('교사 목록을 불러올 수 없습니다.')
@@ -130,12 +119,12 @@ export default async function AdminDashboardPage() {
     throw new Error('학생 전체 목록을 불러올 수 없습니다.')
   }
 
-  if (authErrorList) {
-    console.error('[AdminDashboard] auth user list error:', authErrorList)
+  if (authUsersError) {
+    console.error('[AdminDashboard] auth user list error:', authUsersError)
   }
 
   const authMap = new Map(
-    (authUsers?.users ?? []).map((user) => [
+    (authUsersData?.users ?? []).map((user) => [
       user.id,
       {
         email: user.email,
@@ -259,12 +248,8 @@ export default async function AdminDashboardPage() {
                   {teachers.map((teacher) => (
                     <tr key={teacher.id}>
                       <td>{teacher.name ?? '이름 없음'}</td>
-                      <td>{teacher.email ?? authMap.get(teacher.id)?.email ?? '이메일 없음'}</td>
-                      <td>
-                        {(teacher.classes ?? []).length > 0
-                          ? teacher.classes.map((cls) => cls.class_name).join(', ')
-                          : '반 미등록'}
-                      </td>
+                      <td>{authMap.get(teacher.id)?.email ?? '이메일 없음'}</td>
+                      <td>{teacher.name ? `${teacher.name} 반` : '반 미등록'}</td>
                       <td>{teacher.status === 'active' ? '활성' : teacher.status === 'suspended' ? '중지' : '승인 대기'}</td>
                       <td>{formatDate(teacher.created_at)}</td>
                       <td>{formatDateTime(authMap.get(teacher.id)?.lastLoginAt ?? teacher.created_at)}</td>
