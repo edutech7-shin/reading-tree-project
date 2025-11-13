@@ -34,6 +34,7 @@ export default async function MyPage() {
 
   const normalizedStatus = (profile?.status ?? '').trim().toLowerCase()
   const normalizedRole = (profile?.role ?? '').trim().toLowerCase()
+  console.log('[MyPage] Normalized role/status:', normalizedRole, normalizedStatus)
 
   const { count: approvedCount } = await supabase
     .from('book_records')
