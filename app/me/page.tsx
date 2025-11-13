@@ -25,6 +25,9 @@ export default async function MyPage() {
     .eq('id', user.id)
     .maybeSingle()
 
+  console.log('[MyPage] Raw profile:', profile)
+  console.log('[MyPage] Profile error:', profileError)
+
   if (profileError) {
     console.error('[MyPage] Profile load error:', profileError)
   }
