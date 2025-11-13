@@ -1,5 +1,17 @@
-alter table public.profiles
-  rename column nickname to name;
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'profiles'
+      and column_name = 'nickname'
+  ) then
+    alter table public.profiles
+      rename column nickname to name;
+  end if;
+end;
+$$;
 
 create or replace function public.handle_new_user()
 returns trigger
