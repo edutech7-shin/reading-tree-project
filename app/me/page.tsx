@@ -19,11 +19,17 @@ export default async function MyPage() {
     )
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('name, role, level, points, status')
     .eq('id', user.id)
     .maybeSingle()
+
+  if (profileError) {
+    console.error('[MyPage] Profile load error:', profileError)
+  }
+
+  const normalizedStatus = (profile?.status ?? '').trim().toLowerCase()
 
   const { count: approvedCount } = await supabase
     .from('book_records')
@@ -77,7 +83,7 @@ export default async function MyPage() {
     redirect('/admin/dashboard')
   }
 
-  if (profile.status !== 'active') {
+  if (normalizedStatus && !['active', 'approved'].includes(normalizedStatus)) {
     return (
       <main className="container">
         <h1>내 나무</h1>
