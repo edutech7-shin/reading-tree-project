@@ -28,9 +28,7 @@ export default async function MyPage() {
   console.log('[MyPage] Raw profile:', profile)
   console.log('[MyPage] Profile error:', profileError)
 
-  if (profileError) {
-    console.error('[MyPage] Profile load error:', profileError)
-  }
+  console.error('[MyPage] Profile load error:', profileError)
 
   const normalizedStatus = (profile?.status ?? '').trim().toLowerCase()
   const normalizedRole = (profile?.role ?? '').trim().toLowerCase()
