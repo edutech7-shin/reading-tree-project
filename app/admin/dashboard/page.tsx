@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import { createSupabaseServerClient } from '../../lib/supabase/server'
+import { createSupabaseServerClient } from '../../../lib/supabase/server'
 import styles from './dashboard.module.css'
 
 type TeacherProfile = {
