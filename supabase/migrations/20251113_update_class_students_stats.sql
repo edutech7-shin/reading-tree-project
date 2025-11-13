@@ -28,6 +28,12 @@ create policy "class student activities teacher select" on public.class_student_
       where cs.id = student_id
         and cs.teacher_id = auth.uid()
     )
+    or exists (
+      select 1
+      from public.profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+    )
   );
 
 drop policy if exists "class student activities teacher insert" on public.class_student_activities;
@@ -38,6 +44,12 @@ create policy "class student activities teacher insert" on public.class_student_
       from public.class_students cs
       where cs.id = student_id
         and cs.teacher_id = auth.uid()
+    )
+    or exists (
+      select 1
+      from public.profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
     )
   );
 
@@ -50,12 +62,24 @@ create policy "class student activities teacher update" on public.class_student_
       where cs.id = student_id
         and cs.teacher_id = auth.uid()
     )
+    or exists (
+      select 1
+      from public.profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+    )
   ) with check (
     exists (
       select 1
       from public.class_students cs
       where cs.id = student_id
         and cs.teacher_id = auth.uid()
+    )
+    or exists (
+      select 1
+      from public.profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
     )
   );
 
@@ -67,6 +91,12 @@ create policy "class student activities teacher delete" on public.class_student_
       from public.class_students cs
       where cs.id = student_id
         and cs.teacher_id = auth.uid()
+    )
+    or exists (
+      select 1
+      from public.profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
     )
   );
 
