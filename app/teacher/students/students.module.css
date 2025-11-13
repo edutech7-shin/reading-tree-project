@@ -442,6 +442,41 @@
   font-size: 14px;
 }
 
+.selectAllRow {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 12px;
+}
+
+.selectAllButton,
+.selectAllActive {
+  border: none;
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.selectAllButton {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.selectAllActive {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.18);
+}
+
+.selectAllButton:disabled,
+.selectAllActive:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .studentGrid {
   max-height: 320px;
   overflow-y: auto;

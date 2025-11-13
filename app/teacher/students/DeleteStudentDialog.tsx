@@ -57,6 +57,10 @@ export function DeleteStudentDialog({
     })
   }, [keyword, students])
 
+  const isAllSelected = useMemo(() => {
+    return filtered.length > 0 && filtered.every((student) => selected.has(student.id))
+  }, [filtered, selected])
+
   const toggle = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev)
@@ -64,6 +68,18 @@ export function DeleteStudentDialog({
         next.delete(id)
       } else {
         next.add(id)
+      }
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (isAllSelected) {
+        filtered.forEach((student) => next.delete(student.id))
+      } else {
+        filtered.forEach((student) => next.add(student.id))
       }
       return next
     })
@@ -107,6 +123,17 @@ export function DeleteStudentDialog({
             onChange={(event) => setKeyword(event.target.value)}
             disabled={isPending}
           />
+
+          <div className={styles.selectAllRow}>
+            <button
+              type='button'
+              className={isAllSelected ? styles.selectAllActive : styles.selectAllButton}
+              onClick={toggleSelectAll}
+              disabled={filtered.length === 0 || isPending}
+            >
+              {isAllSelected ? '전체 선택 해제' : '전체 선택'}
+            </button>
+          </div>
 
           <div className={styles.studentGrid}>
             {filtered.map((student) => {
