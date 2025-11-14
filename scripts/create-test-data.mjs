@@ -48,13 +48,26 @@ function getEnv(key) {
   return value
 }
 
-// 테스트용 학생 데이터
+// 테스트용 교사/학생 데이터
+const TEACHERS = [
+  { email: 'teacher1@test.com', password: 'test1234', name: '담임1' },
+  { email: 'teacher2@test.com', password: 'test1234', name: '담임2' },
+  { email: 'teacher3@test.com', password: 'test1234', name: '담임3' },
+  { email: 'teacher4@test.com', password: 'test1234', name: '담임4' },
+  { email: 'teacher5@test.com', password: 'test1234', name: '담임5' }
+]
+
 const STUDENTS = [
   { email: 'student1@test.com', password: 'test1234', name: '김철수' },
   { email: 'student2@test.com', password: 'test1234', name: '이영희' },
   { email: 'student3@test.com', password: 'test1234', name: '박민수' },
   { email: 'student4@test.com', password: 'test1234', name: '최지은' },
-  { email: 'student5@test.com', password: 'test1234', name: '정준호' }
+  { email: 'student5@test.com', password: 'test1234', name: '정준호' },
+  { email: 'student6@test.com', password: 'test1234', name: '홍서연' },
+  { email: 'student7@test.com', password: 'test1234', name: '문다은' },
+  { email: 'student8@test.com', password: 'test1234', name: '김도윤' },
+  { email: 'student9@test.com', password: 'test1234', name: '이태경' },
+  { email: 'student10@test.com', password: 'test1234', name: '박세진' }
 ]
 
 // 더미 독서 기록 데이터
@@ -98,6 +111,65 @@ async function createTestData() {
   })
 
   console.log('[create-test-data] 테스트 데이터 생성을 시작합니다...\n')
+
+  // 교사 계정 생성
+  const createdTeachers = []
+  for (const teacher of TEACHERS) {
+    console.log(`[create-test-data] ${teacher.name} (${teacher.email}) 교사 계정 생성 중...`)
+
+    const { data: listData } = await supabase.auth.admin.listUsers({
+      email: teacher.email
+    })
+
+    let user = listData?.users?.find(u => u.email?.toLowerCase() === teacher.email.toLowerCase())
+
+    if (!user) {
+      const { data, error } = await supabase.auth.admin.createUser({
+        email: teacher.email,
+        password: teacher.password,
+        email_confirm: true,
+        user_metadata: {
+          name: teacher.name,
+          role: 'teacher',
+          status: 'active'
+        }
+      })
+
+      if (error) {
+        console.error(`  ❌ 교사 계정 생성 실패: ${error.message}`)
+        continue
+      }
+
+      user = data.user
+      console.log(`  ✅ 교사 계정 생성 완료: ${user.id}`)
+    } else {
+      console.log(`  ⚠️ 기존 교사 계정 발견: ${user.id} (비밀번호 업데이트)`)
+      await supabase.auth.admin.updateUserById(user.id, {
+        password: teacher.password,
+        email_confirm: true
+      })
+    }
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: user.id,
+        name: teacher.name,
+        role: 'teacher',
+        status: 'active',
+        level: 1,
+        points: 0
+      }, { onConflict: 'id' })
+
+    if (profileError) {
+      console.error(`  ❌ 교사 프로필 생성 실패: ${profileError.message}`)
+      continue
+    }
+
+    createdTeachers.push({ ...teacher, userId: user.id })
+  }
+
+  console.log(`\n[create-test-data] ${createdTeachers.length}명의 교사 계정 생성 완료\n`)
 
   // 학생 계정 생성
   const createdStudents = []
@@ -159,6 +231,37 @@ async function createTestData() {
   }
 
   console.log(`\n[create-test-data] ${createdStudents.length}명의 학생 계정 생성 완료\n`)
+
+  if (createdTeachers.length === 0 || createdStudents.length === 0) {
+    console.warn('[create-test-data] 교사 또는 학생 생성이 완료되지 않아 class_students 생성을 건너뜁니다.')
+  } else {
+    console.log('[create-test-data] class_students 데이터 생성 중...')
+    const assignments = createdStudents.map((student, idx) => ({
+      student,
+      teacher: createdTeachers[idx % createdTeachers.length]
+    }))
+
+    let studentNumber = 1
+    for (const { student, teacher } of assignments) {
+      const { error } = await supabase
+        .from('class_students')
+        .upsert({
+          teacher_id: teacher.userId,
+          student_number: studentNumber++,
+          name: student.name,
+          level: 1,
+          leaves: 0,
+          coins: 0,
+          gems: 0
+        }, { onConflict: 'teacher_id,student_number' })
+
+      if (error) {
+        console.error(`  ❌ class_students 생성 실패 (${student.name}): ${error.message}`)
+      } else {
+        console.log(`  ✅ ${student.name} -> ${teacher.name} 배정 완료`)
+      }
+    }
+  }
 
   // 더미 독서 기록 생성
   console.log('[create-test-data] 더미 독서 기록 생성 중...\n')
@@ -306,6 +409,14 @@ async function createTestData() {
 
   console.log('\n[create-test-data] 테스트 데이터 생성 완료!')
   console.log('\n생성된 계정 정보:')
+  console.log('='.repeat(50))
+  console.log('\n교사 계정 정보:')
+  createdTeachers.forEach((t, i) => {
+    console.log(`${i + 1}. ${t.name}`)
+    console.log(`   이메일: ${t.email}`)
+    console.log(`   비밀번호: ${t.password}`)
+    console.log('')
+  })
   console.log('='.repeat(50))
   STUDENTS.forEach((s, i) => {
     console.log(`${i + 1}. ${s.name}`)
