@@ -170,44 +170,47 @@ export default function ApprovePage() {
   return (
     <main className="container">
       <h1>독서 기록 승인</h1>
-      {loading && <div>불러오는 중...</div>}
-      {error && <div style={{ color: 'crimson' }}>{error}</div>}
-      <div style={{ display: 'grid', gap: 12 }}>
+      {loading && <div className="text-secondary">불러오는 중...</div>}
+      {error && (
+        <div 
+          className="bg-negative-light text-negative" 
+          style={{ 
+            padding: 'var(--grid-gap-sm) var(--grid-gap-md)', 
+            borderRadius: 'var(--radius-small)',
+            marginBottom: 'var(--grid-gap-md)'
+          }}
+        >
+          {error}
+        </div>
+      )}
+      <div style={{ display: 'grid', gap: 'var(--grid-gap-md)' }}>
         {rows.map(r => (
           <div className="card" key={r.id}>
-            <div style={{ fontWeight: 600, marginBottom: 4 }}>
+            <div style={{ fontWeight: 'var(--font-weight-semibold)', marginBottom: 'var(--grid-gap-xs)', fontSize: 'var(--font-size-lg)' }}>
               {r.book_title ?? '(제목 없음)'}
-              {r.book_author && <small style={{ color: '#666', marginLeft: 8 }}>{r.book_author}</small>}
+              {r.book_author && <small className="text-secondary" style={{ marginLeft: 'var(--grid-gap-xs)', fontSize: 'var(--font-size-sm)' }}>{r.book_author}</small>}
             </div>
             {r.user_name && (
-              <div style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>
-                👤 학생: <strong>{r.user_name}</strong>
+              <div className="text-secondary" style={{ fontSize: 'var(--font-size-sm)', marginBottom: 'var(--grid-gap-xs)' }}>
+                👤 학생: <strong style={{ color: 'var(--color-text-primary)' }}>{r.user_name}</strong>
               </div>
             )}
-            {r.content_text && <p style={{ marginTop: 8 }}>{r.content_text}</p>}
+            {r.content_text && <p style={{ marginTop: 'var(--grid-gap-xs)', lineHeight: 1.6 }}>{r.content_text}</p>}
             {r.content_image_url && (
-              <a className="btn" style={{ marginTop: 8 }} href={r.content_image_url} target="_blank" rel="noreferrer">이미지 보기</a>
+              <a className="btn" style={{ marginTop: 'var(--grid-gap-xs)', display: 'inline-block' }} href={r.content_image_url} target="_blank" rel="noreferrer">이미지 보기</a>
             )}
-            <div style={{ marginTop: 12 }}>
-              <label style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>교사 코멘트 (선택)</label>
+            <div style={{ marginTop: 'var(--grid-gap-sm)' }}>
+              <label>교사 코멘트 (선택)</label>
               <textarea
                 value={comments[r.id] || ''}
                 onChange={(e) => setComments(prev => ({ ...prev, [r.id]: e.target.value }))}
                 placeholder="피드백을 입력하세요..."
                 rows={2}
-                style={{
-                  width: '100%',
-                  padding: 8,
-                  border: '1px solid #ddd',
-                  borderRadius: 4,
-                  fontSize: 14,
-                  fontFamily: 'inherit'
-                }}
               />
             </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-              <button className="btn primary" onClick={() => approve(r.id)}>👍 승인하기</button>
-              <button className="btn" onClick={() => reject(r.id)}>↩️ 반려하기</button>
+            <div style={{ display: 'flex', gap: 'var(--grid-gap-xs)', marginTop: 'var(--grid-gap-sm)', flexWrap: 'wrap' }}>
+              <button className="btn primary" onClick={() => approve(r.id)} style={{ flex: 1, minWidth: '120px' }}>👍 승인하기</button>
+              <button className="btn" onClick={() => reject(r.id)} style={{ flex: 1, minWidth: '120px' }}>↩️ 반려하기</button>
             </div>
           </div>
         ))}

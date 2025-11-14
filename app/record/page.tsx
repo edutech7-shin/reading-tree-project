@@ -123,110 +123,121 @@ export default function RecordPage() {
 
   return (
     <main className="container" style={{ maxWidth: 720 }}>
-      <h1>독서 기록하기</h1>
-      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 12 }}>
-        <div style={{ display: 'grid', gap: 8 }}>
-          <label>책 정보</label>
-          <BookSearch onSelect={handleBookSelect} />
-          {bookCoverUrl && (
-            <img
-              src={bookCoverUrl}
-              alt={bookTitle}
-              style={{ width: 100, height: 140, objectFit: 'cover', borderRadius: 4, marginTop: 8 }}
+      <div className="card" style={{ marginTop: 'var(--card-spacing)' }}>
+        <h1>독서 기록하기</h1>
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 'var(--grid-gap-md)' }}>
+          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+            <label>책 정보</label>
+            <BookSearch onSelect={handleBookSelect} />
+            {bookCoverUrl && (
+              <img
+                src={bookCoverUrl}
+                alt={bookTitle}
+                style={{ 
+                  width: 100, 
+                  height: 140, 
+                  objectFit: 'cover', 
+                  borderRadius: 'var(--radius-small)', 
+                  marginTop: 'var(--grid-gap-xs)',
+                  boxShadow: 'var(--shadow-card)'
+                }}
+              />
+            )}
+          </div>
+          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+            <label htmlFor="book-title">책 제목</label>
+            <input 
+              id="book-title"
+              name="book-title"
+              value={bookTitle} 
+              onChange={(e) => setBookTitle(e.target.value)} 
+              placeholder="예: 해리포터 또는 검색으로 입력" 
             />
-          )}
-        </div>
-        <div style={{ display: 'grid', gap: 8 }}>
-          <label htmlFor="book-title">책 제목</label>
-          <input 
-            id="book-title"
-            name="book-title"
-            value={bookTitle} 
-            onChange={(e) => setBookTitle(e.target.value)} 
-            placeholder="예: 해리포터 또는 검색으로 입력" 
-          />
-        </div>
-        <div style={{ display: 'grid', gap: 8 }}>
-          <label htmlFor="book-author">저자</label>
-          <input 
-            id="book-author"
-            name="book-author"
-            value={bookAuthor} 
-            onChange={(e) => setBookAuthor(e.target.value)} 
-            placeholder="예: J.K. 롤링 또는 검색으로 입력" 
-          />
-        </div>
-        <div style={{ display: 'grid', gap: 8 }}>
-          <label htmlFor="content-text">감상(텍스트)</label>
-          <textarea 
-            id="content-text"
-            name="content-text"
-            value={contentText} 
-            onChange={(e) => setContentText(e.target.value)} 
-            rows={6} 
-            placeholder="느낀 점을 적어보세요" 
-          />
-        </div>
-        <div style={{ display: 'grid', gap: 8 }}>
-          <label htmlFor="image-file">사진 첨부(선택)</label>
-          <input 
-            id="image-file"
-            name="image-file"
-            type="file" 
-            accept="image/*" 
-            onChange={(e) => {
-              const file = e.target.files?.[0] || null
-              setFileError(null)
-              
-              if (file) {
-                // 파일 타입 검증
-                if (!file.type.startsWith('image/')) {
-                  setFileError('이미지 파일만 업로드 가능합니다.')
-                  setImageFile(null)
-                  e.target.value = '' // 입력 초기화
-                  return
+          </div>
+          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+            <label htmlFor="book-author">저자</label>
+            <input 
+              id="book-author"
+              name="book-author"
+              value={bookAuthor} 
+              onChange={(e) => setBookAuthor(e.target.value)} 
+              placeholder="예: J.K. 롤링 또는 검색으로 입력" 
+            />
+          </div>
+          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+            <label htmlFor="content-text">감상(텍스트)</label>
+            <textarea 
+              id="content-text"
+              name="content-text"
+              value={contentText} 
+              onChange={(e) => setContentText(e.target.value)} 
+              rows={6} 
+              placeholder="느낀 점을 적어보세요" 
+            />
+          </div>
+          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+            <label htmlFor="image-file">사진 첨부(선택)</label>
+            <input 
+              id="image-file"
+              name="image-file"
+              type="file" 
+              accept="image/*" 
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null
+                setFileError(null)
+                
+                if (file) {
+                  // 파일 타입 검증
+                  if (!file.type.startsWith('image/')) {
+                    setFileError('이미지 파일만 업로드 가능합니다.')
+                    setImageFile(null)
+                    e.target.value = '' // 입력 초기화
+                    return
+                  }
+                  
+                  // 파일 크기 검증
+                  if (file.size > MAX_FILE_SIZE) {
+                    setFileError(`파일 크기가 5MB를 초과합니다. (현재: ${(file.size / 1024 / 1024).toFixed(2)}MB)`)
+                    setImageFile(null)
+                    e.target.value = '' // 입력 초기화
+                    return
+                  }
                 }
                 
-                // 파일 크기 검증
-                if (file.size > MAX_FILE_SIZE) {
-                  setFileError(`파일 크기가 5MB를 초과합니다. (현재: ${(file.size / 1024 / 1024).toFixed(2)}MB)`)
-                  setImageFile(null)
-                  e.target.value = '' // 입력 초기화
-                  return
-                }
-              }
-              
-              setImageFile(file)
-            }} 
-          />
-          <small style={{ color: '#666', fontSize: 12 }}>
-            이미지 파일만 업로드 가능하며, 최대 5MB까지 업로드할 수 있습니다.
-          </small>
-          {fileError && (
-            <small style={{ color: '#c33', fontSize: 12 }}>
-              {fileError}
+                setImageFile(file)
+              }} 
+            />
+            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
+              이미지 파일만 업로드 가능하며, 최대 5MB까지 업로드할 수 있습니다.
             </small>
-          )}
-          {imageFile && !fileError && (
-            <small style={{ color: '#666' }}>
-              선택된 파일: {imageFile.name} ({(imageFile.size / 1024).toFixed(1)} KB)
-            </small>
-          )}
-        </div>
-        {message && (
-          <div style={{ 
-            padding: 12, 
-            borderRadius: 4,
-            backgroundColor: message.includes('실패') || message.includes('오류') ? '#fee' : '#efe',
-            color: message.includes('실패') || message.includes('오류') ? '#c33' : '#363'
-          }}>
-            {message}
+            {fileError && (
+              <small className="text-negative" style={{ fontSize: 'var(--font-size-xs)' }}>
+                {fileError}
+              </small>
+            )}
+            {imageFile && !fileError && (
+              <small className="text-secondary" style={{ fontSize: 'var(--font-size-xs)' }}>
+                선택된 파일: {imageFile.name} ({(imageFile.size / 1024).toFixed(1)} KB)
+              </small>
+            )}
           </div>
-        )}
-        <button className="btn primary" disabled={submitting} type="submit">
-          {submitting ? '제출 중...' : '제출하기'}
-        </button>
-      </form>
+          {message && (
+            <div 
+              className={message.includes('실패') || message.includes('오류') ? 'bg-negative-light text-negative' : 'bg-positive-light text-positive'}
+              style={{ 
+                padding: 'var(--grid-gap-sm) var(--grid-gap-md)', 
+                borderRadius: 'var(--radius-small)',
+                fontSize: 'var(--font-size-sm)'
+              }}
+            >
+              {message}
+            </div>
+          )}
+          <button className="btn primary" disabled={submitting} type="submit" style={{ width: '100%' }}>
+            {submitting ? '제출 중...' : '제출하기'}
+          </button>
+        </form>
+      </div>
     </main>
   )
 }

@@ -85,58 +85,72 @@ export default function LoginPage() {
 
   return (
     <main className="container" style={{ maxWidth: 420 }}>
-      <h1>로그인</h1>
+      <div className="card" style={{ marginTop: 'var(--card-spacing)' }}>
+        <h1>로그인</h1>
 
-      {error && <div style={{ color: 'crimson', marginBottom: 16 }}>{error}</div>}
+        {error && (
+          <div 
+            className="bg-negative-light text-negative" 
+            style={{ 
+              padding: 'var(--grid-gap-sm) var(--grid-gap-md)', 
+              borderRadius: 'var(--radius-small)',
+              marginBottom: 'var(--grid-gap-md)',
+              fontSize: 'var(--font-size-sm)'
+            }}
+          >
+            {error}
+          </div>
+        )}
 
-      <button
-        className="btn primary"
-        onClick={onGoogleLogin}
-        disabled={!origin}
-        style={{ marginBottom: 16, width: '100%' }}
-      >
-        🔐 Google로 로그인
-      </button>
-
-      <div style={{ textAlign: 'center', margin: '16px 0', color: '#666' }}>또는</div>
-
-      <form onSubmit={onLogin} style={{ display: 'grid', gap: 12 }}>
-        <div>
-          <label htmlFor="login-email" style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>이메일</label>
-          <input 
-            id="login-email"
-            name="email"
-            placeholder="이메일" 
-            type="email" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-            required 
-          />
-        </div>
-        <div>
-          <label htmlFor="login-password" style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>비밀번호</label>
-          <input 
-            id="login-password"
-            name="password"
-            placeholder="비밀번호" 
-            type="password" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            required 
-          />
-        </div>
-        <button className="btn primary" disabled={loading}>
-          {loading ? '로그인 중...' : '이메일로 로그인'}
+        <button
+          className="btn primary"
+          onClick={onGoogleLogin}
+          disabled={!origin}
+          style={{ marginBottom: 'var(--grid-gap-md)', width: '100%' }}
+        >
+          🔐 Google로 로그인
         </button>
-      </form>
 
-      <p style={{ marginTop: 16, textAlign: 'center' }}>
-        계정이 없으신가요? <Link href="/signup" style={{ color: '#0070f3', textDecoration: 'underline' }}>회원가입</Link>
-      </p>
+        <div className="text-center text-secondary" style={{ margin: 'var(--grid-gap-md) 0' }}>또는</div>
 
-      <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
-        <button className="btn" onClick={onLogout}>로그아웃</button>
-        <Link className="btn" href="/">메인으로</Link>
+        <form onSubmit={onLogin} style={{ display: 'grid', gap: 'var(--grid-gap-sm)' }}>
+          <div>
+            <label htmlFor="login-email">이메일</label>
+            <input 
+              id="login-email"
+              name="email"
+              placeholder="이메일" 
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              required 
+            />
+          </div>
+          <div>
+            <label htmlFor="login-password">비밀번호</label>
+            <input 
+              id="login-password"
+              name="password"
+              placeholder="비밀번호" 
+              type="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+            />
+          </div>
+          <button className="btn primary" disabled={loading} style={{ width: '100%' }}>
+            {loading ? '로그인 중...' : '이메일로 로그인'}
+          </button>
+        </form>
+
+        <p className="text-center" style={{ marginTop: 'var(--grid-gap-md)' }}>
+          계정이 없으신가요? <Link href="/signup" style={{ color: 'var(--color-primary)', textDecoration: 'underline' }}>회원가입</Link>
+        </p>
+
+        <div style={{ marginTop: 'var(--grid-gap-md)', display: 'flex', gap: 'var(--grid-gap-xs)', flexWrap: 'wrap' }}>
+          <button className="btn" onClick={onLogout} style={{ flex: 1, minWidth: '120px' }}>로그아웃</button>
+          <Link className="btn" href="/" style={{ flex: 1, minWidth: '120px', textAlign: 'center' }}>메인으로</Link>
+        </div>
       </div>
     </main>
   )

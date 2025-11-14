@@ -1,11 +1,12 @@
 .wrapper {
-  background: #f6f9ff;
-  border-radius: 32px;
-  padding: 32px;
-  box-shadow: 0 24px 64px rgba(15, 30, 80, 0.08);
+  background: var(--color-panel-background);
+  border-radius: var(--radius-large);
+  padding: var(--side-padding);
+  box-shadow: var(--shadow-panel);
+  border: 1px solid var(--color-border-light);
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: var(--card-spacing);
 }
 
 .header {
@@ -16,16 +17,16 @@
 }
 
 .title {
-  font-size: 26px;
-  font-weight: 700;
+  font-size: var(--font-size-display);
+  font-weight: var(--font-weight-bold);
   margin: 0;
-  color: #101828;
+  color: var(--color-text-primary);
 }
 
 .subtitle {
   margin: 4px 0 0;
-  font-size: 14px;
-  color: #61708d;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
 }
 
 .controls {
@@ -101,9 +102,9 @@
 }
 
 .addButton {
-  background: #1d4ed8;
+  background: var(--color-primary);
   color: #ffffff;
-  box-shadow: 0 12px 22px rgba(29, 78, 216, 0.25);
+  box-shadow: var(--shadow-card);
 }
 
 .guideButton:disabled,
@@ -127,9 +128,9 @@
 
 .averageValue {
   display: block;
-  font-size: 28px;
-  font-weight: 700;
-  color: #1d4ed8;
+  font-size: var(--font-size-display);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
 }
 
 .averageSuffix {
@@ -158,19 +159,20 @@
 .cardLink:focus-visible .card,
 .cardLink:hover .card {
   transform: translateY(-4px);
-  box-shadow: 0 16px 44px rgba(15, 30, 80, 0.18);
+  box-shadow: var(--shadow-panel);
 }
 
 .card {
   position: relative;
-  padding: 24px 16px 20px;
-  background: #ffffff;
-  border-radius: 24px;
-  box-shadow: 0 12px 40px rgba(15, 30, 80, 0.1);
+  padding: var(--card-spacing) var(--grid-gap-md) var(--grid-gap-md);
+  background: var(--color-background-primary);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border-light);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--grid-gap-xs);
   cursor: pointer;
   transition: inherit;
 }
@@ -278,15 +280,16 @@
 
 .dialog,
 .dialogLarge {
-  background: #ffffff;
-  border-radius: 24px;
+  background: var(--color-background-primary);
+  border-radius: var(--radius-large);
   width: 100%;
   max-width: 520px;
-  padding: 24px;
-  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.16);
+  padding: var(--card-spacing);
+  box-shadow: var(--shadow-modal);
+  border: 1px solid var(--color-border-light);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--grid-gap-md);
 }
 
 .dialogLarge {
@@ -443,9 +446,9 @@
 }
 
 .primaryButton {
-  background: #1d4ed8;
+  background: var(--color-primary);
   color: #ffffff;
-  box-shadow: 0 12px 24px rgba(29, 78, 216, 0.22);
+  box-shadow: var(--shadow-card);
 }
 
 .destructiveButton {

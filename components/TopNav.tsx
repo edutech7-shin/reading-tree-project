@@ -241,20 +241,10 @@ export default function TopNav() {
         )}
         <span className="spacer" />
         {loading ? (
-          <span style={{ color: '#999', fontSize: '14px' }}>로딩...</span>
+          <span className="text-tertiary" style={{ fontSize: 'var(--font-size-sm)' }}>로딩...</span>
         ) : isLoggedIn ? (
           <button
             onClick={handleLogout}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: '#111',
-              textDecoration: 'none',
-              fontSize: 'inherit',
-              fontFamily: 'inherit',
-              padding: 0
-            }}
             className="nav-link"
           >
             로그아웃
