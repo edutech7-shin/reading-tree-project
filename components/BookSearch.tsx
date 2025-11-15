@@ -6,7 +6,10 @@ type BookResult = {
   title: string
   author: string
   coverUrl: string | null
-  isbn?: string
+  isbn?: string | null
+  publisher?: string | null
+  publicationYear?: string | null
+  totalPages?: number | null
 }
 
 type Props = {
@@ -178,6 +181,11 @@ export default function BookSearch({ onSelect }: Props) {
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600 }}>{book.title}</div>
                       <div style={{ fontSize: 14, color: '#666' }}>{book.author}</div>
+                      {book.publisher && (
+                        <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
+                          {book.publisher} {book.publicationYear && `· ${book.publicationYear}`}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

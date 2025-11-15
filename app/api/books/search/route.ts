@@ -66,7 +66,10 @@ export async function GET(request: NextRequest) {
           title: item.title || '',
           author: item.author || '',
           coverUrl: item.cover_url || null,
-          isbn: item.isbn
+          isbn: item.isbn || null,
+          publisher: null,
+          publicationYear: null,
+          totalPages: null
         }))
       })
     }
@@ -242,7 +245,15 @@ export async function GET(request: NextRequest) {
       responseKeys: libraryData.response ? Object.keys(libraryData.response) : []
     })
     
-    let books: Array<{ title: string; author: string; coverUrl: string | null; isbn: string }> = []
+    let books: Array<{ 
+      title: string
+      author: string
+      coverUrl: string | null
+      isbn: string | null
+      publisher: string | null
+      publicationYear: string | null
+      totalPages: number | null
+    }> = []
     
     // 방법 1: docs 배열 (srchBooks 표준 형식 - 실제 API 응답 구조)
     // 구조: response.docs[] - 각 요소는 { doc: BookDoc } 형태
@@ -267,7 +278,10 @@ export async function GET(request: NextRequest) {
           title: bookDoc.bookname || '',
           author: bookDoc.authors || '',
           coverUrl: bookDoc.bookImageURL || null,
-          isbn: isbn
+          isbn: isbn,
+          publisher: bookDoc.publisher || null,
+          publicationYear: bookDoc.publication_year || null,
+          totalPages: null
         })
       }
     }
@@ -288,7 +302,10 @@ export async function GET(request: NextRequest) {
             title: book.bookname || '',
             author: book.authors || '',
             coverUrl: book.bookImageURL || null,
-            isbn: isbn
+            isbn: isbn,
+            publisher: book.publisher || null,
+            publicationYear: book.publication_year || null,
+            totalPages: null
           })
         }
       }
@@ -333,7 +350,10 @@ export async function GET(request: NextRequest) {
           title: bookDoc.bookname || '',
           author: bookDoc.authors || '',
           coverUrl: bookDoc.bookImageURL || null,
-          isbn: isbn
+          isbn: isbn,
+          publisher: bookDoc.publisher || null,
+          publicationYear: bookDoc.publication_year || null,
+          totalPages: null
         })
       }
     }
