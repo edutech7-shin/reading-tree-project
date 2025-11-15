@@ -9,7 +9,6 @@ type BookResult = {
   isbn?: string | null
   publisher?: string | null
   publicationYear?: string | null
-  totalPages?: number | null
 }
 
 type Props = {
@@ -41,6 +40,15 @@ export default function BookSearch({ onSelect }: Props) {
 
       const data = await response.json()
       console.log('[BookSearch] Response:', data)
+      
+      // 브라우저 콘솔에서 API 응답 상세 확인
+      if (data.books && data.books.length > 0) {
+        console.log('[BookSearch] 첫 번째 책의 상세 정보:', data.books[0])
+        console.log('[BookSearch] 첫 번째 책의 필드:', Object.keys(data.books[0]))
+        console.log('[BookSearch] ISBN:', data.books[0].isbn)
+        console.log('[BookSearch] 출판사:', data.books[0].publisher)
+        console.log('[BookSearch] 출판연도:', data.books[0].publicationYear)
+      }
       
       if (data.error) {
         setError(data.error)

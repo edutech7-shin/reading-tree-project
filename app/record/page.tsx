@@ -11,8 +11,7 @@ export default function RecordPage() {
   const [bookCoverUrl, setBookCoverUrl] = useState<string | null>(null)
   const [bookPublisher, setBookPublisher] = useState('')
   const [bookIsbn, setBookIsbn] = useState('')
-  const [bookPublicationDate, setBookPublicationDate] = useState('')
-  const [bookTotalPages, setBookTotalPages] = useState('')
+  const [bookPublicationYear, setBookPublicationYear] = useState('')
   const [contentText, setContentText] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -28,15 +27,13 @@ export default function RecordPage() {
     isbn?: string | null
     publisher?: string | null
     publicationYear?: string | null
-    totalPages?: number | null
   }) {
     setBookTitle(book.title)
     setBookAuthor(book.author)
     setBookCoverUrl(book.coverUrl)
     setBookPublisher(book.publisher || '')
     setBookIsbn(book.isbn || '')
-    setBookPublicationDate(book.publicationYear || '')
-    setBookTotalPages(book.totalPages?.toString() || '')
+    setBookPublicationYear(book.publicationYear || '')
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -119,19 +116,16 @@ export default function RecordPage() {
       console.log('[Record] Image uploaded successfully:', contentImageUrl)
     }
 
-    // 출판일 문자열을 date 형식으로 변환 (YYYY-MM-DD 형식이거나 YYYY만 있는 경우)
+    // 출판연도를 date 형식으로 변환 (YYYY 형식인 경우 YYYY-01-01로 변환)
     let publicationDateValue: string | null = null
-    if (bookPublicationDate) {
+    if (bookPublicationYear) {
       // YYYY 형식인 경우 YYYY-01-01로 변환
-      if (/^\d{4}$/.test(bookPublicationDate)) {
-        publicationDateValue = `${bookPublicationDate}-01-01`
-      } else if (/^\d{4}-\d{2}-\d{2}$/.test(bookPublicationDate)) {
-        publicationDateValue = bookPublicationDate
+      if (/^\d{4}$/.test(bookPublicationYear)) {
+        publicationDateValue = `${bookPublicationYear}-01-01`
+      } else if (/^\d{4}-\d{2}-\d{2}$/.test(bookPublicationYear)) {
+        publicationDateValue = bookPublicationYear
       }
     }
-
-    // 전체 페이지 수를 숫자로 변환
-    const totalPagesValue = bookTotalPages ? parseInt(bookTotalPages, 10) : null
 
     const { error: insertError } = await supabase.from('book_records').insert({
       user_id: user.id,
@@ -141,7 +135,6 @@ export default function RecordPage() {
       book_publisher: bookPublisher || null,
       book_isbn: bookIsbn || null,
       book_publication_date: publicationDateValue,
-      book_total_pages: totalPagesValue,
       content_text: contentText || null,
       content_image_url: contentImageUrl,
       status: 'pending'
@@ -155,8 +148,7 @@ export default function RecordPage() {
       setBookCoverUrl(null)
       setBookPublisher('')
       setBookIsbn('')
-      setBookPublicationDate('')
-      setBookTotalPages('')
+      setBookPublicationYear('')
       setContentText('')
       setImageFile(null)
       setMessage('제출되었습니다. 승인 대기 중입니다!')
@@ -192,66 +184,70 @@ export default function RecordPage() {
             <input 
               id="book-title"
               name="book-title"
+              type="text"
               value={bookTitle} 
               onChange={(e) => setBookTitle(e.target.value)} 
               placeholder="예: 해리포터 또는 검색으로 입력" 
             />
+            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
+              책 제목을 입력하거나 검색으로 선택하세요.
+            </small>
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
             <label htmlFor="book-author">저자</label>
             <input 
               id="book-author"
               name="book-author"
+              type="text"
               value={bookAuthor} 
               onChange={(e) => setBookAuthor(e.target.value)} 
               placeholder="예: J.K. 롤링 또는 검색으로 입력" 
             />
+            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
+              저자명을 입력하거나 검색으로 선택하세요.
+            </small>
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
             <label htmlFor="book-publisher">출판사</label>
             <input 
               id="book-publisher"
               name="book-publisher"
+              type="text"
               value={bookPublisher} 
               onChange={(e) => setBookPublisher(e.target.value)} 
               placeholder="예: 문학수첩 또는 검색으로 입력" 
             />
+            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
+              출판사명을 입력하거나 검색으로 선택하세요.
+            </small>
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
             <label htmlFor="book-isbn">ISBN</label>
             <input 
               id="book-isbn"
               name="book-isbn"
+              type="text"
               value={bookIsbn} 
               onChange={(e) => setBookIsbn(e.target.value)} 
               placeholder="예: 9788936434267 또는 검색으로 입력" 
             />
-          </div>
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="book-publication-date">출판일</label>
-            <input 
-              id="book-publication-date"
-              name="book-publication-date"
-              type="text"
-              value={bookPublicationDate} 
-              onChange={(e) => setBookPublicationDate(e.target.value)} 
-              placeholder="예: 2023 또는 2023-01-15 (YYYY 또는 YYYY-MM-DD)" 
-            />
             <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              연도만 입력하거나 YYYY-MM-DD 형식으로 입력하세요.
+              ISBN을 입력하거나 검색으로 선택하세요.
             </small>
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="book-total-pages">전체 페이지 수</label>
+            <label htmlFor="book-publication-year">출판연도</label>
             <input 
-              id="book-total-pages"
-              name="book-total-pages"
-              type="number"
-              min="1"
-              value={bookTotalPages} 
-              onChange={(e) => setBookTotalPages(e.target.value)} 
-              placeholder="예: 320" 
+              id="book-publication-year"
+              name="book-publication-year"
+              type="text"
+              value={bookPublicationYear} 
+              onChange={(e) => setBookPublicationYear(e.target.value)} 
+              placeholder="예: 2023 (YYYY 형식)" 
             />
+            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
+              출판연도를 YYYY 형식으로 입력하세요.
+            </small>
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
             <label htmlFor="content-text">감상(텍스트)</label>
