@@ -110,7 +110,7 @@ p {
 /* Navigation */
 .topnav {
   border-bottom: 1px solid var(--color-border-light);
-  background: var(--color-background-primary);
+  background: #E7EFEA;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -142,14 +142,16 @@ p {
 .topnav nav a:hover,
 .topnav nav button.nav-link:hover {
   color: var(--color-text-primary);
-  background-color: var(--color-background-secondary);
+  background-color: #D1E7DD;
   text-decoration: none;
 }
 .topnav nav a[aria-current="page"],
 .topnav nav a.active {
-  color: var(--color-text-primary);
+  color: #FFFFFF;
+  background-color: #166534;
   font-weight: var(--font-weight-semibold);
   position: relative;
+  border-radius: var(--radius-small);
 }
 .topnav nav a[aria-current="page"]::after,
 .topnav nav a.active::after {
@@ -159,7 +161,7 @@ p {
   left: var(--grid-gap-sm);
   right: var(--grid-gap-sm);
   height: 2px;
-  background: var(--color-primary);
+  background: #166534;
   border-radius: var(--radius-full);
 }
 
@@ -284,9 +286,9 @@ input[type="password"]:focus,
 input[type="number"]:focus,
 textarea:focus,
 select:focus {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid #166534;
   outline-offset: 2px;
-  border-color: var(--color-primary);
+  border-color: #166534;
 }
 input::placeholder,
 textarea::placeholder {
