@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap');
+
 /* Design System Variables from design.json */
 :root {
   /* Colors - Neutrals */
@@ -28,7 +30,7 @@
   --color-cta: #0EA5E9;
 
   /* Typography */
-  --font-family-base: Inter, Pretendard, sans-serif;
+  --font-family-base: 'Nanum Gothic', '나눔고딕', Inter, Pretendard, sans-serif;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
@@ -279,6 +281,15 @@ select {
   background: var(--color-background-primary);
   transition: var(--transition-hover);
   box-sizing: border-box;
+  min-height: 44px; /* 모든 입력 필드의 최소 높이 통일 */
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+select {
+  height: 44px; /* 텍스트 입력 필드 높이 통일 */
 }
 input[type="text"]:focus,
 input[type="email"]:focus,
@@ -298,8 +309,8 @@ textarea::placeholder {
 label {
   display: block;
   margin-bottom: var(--grid-gap-xs);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
 }
 

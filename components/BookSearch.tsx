@@ -45,16 +45,19 @@ export default function BookSearch({ onSelect }: Props) {
       if (data.error) {
         setError(data.error)
         setResults([])
+        setShowModal(true) // 에러가 있어도 모달 표시
       } else {
         setResults(data.books || [])
         if (!data.books || data.books.length === 0) {
           setError('검색 결과가 없습니다.')
         }
+        setShowModal(true) // 검색 결과가 있으면 모달 표시
       }
     } catch (err: any) {
       console.error('[BookSearch] Error:', err)
       setError(err.message || '검색 중 오류가 발생했습니다.')
       setResults([])
+      setShowModal(true) // 에러 발생 시에도 모달 표시
     } finally {
       setSearching(false)
     }
@@ -69,14 +72,45 @@ export default function BookSearch({ onSelect }: Props) {
 
   return (
     <>
-      <button
-        type="button"
-        className="btn"
-        onClick={() => setShowModal(true)}
-        style={{ marginBottom: 12 }}
-      >
-        🔍 책 검색하기
-      </button>
+      <div style={{ display: 'flex', gap: 'var(--grid-gap-xs)', alignItems: 'center' }}>
+        <label htmlFor="book-search-query" style={{ display: 'none' }}>책 제목 또는 저자</label>
+        <input
+          id="book-search-query"
+          name="book-search-query"
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              handleSearch()
+            }
+          }}
+          onClick={() => {
+            if (results.length > 0 || error) {
+              setShowModal(true)
+            }
+          }}
+          placeholder="책 제목 또는 저자를 입력하세요"
+          style={{ 
+            flex: 1, 
+            padding: 'var(--grid-gap-sm) var(--grid-gap-md)', 
+            border: '1px solid var(--color-border-medium)', 
+            borderRadius: 'var(--radius-small)',
+            fontSize: 'var(--font-size-md)',
+            fontFamily: 'inherit'
+          }}
+        />
+        <button 
+          type="button"
+          className="btn primary" 
+          onClick={handleSearch} 
+          disabled={searching || !query.trim()}
+          style={{ whiteSpace: 'nowrap' }}
+        >
+          {searching ? '검색 중...' : '🔍 검색'}
+        </button>
+      </div>
 
       {showModal && (
         <div
@@ -107,24 +141,7 @@ export default function BookSearch({ onSelect }: Props) {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ marginTop: 0 }}>책 검색</h3>
-
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              <label htmlFor="book-search-query" style={{ display: 'none' }}>책 제목 또는 저자</label>
-              <input
-                id="book-search-query"
-                name="book-search-query"
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="책 제목 또는 저자를 입력하세요"
-                style={{ flex: 1, padding: 8, border: '1px solid #ddd', borderRadius: 4 }}
-              />
-              <button className="btn primary" onClick={handleSearch} disabled={searching}>
-                {searching ? '검색 중...' : '검색'}
-              </button>
-            </div>
+            <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-md)' }}>검색 결과</h3>
 
             {error && (
               <div style={{ 
