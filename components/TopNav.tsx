@@ -230,6 +230,15 @@ export default function TopNav() {
   return (
     <header className="topnav">
       <nav>
+        <Link href="/" aria-label="독서 나무 홈" style={{ 
+          fontWeight: 800, 
+          fontSize: 'var(--font-size-lg)', 
+          marginRight: 'var(--grid-gap-md)', 
+          letterSpacing: '-0.02em',
+          color: 'var(--color-text-primary)'
+        }}>
+          독서 나무
+        </Link>
         <Link href="/me">책장</Link>
         <Link href="/record">독서록</Link>
         <Link href="/">독서 나무</Link>
