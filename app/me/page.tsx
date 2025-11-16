@@ -1,7 +1,7 @@
                                                                                                                           import { createSupabaseServerClient } from '../../lib/supabase/server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import dynamic from 'next/dynamic'
+import NextDynamic from 'next/dynamic'
 
 export const dynamic = 'force-dynamic'
 
@@ -176,7 +176,7 @@ export default async function MyPage() {
 
       {/** 내 책장 (읽고 있어요 / 다 읽었어요) */}
       {/* Client 컴포넌트를 동적 import하여 CSR로 렌더링 */}
-      {dynamic(() => import('../../components/UserBooks'), { ssr: false })()}
+      {NextDynamic(() => import('../../components/UserBooks'), { ssr: false })()}
 
       <div className="card" style={{ marginTop: 16 }}>
         <h3 style={{ marginTop: 0, marginBottom: 12 }}>내 독서 기록</h3>
