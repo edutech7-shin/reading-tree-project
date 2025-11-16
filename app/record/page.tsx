@@ -1,9 +1,8 @@
 'use client'
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getSupabaseClient } from '../../lib/supabase/client'
-import BookSearch from '../../components/BookSearch'
 
 export default function RecordPage() {
   const [bookTitle, setBookTitle] = useState('')
@@ -18,8 +17,48 @@ export default function RecordPage() {
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
+  const [userBooks, setUserBooks] = useState<Array<{
+    id: number
+    title: string
+    author: string
+    coverUrl: string | null
+    isbn?: string | null
+    publisher?: string | null
+    publicationYear?: string | null
+    totalPages?: number | null
+  }>>([])
+  const [selectedBookId, setSelectedBookId] = useState<number | ''>('')
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+
+  useEffect(() => {
+    async function loadUserBooks() {
+      const supabase = getSupabaseClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data, error } = await supabase
+        .from('user_books')
+        .select('id, book_title, book_author, book_cover_url, book_publisher, book_isbn, book_publication_year, book_total_pages')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      if (error) {
+        console.error('[Record] user_books load error:', error)
+        return
+      }
+      const mapped = (data || []).map((b) => ({
+        id: b.id as number,
+        title: (b as any).book_title || '',
+        author: (b as any).book_author || '',
+        coverUrl: (b as any).book_cover_url || null,
+        isbn: (b as any).book_isbn || null,
+        publisher: (b as any).book_publisher || null,
+        publicationYear: (b as any).book_publication_year || null,
+        totalPages: (b as any).book_total_pages ?? null,
+      }))
+      setUserBooks(mapped)
+    }
+    loadUserBooks()
+  }, [])
 
   function handleBookSelect(book: { 
     title: string
@@ -168,10 +207,28 @@ export default function RecordPage() {
       <div className="card" style={{ marginTop: 'var(--card-spacing)' }}>
         <h1>독서록</h1>
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 'var(--grid-gap-md)' }}>
-          {/* 검색창을 맨 상단에 배치 */}
+          {/* 책 선택: 내 책장에서만 선택 가능 */}
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label>책 검색</label>
-            <BookSearch onSelect={handleBookSelect} />
+            <label htmlFor="user-book-select">책 선택</label>
+            <select
+              id="user-book-select"
+              name="user-book-select"
+              value={selectedBookId}
+              onChange={(e) => {
+                const val = e.target.value ? parseInt(e.target.value, 10) : ''
+                setSelectedBookId(val)
+                const found = userBooks.find(b => b.id === val)
+                if (found) handleBookSelect(found)
+              }}
+              style={{ height: 44 }}
+            >
+              <option value="">내 책장에서 선택하세요</option>
+              {userBooks.map(b => (
+                <option key={b.id} value={b.id}>
+                  {b.title} {b.author ? `· ${b.author}` : ''}
+                </option>
+              ))}
+            </select>
             {bookCoverUrl && (
               <img
                 src={bookCoverUrl}
@@ -186,6 +243,9 @@ export default function RecordPage() {
                 }}
               />
             )}
+            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
+              책장은 책장 페이지에서 추가할 수 있습니다. (책장 → ＋ 새 책 추가)
+            </small>
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
             <label htmlFor="book-total-pages">전체 페이지 수</label>
