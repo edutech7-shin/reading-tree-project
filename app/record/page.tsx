@@ -166,7 +166,7 @@ export default function RecordPage() {
   return (
     <main className="container" style={{ maxWidth: 720 }}>
       <div className="card" style={{ marginTop: 'var(--card-spacing)' }}>
-        <h1>독서 기록하기</h1>
+        <h1>독서록</h1>
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 'var(--grid-gap-md)' }}>
           {/* 검색창을 맨 상단에 배치 */}
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>

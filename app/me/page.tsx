@@ -267,7 +267,7 @@ export default async function MyPage() {
             아직 기록한 독서가 없습니다.
             <br />
             <Link href="/record" style={{ color: '#0070f3', textDecoration: 'underline', marginTop: 8, display: 'inline-block' }}>
-              첫 독서 기록하기 →
+              첫 독서록 →
             </Link>
           </p>
         )}

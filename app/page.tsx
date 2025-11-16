@@ -33,7 +33,7 @@ export default async function Home() {
       </section>
 
       <section className="ctaRow">
-        <Link className="btn primary" href="/record">✍️ 독서 기록하기</Link>
+        <Link className="btn primary" href="/record">✍️ 독서록</Link>
         <Link className="btn" href="/me">책장 보기</Link>
       </section>
     </main>

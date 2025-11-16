@@ -231,7 +231,7 @@ export default function TopNav() {
     <header className="topnav">
       <nav>
         <Link href="/">우리 반 나무</Link>
-        <Link href="/record">기록하기</Link>
+        <Link href="/record">독서록</Link>
         <Link href="/me">책장</Link>
         {!loading && isLoggedIn && userRole === 'admin' && (
           <Link href="/admin/dashboard">관리자</Link>
