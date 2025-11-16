@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { getSupabaseClient } from '../../lib/supabase/client'
+import BookPicker from '../../components/BookPicker'
 
 export default function RecordPage() {
   const [bookTitle, setBookTitle] = useState('')
@@ -28,6 +29,7 @@ export default function RecordPage() {
     totalPages?: number | null
   }>>([])
   const [selectedBookId, setSelectedBookId] = useState<number | ''>('')
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
@@ -207,28 +209,13 @@ export default function RecordPage() {
       <div className="card" style={{ marginTop: 'var(--card-spacing)' }}>
         <h1>독서록</h1>
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 'var(--grid-gap-md)' }}>
-          {/* 책 선택: 내 책장에서만 선택 가능 */}
+          {/* 책 선택: 내 책장에서만 선택 가능 - 모달 열기 */}
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="user-book-select">책 선택</label>
-            <select
-              id="user-book-select"
-              name="user-book-select"
-              value={selectedBookId}
-              onChange={(e) => {
-                const val = e.target.value ? parseInt(e.target.value, 10) : ''
-                setSelectedBookId(val)
-                const found = userBooks.find(b => b.id === val)
-                if (found) handleBookSelect(found)
-              }}
-              style={{ height: 44 }}
-            >
-              <option value="">내 책장에서 선택하세요</option>
-              {userBooks.map(b => (
-                <option key={b.id} value={b.id}>
-                  {b.title} {b.author ? `· ${b.author}` : ''}
-                </option>
-              ))}
-            </select>
+            <label>책 선택</label>
+            <div style={{ display: 'flex', gap: 'var(--grid-gap-xs)', alignItems: 'center' }}>
+              <button type="button" className="btn primary" onClick={() => setPickerOpen(true)}>책장에서 선택</button>
+              {bookTitle && <span style={{ color: '#666' }}>{bookTitle}{bookAuthor ? ` · ${bookAuthor}` : ''}</span>}
+            </div>
             {bookCoverUrl && (
               <img
                 src={bookCoverUrl}
@@ -247,6 +234,17 @@ export default function RecordPage() {
               책장은 책장 페이지에서 추가할 수 있습니다. (책장 → ＋ 새 책 추가)
             </small>
           </div>
+          {pickerOpen && (
+            <BookPicker
+              open={pickerOpen}
+              onClose={() => setPickerOpen(false)}
+              onSelect={(b) => {
+                setSelectedBookId(b.id)
+                handleBookSelect(b)
+                setPickerOpen(false)
+              }}
+            />
+          )}
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
             <label htmlFor="book-total-pages">전체 페이지 수</label>
             <input 
