@@ -12,6 +12,7 @@ export default function RecordPage() {
   const [bookPublisher, setBookPublisher] = useState('')
   const [bookIsbn, setBookIsbn] = useState('')
   const [bookPublicationYear, setBookPublicationYear] = useState('')
+  const [bookTotalPages, setBookTotalPages] = useState('')
   const [contentText, setContentText] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -27,6 +28,7 @@ export default function RecordPage() {
     isbn?: string | null
     publisher?: string | null
     publicationYear?: string | null
+    totalPages?: number | null
   }) {
     setBookTitle(book.title)
     setBookAuthor(book.author)
@@ -34,6 +36,7 @@ export default function RecordPage() {
     setBookPublisher(book.publisher || '')
     setBookIsbn(book.isbn || '')
     setBookPublicationYear(book.publicationYear || '')
+    setBookTotalPages(book.totalPages?.toString() || '')
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -127,6 +130,9 @@ export default function RecordPage() {
       }
     }
 
+  // 전체 페이지 수 숫자 변환
+  const totalPagesValue = bookTotalPages ? parseInt(bookTotalPages, 10) : null
+
     const { error: insertError } = await supabase.from('book_records').insert({
       user_id: user.id,
       book_title: bookTitle || null,
@@ -135,6 +141,7 @@ export default function RecordPage() {
       book_publisher: bookPublisher || null,
       book_isbn: bookIsbn || null,
       book_publication_date: publicationDateValue,
+    book_total_pages: totalPagesValue,
       content_text: contentText || null,
       content_image_url: contentImageUrl,
       status: 'pending'
@@ -149,6 +156,7 @@ export default function RecordPage() {
       setBookPublisher('')
       setBookIsbn('')
       setBookPublicationYear('')
+      setBookTotalPages('')
       setContentText('')
       setImageFile(null)
       setMessage('제출되었습니다. 승인 대기 중입니다!')
@@ -178,6 +186,21 @@ export default function RecordPage() {
                 }}
               />
             )}
+          </div>
+          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+            <label htmlFor="book-total-pages">전체 페이지 수</label>
+            <input 
+              id="book-total-pages"
+              name="book-total-pages"
+              type="number"
+              min="1"
+              value={bookTotalPages} 
+              onChange={(e) => setBookTotalPages(e.target.value)} 
+              placeholder="예: 320" 
+            />
+            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
+              모르는 경우 비워두세요. 검색 결과에서 입력해도 됩니다.
+            </small>
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
             <label htmlFor="book-title">책 제목</label>

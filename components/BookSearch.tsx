@@ -9,6 +9,7 @@ type BookResult = {
   isbn?: string | null
   publisher?: string | null
   publicationYear?: string | null
+  totalPages?: number | null
 }
 
 type Props = {
@@ -21,6 +22,7 @@ export default function BookSearch({ onSelect }: Props) {
   const [results, setResults] = useState<BookResult[]>([])
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [pagesByIndex, setPagesByIndex] = useState<Record<number, string>>({})
 
   async function handleSearch() {
     if (!query.trim()) return
@@ -71,11 +73,19 @@ export default function BookSearch({ onSelect }: Props) {
     }
   }
 
-  function handleSelect(book: BookResult) {
-    onSelect(book)
+  function handleSelect(book: BookResult, idx?: number) {
+    let totalPages: number | null | undefined = book.totalPages
+    if (typeof idx === 'number') {
+      const raw = pagesByIndex[idx]
+      if (raw && /^\d+$/.test(raw)) {
+        totalPages = parseInt(raw, 10)
+      }
+    }
+    onSelect({ ...book, totalPages: totalPages ?? null })
     setShowModal(false)
     setQuery('')
     setResults([])
+    setPagesByIndex({})
   }
 
   return (
@@ -179,21 +189,13 @@ export default function BookSearch({ onSelect }: Props) {
                 {results.map((book, idx) => (
                   <div
                     key={idx}
-                    onClick={() => handleSelect(book)}
                     style={{
                       padding: 12,
                       border: '1px solid #eee',
                       borderRadius: 8,
-                      cursor: 'pointer',
                       display: 'flex',
                       gap: 12,
                       alignItems: 'flex-start'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#f5f5f5'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'white'
                     }}
                   >
                     {book.coverUrl && (
@@ -211,6 +213,37 @@ export default function BookSearch({ onSelect }: Props) {
                           {book.publisher} {book.publicationYear && `· ${book.publicationYear}`}
                         </div>
                       )}
+                    </div>
+                    <div style={{ display: 'grid', gap: 6, minWidth: 140 }}>
+                      <label htmlFor={`pages-${idx}`} style={{ fontSize: 12, color: '#666' }}>
+                        전체 페이지 수
+                      </label>
+                      <input
+                        id={`pages-${idx}`}
+                        name={`pages-${idx}`}
+                        type="number"
+                        min={1}
+                        value={pagesByIndex[idx] ?? (book.totalPages ?? '')}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setPagesByIndex((prev) => ({ ...prev, [idx]: value }))
+                        }}
+                        placeholder="예: 320"
+                        style={{
+                          padding: 8,
+                          border: '1px solid #eee',
+                          borderRadius: 6,
+                          width: 120
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="btn primary"
+                        onClick={() => handleSelect(book, idx)}
+                        style={{ whiteSpace: 'nowrap' }}
+                      >
+                        선택
+                      </button>
                     </div>
                   </div>
                 ))}

@@ -25,12 +25,16 @@ type LibraryResponse = {
       keyword?: string
       pageNo?: number
       pageSize?: number
+      isbn13?: string
     }
     numFound?: number  // 전체 검색결과 건수 (메뉴얼 기준)
     resultNum?: number  // fallback
     docs?: Array<{
       doc?: BookDoc  // 각 doc는 단일 객체 (배열이 아님!)
     }>
+    detail?: {
+      book?: BookDoc | BookDoc[]  // 상세 정보 API 응답 구조
+    }
     libs?: {
       lib?: Array<{
         book?: BookDoc  // srchDtlList 형식
@@ -188,6 +192,12 @@ export async function GET(request: NextRequest) {
       const responseText = await libraryResponse.text()
       console.log('[Book Search] Library API raw response (first 2000 chars):', responseText.substring(0, 2000))
       
+      // 전체 응답을 파일로 저장하거나 상세 로그 출력 (디버깅용)
+      // 주의: 프로덕션에서는 이 로그를 제거하거나 제한해야 함
+      if (responseText.length < 10000) {
+        console.log('[Book Search] Full API response:', responseText)
+      }
+      
       // 빈 응답 체크
       if (!responseText.trim()) {
         console.error('[Book Search] Empty response from API')
@@ -199,6 +209,38 @@ export async function GET(request: NextRequest) {
       
       libraryData = JSON.parse(responseText)
       console.log('[Book Search] Library API parsed response:', JSON.stringify(libraryData).substring(0, 2000))
+      
+      // 첫 번째 책의 상세 정보를 로그로 출력 (디버깅용)
+      // detail.book 구조 확인
+      if (libraryData.response?.detail?.book) {
+        const detailBook = libraryData.response.detail.book
+        const firstBook = Array.isArray(detailBook) ? detailBook[0] : detailBook
+        if (firstBook) {
+          console.log('[Book Search] ===== detail.book 구조 API 응답 상세 분석 =====')
+          console.log('[Book Search] First book complete structure:', JSON.stringify(firstBook, null, 2))
+          console.log('[Book Search] First book available fields:', Object.keys(firstBook))
+          console.log('[Book Search] ISBN13:', firstBook.isbn13)
+          console.log('[Book Search] Publisher:', firstBook.publisher)
+          console.log('[Book Search] Publication Year:', firstBook.publication_year)
+          console.log('[Book Search] Publication Date:', firstBook.publication_date)
+          console.log('[Book Search] 모든 필드와 값:', Object.entries(firstBook).map(([key, value]) => `${key}: ${value}`).join(', '))
+          console.log('[Book Search] ==================================================')
+        }
+      }
+      
+      // docs 구조 확인
+      if (libraryData.response?.docs?.[0]?.doc) {
+        const firstBook = libraryData.response.docs[0].doc
+        console.log('[Book Search] ===== docs 구조 API 응답 상세 분석 =====')
+        console.log('[Book Search] First book complete structure:', JSON.stringify(firstBook, null, 2))
+        console.log('[Book Search] First book available fields:', Object.keys(firstBook))
+        console.log('[Book Search] ISBN13:', firstBook.isbn13)
+        console.log('[Book Search] Publisher:', firstBook.publisher)
+        console.log('[Book Search] Publication Year:', firstBook.publication_year)
+        console.log('[Book Search] Publication Date:', firstBook.publication_date)
+        console.log('[Book Search] 모든 필드와 값:', Object.entries(firstBook).map(([key, value]) => `${key}: ${value}`).join(', '))
+        console.log('[Book Search] ==========================================')
+      }
     } catch (parseError: any) {
       console.error('[Book Search] JSON parse error:', parseError)
       return NextResponse.json({ 
@@ -255,12 +297,72 @@ export async function GET(request: NextRequest) {
       totalPages: number | null
     }> = []
     
+    // 방법 0: detail.book 구조 (상세 정보 API 응답)
+    // 구조: response.detail.book - 단일 객체 또는 배열
+    const detailBook = libraryData.response?.detail?.book
+    if (detailBook) {
+      console.log('[Book Search] Processing detail.book structure')
+      const bookArray = Array.isArray(detailBook) ? detailBook : [detailBook]
+      
+      for (const bookDoc of bookArray) {
+        if (!bookDoc || !bookDoc.bookname) {
+          console.log('[Book Search] Skipping book without bookname:', bookDoc)
+          continue
+        }
+        
+        const isbn = bookDoc.isbn13 || bookDoc.isbn || ''
+        if (!isbn) {
+          console.log('[Book Search] Skipping book without ISBN:', bookDoc.bookname)
+          continue
+        }
+        
+        // 첫 번째 책의 상세 필드 로그
+        if (books.length === 0) {
+          console.log('[Book Search] ===== detail.book 구조 첫 번째 책 상세 필드 =====')
+          console.log('[Book Search] 모든 필드명:', Object.keys(bookDoc))
+          console.log('[Book Search] 모든 필드와 값:')
+          Object.entries(bookDoc).forEach(([key, value]) => {
+            console.log(`  ${key}:`, value)
+          })
+          console.log('[Book Search] ================================================')
+        }
+        
+        const publicationYear = bookDoc.publication_year || 
+                                bookDoc.publicationYear || 
+                                bookDoc.pubdate || 
+                                bookDoc.publicationDate || 
+                                null
+        
+        const publisher = bookDoc.publisher || 
+                         bookDoc.publisherName || 
+                         bookDoc.pub_nm || 
+                         null
+        
+        books.push({
+          title: bookDoc.bookname || '',
+          author: bookDoc.authors || '',
+          coverUrl: bookDoc.bookImageURL || null,
+          isbn: isbn,
+          publisher: publisher,
+          publicationYear: publicationYear,
+          totalPages: null // 도서관 정보나루 API에서 제공하지 않음
+        })
+      }
+    }
+    
     // 방법 1: docs 배열 (srchBooks 표준 형식 - 실제 API 응답 구조)
     // 구조: response.docs[] - 각 요소는 { doc: BookDoc } 형태
     // doc는 단일 객체이지 배열이 아님!
     const docs = libraryData.response?.docs
     if (docs && Array.isArray(docs) && docs.length > 0) {
       console.log('[Book Search] Processing docs array, length:', docs.length)
+      
+      // 첫 번째 책의 전체 필드 구조를 로그로 출력 (디버깅용)
+      if (docs[0]?.doc) {
+        console.log('[Book Search] Sample book doc fields:', Object.keys(docs[0].doc))
+        console.log('[Book Search] Sample book doc full data:', JSON.stringify(docs[0].doc, null, 2))
+      }
+      
       for (const docWrapper of docs) {
         const bookDoc = docWrapper.doc
         if (!bookDoc || !bookDoc.bookname) {
@@ -274,13 +376,37 @@ export async function GET(request: NextRequest) {
           continue
         }
         
+        // 실제 API 응답에서 사용 가능한 필드 확인 (첫 번째 책만 상세 로그)
+        if (books.length === 0) {
+          console.log('[Book Search] ===== 첫 번째 책 상세 필드 분석 =====')
+          console.log('[Book Search] 모든 필드명:', Object.keys(bookDoc))
+          console.log('[Book Search] 모든 필드와 값:')
+          Object.entries(bookDoc).forEach(([key, value]) => {
+            console.log(`  ${key}:`, value)
+          })
+          console.log('[Book Search] =====================================')
+        }
+        
+        // publication_year와 publisher 필드 확인 (다양한 필드명 시도)
+        const publicationYear = bookDoc.publication_year || 
+                                bookDoc.publicationYear || 
+                                bookDoc.pubdate || 
+                                bookDoc.publicationDate || 
+                                null
+        
+        const publisher = bookDoc.publisher || 
+                         bookDoc.publisherName || 
+                         bookDoc.pub_nm || 
+                         null
+        
         books.push({
           title: bookDoc.bookname || '',
           author: bookDoc.authors || '',
           coverUrl: bookDoc.bookImageURL || null,
           isbn: isbn,
-          publisher: bookDoc.publisher || null,
-          publicationYear: bookDoc.publication_year || null,
+          publisher: publisher,
+          publicationYear: publicationYear,
+          // 페이지 수는 도서관 정보나루 API에서 제공하지 않음
           totalPages: null
         })
       }
@@ -298,13 +424,24 @@ export async function GET(request: NextRequest) {
           const isbn = book.isbn13 || ''
           if (!isbn) continue
           
+          const publicationYear = book.publication_year || 
+                                  book.publicationYear || 
+                                  book.pubdate || 
+                                  book.publicationDate || 
+                                  null
+          
+          const publisher = book.publisher || 
+                           book.publisherName || 
+                           book.pub_nm || 
+                           null
+          
           books.push({
             title: book.bookname || '',
             author: book.authors || '',
             coverUrl: book.bookImageURL || null,
             isbn: isbn,
-            publisher: book.publisher || null,
-            publicationYear: book.publication_year || null,
+            publisher: publisher,
+            publicationYear: publicationYear,
             totalPages: null
           })
         }
@@ -346,13 +483,24 @@ export async function GET(request: NextRequest) {
         const isbn = bookDoc.isbn13 || ''
         if (!isbn) continue
         
+        const publicationYear = bookDoc.publication_year || 
+                                bookDoc.publicationYear || 
+                                bookDoc.pubdate || 
+                                bookDoc.publicationDate || 
+                                null
+        
+        const publisher = bookDoc.publisher || 
+                         bookDoc.publisherName || 
+                         bookDoc.pub_nm || 
+                         null
+        
         books.push({
           title: bookDoc.bookname || '',
           author: bookDoc.authors || '',
           coverUrl: bookDoc.bookImageURL || null,
           isbn: isbn,
-          publisher: bookDoc.publisher || null,
-          publicationYear: bookDoc.publication_year || null,
+          publisher: publisher,
+          publicationYear: publicationYear,
           totalPages: null
         })
       }
