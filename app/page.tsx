@@ -34,7 +34,7 @@ export default async function Home() {
 
       <section className="ctaRow">
         <Link className="btn primary" href="/record">✍️ 독서 기록하기</Link>
-        <Link className="btn" href="/me">내 나무 보기</Link>
+        <Link className="btn" href="/me">내 책나무 보기</Link>
       </section>
     </main>
   )

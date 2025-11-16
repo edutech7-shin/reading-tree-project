@@ -1,6 +1,7 @@
                                                                                                                           import { createSupabaseServerClient } from '../../lib/supabase/server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import dynamic from 'next/dynamic'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +14,7 @@ export default async function MyPage() {
   if (!user) {
     return (
       <main className="container">
-        <h1>내 나무</h1>
+        <h1>내 책나무</h1>
         <p>로그인이 필요합니다. 상단의 로그인 메뉴를 이용해주세요.</p>
       </main>
     )
@@ -65,7 +66,7 @@ export default async function MyPage() {
   if (!profile) {
     return (
       <main className="container">
-        <h1>내 나무</h1>
+        <h1>내 책나무</h1>
         <div className="card">
           <p>이메일: {user.email}</p>
           <p style={{ color: '#f97316', marginTop: 12 }}>
@@ -107,7 +108,7 @@ export default async function MyPage() {
 
   return (
     <main className="container">
-      <h1>내 나무</h1>
+      <h1>내 책나무</h1>
       
       {/* 알림 섹션 - 알림이 있거나 없어도 항상 표시 */}
       <div className="card" style={{ marginBottom: 16 }}>
@@ -172,6 +173,10 @@ export default async function MyPage() {
         <div>내 잎사귀: 🍃 {approvedCount ?? 0}개</div>
         <div>내 물방울: 💧 {profile.points}점</div>
       </div>
+
+      {/** 내 책장 (읽고 있어요 / 다 읽었어요) */}
+      {/* Client 컴포넌트를 동적 import하여 CSR로 렌더링 */}
+      {dynamic(() => import('../../components/UserBooks'), { ssr: false })()}
 
       <div className="card" style={{ marginTop: 16 }}>
         <h3 style={{ marginTop: 0, marginBottom: 12 }}>내 독서 기록</h3>
