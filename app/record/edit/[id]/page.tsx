@@ -189,7 +189,7 @@ export default function EditRecordPage() {
         <h1>독서 기록 수정</h1>
         <div style={{ color: 'crimson', marginBottom: 16 }}>{error}</div>
         <button className="btn" onClick={() => router.push('/me')}>
-          내 책나무로 돌아가기
+          책장으로 돌아가기
         </button>
       </main>
     )

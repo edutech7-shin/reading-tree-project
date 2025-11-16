@@ -35,7 +35,7 @@ export default function SetupPage() {
           onClick={() => router.push('/me')}
           style={{ justifySelf: 'start' }}
         >
-          내 책나무로 돌아가기
+          책장으로 돌아가기
         </button>
       </div>
     </main>

@@ -14,7 +14,7 @@ export default async function MyPage() {
   if (!user) {
     return (
       <main className="container">
-        <h1>내 책나무</h1>
+        <h1>책장</h1>
         <p>로그인이 필요합니다. 상단의 로그인 메뉴를 이용해주세요.</p>
       </main>
     )
@@ -66,7 +66,7 @@ export default async function MyPage() {
   if (!profile) {
     return (
       <main className="container">
-        <h1>내 책나무</h1>
+        <h1>책장</h1>
         <div className="card">
           <p>이메일: {user.email}</p>
           <p style={{ color: '#f97316', marginTop: 12 }}>
@@ -108,7 +108,7 @@ export default async function MyPage() {
 
   return (
     <main className="container">
-      <h1>내 책나무</h1>
+      <h1>책장</h1>
       
       {/* 알림 섹션 - 알림이 있거나 없어도 항상 표시 */}
       <div className="card" style={{ marginBottom: 16 }}>

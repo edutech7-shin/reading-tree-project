@@ -68,7 +68,7 @@ export default function DebugPage() {
 
       <div style={{ marginTop: 16 }}>
         <a href="/login" className="btn">로그인 페이지로</a>
-        <a href="/me" className="btn" style={{ marginLeft: 8 }}>내 책나무로</a>
+        <a href="/me" className="btn" style={{ marginLeft: 8 }}>책장으로</a>
       </div>
     </main>
   )
