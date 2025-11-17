@@ -347,12 +347,23 @@ export default function RecordPage() {
 
   return (
     <main className="container" style={{ maxWidth: 720 }}>
+      <style dangerouslySetInnerHTML={{__html: `
+        input::placeholder,
+        textarea::placeholder {
+          font-size: 80% !important;
+        }
+      `}} />
       <div className="card" style={{ marginTop: 'var(--card-spacing)' }}>
         <h1>독서록</h1>
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 'var(--grid-gap-md)' }}>
           {/* 책 선택: 내 책장에서만 선택 가능 - 모달 열기 */}
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label>책 선택</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <label style={{ margin: 0 }}>책 선택</label>
+              <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)', color: '#999' }}>
+                책장은 책장 페이지에서 추가할 수 있습니다. (책장 → ＋ 새 책 추가)
+              </small>
+            </div>
             <div style={{ display: 'flex', gap: 'var(--grid-gap-xs)', alignItems: 'center', flexWrap: 'wrap' }}>
               <button type="button" className="btn primary" onClick={() => setPickerOpen(true)}>책장에서 선택</button>
               {bookTitle && <span style={{ color: '#666' }}>{bookTitle}{bookAuthor ? ` · ${bookAuthor}` : ''}</span>}
@@ -466,9 +477,6 @@ export default function RecordPage() {
                 </button>
               </div>
             )}
-            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              책장은 책장 페이지에서 추가할 수 있습니다. (책장 → ＋ 새 책 추가)
-            </small>
           </div>
           {pickerOpen && (
             <BookPicker
@@ -490,7 +498,7 @@ export default function RecordPage() {
                 type="text"
                 value={bookTitle} 
                 onChange={(e) => setBookTitle(e.target.value)} 
-                placeholder="책 제목을 입력하거나 검색으로 선택하세요" 
+                placeholder="책 제목을 입력하거나 검색으로 선택하세요"
               />
             </div>
             <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
@@ -501,7 +509,7 @@ export default function RecordPage() {
                 type="text"
                 value={bookAuthor} 
                 onChange={(e) => setBookAuthor(e.target.value)} 
-                placeholder="저자명을 입력하거나 검색으로 선택하세요" 
+                placeholder="저자명을 입력하거나 검색으로 선택하세요"
               />
             </div>
           </div>
@@ -514,7 +522,7 @@ export default function RecordPage() {
                 type="text"
                 value={bookPublisher} 
                 onChange={(e) => setBookPublisher(e.target.value)} 
-                placeholder="출판사명을 입력하거나 검색으로 선택하세요" 
+                placeholder="출판사명을 입력하거나 검색으로 선택하세요"
               />
             </div>
             <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
@@ -565,7 +573,7 @@ export default function RecordPage() {
               value={contentText} 
               onChange={(e) => setContentText(e.target.value)} 
               rows={6} 
-              placeholder="책을 읽고 생각하거나 느낀 점을 적어보세요" 
+              placeholder="책을 읽고 생각하거나 느낀 점을 적어보세요"
             />
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
