@@ -83,27 +83,41 @@ export default function RecordPage() {
     }
     console.log('[Record] Loading recent records for user:', user.id)
     
-    // book_records에서 최근 기록 가져오기 (더 많이 가져와서 중복 제거 후 정렬)
+    // book_records에서 이미 제출한 책 목록 가져오기 (제외할 책들)
     const { data: recordsData, error: recordsError } = await supabase
       .from('book_records')
-      .select('id, book_title, book_author, book_cover_url, book_publisher, book_isbn, book_publication_date, book_total_pages, created_at')
+      .select('id, book_title, book_author, book_isbn')
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(10) // 충분히 가져와서 중복 제거 후 정렬
     
     if (recordsError) {
       console.error('[Record] book_records load error:', recordsError)
     } else {
-      console.log('[Record] book_records loaded:', recordsData?.length || 0, 'records')
+      console.log('[Record] book_records loaded:', recordsData?.length || 0, 'records (already submitted)')
     }
     
-    // user_books에서 최근 책 가져오기
+    // 이미 제출한 책들의 식별자 집합 생성 (ISBN 또는 제목+저자)
+    const submittedBooks = new Set<string>()
+    if (recordsData) {
+      recordsData.forEach((r: any) => {
+        if (r.book_isbn) {
+          submittedBooks.add(`isbn_${r.book_isbn}`)
+        } else {
+          const key = `title_${(r.book_title || '').trim()}_${(r.book_author || '').trim()}`
+          if (key !== 'title__') { // 빈 제목+저자가 아닌 경우만
+            submittedBooks.add(key)
+          }
+        }
+      })
+    }
+    console.log('[Record] Submitted books set size:', submittedBooks.size)
+    
+    // user_books에서 최근 책 가져오기 (더 많이 가져와서 필터링)
     const { data: booksData, error: booksError } = await supabase
       .from('user_books')
       .select('id, book_title, book_author, book_cover_url, book_publisher, book_isbn, book_publication_year, book_total_pages, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(10) // 충분히 가져와서 중복 제거 후 정렬
+      .limit(20) // 충분히 가져와서 필터링 후 정렬
     
     if (booksError) {
       console.error('[Record] user_books load error:', booksError)
@@ -111,94 +125,48 @@ export default function RecordPage() {
       console.log('[Record] user_books loaded:', booksData?.length || 0, 'books')
     }
     
-    // 두 데이터를 합치고 정규화
-    const allItems: Array<{
-      id: string | number
-      book_title: string | null
-      book_author: string | null
-      book_cover_url: string | null
-      book_publisher: string | null
-      book_isbn: string | null
-      book_publication_year: string | null
-      book_total_pages: number | null
-      created_at: string
-      source: 'record' | 'book'
-    }> = []
-    
-    // book_records 데이터 추가
-    if (recordsData) {
-      recordsData.forEach((r: any) => {
-        allItems.push({
-          id: `record_${r.id}`,
-          book_title: r.book_title,
-          book_author: r.book_author,
-          book_cover_url: r.book_cover_url,
-          book_publisher: r.book_publisher,
-          book_isbn: r.book_isbn,
-          book_publication_year: r.book_publication_date ? r.book_publication_date.substring(0, 4) : null,
-          book_total_pages: r.book_total_pages,
-          created_at: r.created_at,
-          source: 'record'
-        })
-      })
-    }
-    
-    // user_books 데이터 추가
-    if (booksData) {
-      booksData.forEach((r: any) => {
-        allItems.push({
-          id: `book_${r.id}`,
-          book_title: r.book_title,
-          book_author: r.book_author,
-          book_cover_url: r.book_cover_url,
-          book_publisher: r.book_publisher,
-          book_isbn: r.book_isbn,
-          book_publication_year: r.book_publication_year || null,
-          book_total_pages: r.book_total_pages,
-          created_at: r.created_at,
-          source: 'book'
-        })
-      })
-    }
-    
-    // ISBN이나 제목+저자로 중복 제거 (같은 책이 두 테이블에 모두 있을 수 있음)
-    const seen = new Set<string>()
-    const uniqueItems = allItems.filter((item) => {
-      // ISBN이 있으면 ISBN으로 중복 체크
-      if (item.book_isbn) {
-        if (seen.has(`isbn_${item.book_isbn}`)) return false
-        seen.add(`isbn_${item.book_isbn}`)
-        return true
+    // user_books에서 이미 제출한 책 제외
+    const unsubmittedBooks = (booksData || []).filter((book: any) => {
+      // ISBN으로 체크
+      if (book.book_isbn) {
+        if (submittedBooks.has(`isbn_${book.book_isbn}`)) {
+          console.log('[Record] Excluding book (ISBN match):', book.book_title)
+          return false
+        }
       }
-      // ISBN이 없으면 제목+저자로 중복 체크
-      const key = `title_${item.book_title || ''}_${item.book_author || ''}`
-      if (seen.has(key)) return false
-      seen.add(key)
+      // ISBN이 없거나 매칭되지 않으면 제목+저자로 체크
+      const key = `title_${(book.book_title || '').trim()}_${(book.book_author || '').trim()}`
+      if (key !== 'title__' && submittedBooks.has(key)) {
+        console.log('[Record] Excluding book (title+author match):', book.book_title)
+        return false
+      }
       return true
     })
     
+    console.log('[Record] Unsubmitted books after filtering:', unsubmittedBooks.length, 'books')
+    
     // created_at 기준으로 정렬 (최신순)
-    uniqueItems.sort((a, b) => {
+    unsubmittedBooks.sort((a: any, b: any) => {
       const dateA = new Date(a.created_at).getTime()
       const dateB = new Date(b.created_at).getTime()
       return dateB - dateA
     })
     
     // 최근 3개만 선택
-    const finalData = uniqueItems.slice(0, 3)
+    const finalData = unsubmittedBooks.slice(0, 3)
     
-    const mapped = finalData.map((r) => ({
+    const mapped = finalData.map((r: any) => ({
       id: r.id,
       book_title: r.book_title,
       book_author: r.book_author,
       book_cover_url: r.book_cover_url,
       book_publisher: r.book_publisher,
       book_isbn: r.book_isbn,
-      book_publication_year: r.book_publication_year,
+      book_publication_year: r.book_publication_year || null,
       book_total_pages: r.book_total_pages,
     }))
     
-    console.log('[Record] Final recent records:', mapped.length, 'items (after deduplication)')
+    console.log('[Record] Final recent records:', mapped.length, 'items (unsubmitted books only)')
     setRecentRecords(mapped)
   }
 
