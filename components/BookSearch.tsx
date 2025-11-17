@@ -159,7 +159,43 @@ export default function BookSearch({ onSelect }: Props) {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-md)' }}>검색 결과</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--grid-gap-md)' }}>
+              <h3 style={{ margin: 0 }}>검색 결과</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowModal(false)
+                  setQuery('')
+                  setResults([])
+                  setError(null)
+                  setPagesByIndex({})
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 24,
+                  cursor: 'pointer',
+                  color: '#666',
+                  padding: 0,
+                  width: 32,
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f0f0f0'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }}
+                title="닫기"
+              >
+                ×
+              </button>
+            </div>
 
             {error && (
               <div style={{ 
@@ -251,8 +287,17 @@ export default function BookSearch({ onSelect }: Props) {
             )}
 
             <div style={{ marginTop: 16, textAlign: 'center' }}>
-              <button className="btn" onClick={() => setShowModal(false)}>
-                닫기
+              <button 
+                className="btn" 
+                onClick={() => {
+                  setShowModal(false)
+                  setQuery('')
+                  setResults([])
+                  setError(null)
+                  setPagesByIndex({})
+                }}
+              >
+                취소
               </button>
             </div>
           </div>
