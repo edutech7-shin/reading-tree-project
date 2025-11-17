@@ -82,27 +82,55 @@ export default function RecordPage() {
         return
       }
       console.log('[Record] Loading recent records for user:', user.id)
-      const { data, error } = await supabase
+      
+      // 먼저 book_records에서 최근 기록 가져오기
+      const { data: recordsData, error: recordsError } = await supabase
         .from('book_records')
         .select('id, book_title, book_author, book_cover_url, book_publisher, book_isbn, book_publication_date, book_total_pages')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(3)
-      if (error) {
-        console.error('[Record] recent records load error:', error)
-        return
+      
+      if (recordsError) {
+        console.error('[Record] book_records load error:', recordsError)
+      } else {
+        console.log('[Record] book_records loaded:', recordsData?.length || 0, 'records')
       }
-      console.log('[Record] Recent records loaded:', data?.length || 0, 'records')
-      const mapped = (data || []).map((r: any) => ({
+      
+      // book_records에 기록이 있으면 사용, 없으면 user_books에서 가져오기
+      let finalData: any[] = []
+      
+      if (recordsData && recordsData.length > 0) {
+        finalData = recordsData
+      } else {
+        console.log('[Record] No book_records found, trying user_books...')
+        const { data: booksData, error: booksError } = await supabase
+          .from('user_books')
+          .select('id, book_title, book_author, book_cover_url, book_publisher, book_isbn, book_publication_year, book_total_pages')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(3)
+        
+        if (booksError) {
+          console.error('[Record] user_books load error:', booksError)
+        } else {
+          console.log('[Record] user_books loaded:', booksData?.length || 0, 'books')
+          finalData = booksData || []
+        }
+      }
+      
+      const mapped = finalData.map((r: any) => ({
         id: r.id,
         book_title: r.book_title,
         book_author: r.book_author,
         book_cover_url: r.book_cover_url,
         book_publisher: r.book_publisher,
         book_isbn: r.book_isbn,
-        book_publication_year: r.book_publication_date ? r.book_publication_date.substring(0, 4) : null,
+        book_publication_year: r.book_publication_date ? r.book_publication_date.substring(0, 4) : (r.book_publication_year || null),
         book_total_pages: r.book_total_pages,
       }))
+      
+      console.log('[Record] Final recent records:', mapped.length, 'items')
       setRecentRecords(mapped)
     }
     loadRecentRecords()
