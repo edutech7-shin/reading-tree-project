@@ -14,6 +14,7 @@ export default function RecordPage() {
   const [bookPublicationYear, setBookPublicationYear] = useState('')
   const [bookTotalPages, setBookTotalPages] = useState('')
   const [contentText, setContentText] = useState('')
+  const [rating, setRating] = useState<number | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -27,6 +28,16 @@ export default function RecordPage() {
     publisher?: string | null
     publicationYear?: string | null
     totalPages?: number | null
+  }>>([])
+  const [recentRecords, setRecentRecords] = useState<Array<{
+    id: number
+    book_title: string | null
+    book_author: string | null
+    book_cover_url: string | null
+    book_publisher: string | null
+    book_isbn: string | null
+    book_publication_year: string | null
+    book_total_pages: number | null
   }>>([])
   const [selectedBookId, setSelectedBookId] = useState<number | ''>('')
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -62,6 +73,36 @@ export default function RecordPage() {
     loadUserBooks()
   }, [])
 
+  useEffect(() => {
+    async function loadRecentRecords() {
+      const supabase = getSupabaseClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data, error } = await supabase
+        .from('book_records')
+        .select('id, book_title, book_author, book_cover_url, book_publisher, book_isbn, book_publication_date, book_total_pages')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(3)
+      if (error) {
+        console.error('[Record] recent records load error:', error)
+        return
+      }
+      const mapped = (data || []).map((r: any) => ({
+        id: r.id,
+        book_title: r.book_title,
+        book_author: r.book_author,
+        book_cover_url: r.book_cover_url,
+        book_publisher: r.book_publisher,
+        book_isbn: r.book_isbn,
+        book_publication_year: r.book_publication_date ? r.book_publication_date.substring(0, 4) : null,
+        book_total_pages: r.book_total_pages,
+      }))
+      setRecentRecords(mapped)
+    }
+    loadRecentRecords()
+  }, [])
+
   function handleBookSelect(book: { 
     title: string
     author: string
@@ -78,6 +119,18 @@ export default function RecordPage() {
     setBookIsbn(book.isbn || '')
     setBookPublicationYear(book.publicationYear || '')
     setBookTotalPages(book.totalPages?.toString() || '')
+    setRating(null)
+  }
+
+  function handleRecentBookSelect(record: typeof recentRecords[0]) {
+    setBookTitle(record.book_title || '')
+    setBookAuthor(record.book_author || '')
+    setBookCoverUrl(record.book_cover_url)
+    setBookPublisher(record.book_publisher || '')
+    setBookIsbn(record.book_isbn || '')
+    setBookPublicationYear(record.book_publication_year || '')
+    setBookTotalPages(record.book_total_pages?.toString() || '')
+    setRating(null)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -182,9 +235,10 @@ export default function RecordPage() {
       book_publisher: bookPublisher || null,
       book_isbn: bookIsbn || null,
       book_publication_date: publicationDateValue,
-    book_total_pages: totalPagesValue,
+      book_total_pages: totalPagesValue,
       content_text: contentText || null,
       content_image_url: contentImageUrl,
+      rating: rating || null,
       status: 'pending'
     })
 
@@ -199,8 +253,32 @@ export default function RecordPage() {
       setBookPublicationYear('')
       setBookTotalPages('')
       setContentText('')
+      setRating(null)
       setImageFile(null)
       setMessage('제출되었습니다. 승인 대기 중입니다!')
+      // 최근 기록 다시 로드
+      const { data: { user: user2 } } = await supabase.auth.getUser()
+      if (user2) {
+        const { data } = await supabase
+          .from('book_records')
+          .select('id, book_title, book_author, book_cover_url, book_publisher, book_isbn, book_publication_date, book_total_pages')
+          .eq('user_id', user2.id)
+          .order('created_at', { ascending: false })
+          .limit(3)
+        if (data) {
+          const mapped = data.map((r: any) => ({
+            id: r.id,
+            book_title: r.book_title,
+            book_author: r.book_author,
+            book_cover_url: r.book_cover_url,
+            book_publisher: r.book_publisher,
+            book_isbn: r.book_isbn,
+            book_publication_year: r.book_publication_date ? r.book_publication_date.substring(0, 4) : null,
+            book_total_pages: r.book_total_pages,
+          }))
+          setRecentRecords(mapped)
+        }
+      }
     }
   }
 
@@ -212,10 +290,60 @@ export default function RecordPage() {
           {/* 책 선택: 내 책장에서만 선택 가능 - 모달 열기 */}
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
             <label>책 선택</label>
-            <div style={{ display: 'flex', gap: 'var(--grid-gap-xs)', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 'var(--grid-gap-xs)', alignItems: 'center', flexWrap: 'wrap' }}>
               <button type="button" className="btn primary" onClick={() => setPickerOpen(true)}>책장에서 선택</button>
               {bookTitle && <span style={{ color: '#666' }}>{bookTitle}{bookAuthor ? ` · ${bookAuthor}` : ''}</span>}
             </div>
+            {recentRecords.length > 0 && (
+              <div style={{ marginTop: 'var(--grid-gap-sm)' }}>
+                <div style={{ fontSize: 'var(--font-size-sm)', color: '#666', marginBottom: 'var(--grid-gap-xs)' }}>최근에 읽은 책</div>
+                <div style={{ display: 'flex', gap: 'var(--grid-gap-sm)', flexWrap: 'wrap' }}>
+                  {recentRecords.map((record) => (
+                    <button
+                      key={record.id}
+                      type="button"
+                      onClick={() => handleRecentBookSelect(record)}
+                      style={{
+                        display: 'flex',
+                        gap: 8,
+                        alignItems: 'center',
+                        padding: 8,
+                        border: '1px solid var(--color-border-medium)',
+                        borderRadius: 'var(--radius-small)',
+                        backgroundColor: 'white',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        maxWidth: 200
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f5f5f5'
+                        e.currentTarget.style.borderColor = 'var(--color-primary)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'white'
+                        e.currentTarget.style.borderColor = 'var(--color-border-medium)'
+                      }}
+                    >
+                      {record.book_cover_url && (
+                        <img
+                          src={record.book_cover_url}
+                          alt={record.book_title || ''}
+                          style={{ width: 40, height: 56, objectFit: 'cover', borderRadius: 4 }}
+                        />
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {record.book_title || '제목 없음'}
+                        </div>
+                        <div style={{ fontSize: 'var(--font-size-xs)', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {record.book_author || '저자 없음'}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             {bookCoverUrl && (
               <img
                 src={bookCoverUrl}
@@ -245,21 +373,6 @@ export default function RecordPage() {
               }}
             />
           )}
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="book-total-pages">전체 페이지 수</label>
-            <input 
-              id="book-total-pages"
-              name="book-total-pages"
-              type="number"
-              min="1"
-              value={bookTotalPages} 
-              onChange={(e) => setBookTotalPages(e.target.value)} 
-              placeholder="예: 320" 
-            />
-            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              모르는 경우 비워두세요. 검색 결과에서 입력해도 됩니다.
-            </small>
-          </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
             <label htmlFor="book-title">책 제목</label>
             <input 
@@ -303,35 +416,49 @@ export default function RecordPage() {
             </small>
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="book-isbn">ISBN</label>
-            <input 
-              id="book-isbn"
-              name="book-isbn"
-              type="text"
-              value={bookIsbn} 
-              onChange={(e) => setBookIsbn(e.target.value)} 
-              placeholder="예: 9788936434267 또는 검색으로 입력" 
-            />
+            <label>별점</label>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    fontSize: 32,
+                    lineHeight: 1,
+                    color: rating && star <= rating ? '#FFD700' : '#ddd',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!rating) {
+                      e.currentTarget.style.color = '#FFD700'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!rating || star > rating) {
+                      e.currentTarget.style.color = '#ddd'
+                    }
+                  }}
+                >
+                  ★
+                </button>
+              ))}
+              {rating && (
+                <span style={{ marginLeft: 8, color: '#666', fontSize: 'var(--font-size-sm)' }}>
+                  {rating}점
+                </span>
+              )}
+            </div>
             <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              ISBN을 입력하거나 검색으로 선택하세요.
+              별을 클릭하여 점수를 선택하세요. (선택사항)
             </small>
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="book-publication-year">출판연도</label>
-            <input 
-              id="book-publication-year"
-              name="book-publication-year"
-              type="text"
-              value={bookPublicationYear} 
-              onChange={(e) => setBookPublicationYear(e.target.value)} 
-              placeholder="예: 2023 (YYYY 형식)" 
-            />
-            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              출판연도를 YYYY 형식으로 입력하세요.
-            </small>
-          </div>
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="content-text">감상(텍스트)</label>
+            <label htmlFor="content-text">책을 읽고 생각하거나 느낀 점</label>
             <textarea 
               id="content-text"
               name="content-text"
