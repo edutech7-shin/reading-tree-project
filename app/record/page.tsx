@@ -361,7 +361,7 @@ export default function RecordPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <label style={{ margin: 0 }}>책 선택</label>
               <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)', color: '#999' }}>
-                책장은 책장 페이지에서 추가할 수 있습니다. (책장 → ＋ 새 책 추가)
+                독서록을 쓰려면 책장에 먼저 추가하세요.
               </small>
             </div>
             <div style={{ display: 'flex', gap: 'var(--grid-gap-xs)', alignItems: 'center', flexWrap: 'wrap' }}>
