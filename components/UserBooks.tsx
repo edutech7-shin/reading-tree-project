@@ -163,13 +163,13 @@ export default function UserBooks() {
                     }}
                   >
                     {b.book_cover_url && (
-                      <img src={b.book_cover_url} alt={b.book_title ?? ''} style={{ width: 48, height: 68, objectFit: 'cover', borderRadius: 4 }} />
+                      <img src={b.book_cover_url} alt={b.book_title ?? ''} style={{ width: 96, height: 136, objectFit: 'cover', borderRadius: 4 }} />
                     )}
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600 }}>{b.book_title}</div>
                       <div style={{ fontSize: 12, color: '#666' }}>{b.book_author}</div>
                       <button className="btn" style={{ marginTop: 8, fontSize: 12 }} onClick={() => toggleStatus(b)}>
-                        완료로 이동
+                        다 읽음
                       </button>
                     </div>
                     <button
@@ -233,13 +233,13 @@ export default function UserBooks() {
                     }}
                   >
                     {b.book_cover_url && (
-                      <img src={b.book_cover_url} alt={b.book_title ?? ''} style={{ width: 48, height: 68, objectFit: 'cover', borderRadius: 4 }} />
+                      <img src={b.book_cover_url} alt={b.book_title ?? ''} style={{ width: 96, height: 136, objectFit: 'cover', borderRadius: 4 }} />
                     )}
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600 }}>{b.book_title}</div>
                       <div style={{ fontSize: 12, color: '#666' }}>{b.book_author}</div>
                       <button className="btn" style={{ marginTop: 8, fontSize: 12 }} onClick={() => toggleStatus(b)}>
-                        다시 읽는 중
+                        읽는 중
                       </button>
                     </div>
                     <button

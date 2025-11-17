@@ -481,33 +481,35 @@ export default function RecordPage() {
               }}
             />
           )}
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="book-title">책 제목</label>
-            <input 
-              id="book-title"
-              name="book-title"
-              type="text"
-              value={bookTitle} 
-              onChange={(e) => setBookTitle(e.target.value)} 
-              placeholder="예: 해리포터 또는 검색으로 입력" 
-            />
-            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              책 제목을 입력하거나 검색으로 선택하세요.
-            </small>
-          </div>
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="book-author">저자</label>
-            <input 
-              id="book-author"
-              name="book-author"
-              type="text"
-              value={bookAuthor} 
-              onChange={(e) => setBookAuthor(e.target.value)} 
-              placeholder="예: J.K. 롤링 또는 검색으로 입력" 
-            />
-            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              저자명을 입력하거나 검색으로 선택하세요.
-            </small>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--grid-gap-md)' }}>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+              <label htmlFor="book-title">책 제목</label>
+              <input 
+                id="book-title"
+                name="book-title"
+                type="text"
+                value={bookTitle} 
+                onChange={(e) => setBookTitle(e.target.value)} 
+                placeholder="예: 해리포터 또는 검색으로 입력" 
+              />
+              <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
+                책 제목을 입력하거나 검색으로 선택하세요.
+              </small>
+            </div>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+              <label htmlFor="book-author">저자</label>
+              <input 
+                id="book-author"
+                name="book-author"
+                type="text"
+                value={bookAuthor} 
+                onChange={(e) => setBookAuthor(e.target.value)} 
+                placeholder="예: J.K. 롤링 또는 검색으로 입력" 
+              />
+              <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
+                저자명을 입력하거나 검색으로 선택하세요.
+              </small>
+            </div>
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
             <label htmlFor="book-publisher">출판사</label>
