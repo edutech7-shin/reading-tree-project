@@ -77,7 +77,11 @@ export default function RecordPage() {
     async function loadRecentRecords() {
       const supabase = getSupabaseClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) {
+        console.log('[Record] No user, skipping recent records load')
+        return
+      }
+      console.log('[Record] Loading recent records for user:', user.id)
       const { data, error } = await supabase
         .from('book_records')
         .select('id, book_title, book_author, book_cover_url, book_publisher, book_isbn, book_publication_date, book_total_pages')
@@ -88,6 +92,7 @@ export default function RecordPage() {
         console.error('[Record] recent records load error:', error)
         return
       }
+      console.log('[Record] Recent records loaded:', data?.length || 0, 'records')
       const mapped = (data || []).map((r: any) => ({
         id: r.id,
         book_title: r.book_title,
@@ -131,6 +136,19 @@ export default function RecordPage() {
     setBookPublicationYear(record.book_publication_year || '')
     setBookTotalPages(record.book_total_pages?.toString() || '')
     setRating(null)
+  }
+
+  function handleClearBook() {
+    setBookTitle('')
+    setBookAuthor('')
+    setBookCoverUrl(null)
+    setBookPublisher('')
+    setBookIsbn('')
+    setBookPublicationYear('')
+    setBookTotalPages('')
+    setRating(null)
+    setContentText('')
+    setImageFile(null)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -345,18 +363,63 @@ export default function RecordPage() {
               </div>
             )}
             {bookCoverUrl && (
-              <img
-                src={bookCoverUrl}
-                alt={bookTitle}
-                style={{ 
-                  width: 100, 
-                  height: 140, 
-                  objectFit: 'cover', 
-                  borderRadius: 'var(--radius-small)', 
-                  marginTop: 'var(--grid-gap-xs)',
-                  boxShadow: 'var(--shadow-card)'
+              <div
+                style={{
+                  position: 'relative',
+                  display: 'inline-block',
+                  marginTop: 'var(--grid-gap-xs)'
                 }}
-              />
+                onMouseEnter={(e) => {
+                  const btn = e.currentTarget.querySelector('button') as HTMLButtonElement
+                  if (btn) btn.style.opacity = '1'
+                }}
+                onMouseLeave={(e) => {
+                  const btn = e.currentTarget.querySelector('button') as HTMLButtonElement
+                  if (btn) btn.style.opacity = '0'
+                }}
+              >
+                <img
+                  src={bookCoverUrl}
+                  alt={bookTitle}
+                  style={{ 
+                    width: 100, 
+                    height: 140, 
+                    objectFit: 'cover', 
+                    borderRadius: 'var(--radius-small)', 
+                    boxShadow: 'var(--shadow-card)',
+                    display: 'block'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleClearBook()
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    right: 4,
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    color: 'white',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 16,
+                    opacity: 0,
+                    transition: 'opacity 0.2s',
+                    zIndex: 10
+                  }}
+                  title="선택 해제"
+                >
+                  ×
+                </button>
+              </div>
             )}
             <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
               책장은 책장 페이지에서 추가할 수 있습니다. (책장 → ＋ 새 책 추가)
