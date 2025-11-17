@@ -490,11 +490,8 @@ export default function RecordPage() {
                 type="text"
                 value={bookTitle} 
                 onChange={(e) => setBookTitle(e.target.value)} 
-                placeholder="예: 해리포터 또는 검색으로 입력" 
+                placeholder="책 제목을 입력하거나 검색으로 선택하세요" 
               />
-              <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-                책 제목을 입력하거나 검색으로 선택하세요.
-              </small>
             </div>
             <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
               <label htmlFor="book-author">저자</label>
@@ -504,68 +501,61 @@ export default function RecordPage() {
                 type="text"
                 value={bookAuthor} 
                 onChange={(e) => setBookAuthor(e.target.value)} 
-                placeholder="예: J.K. 롤링 또는 검색으로 입력" 
+                placeholder="저자명을 입력하거나 검색으로 선택하세요" 
               />
-              <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-                저자명을 입력하거나 검색으로 선택하세요.
-              </small>
             </div>
           </div>
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="book-publisher">출판사</label>
-            <input 
-              id="book-publisher"
-              name="book-publisher"
-              type="text"
-              value={bookPublisher} 
-              onChange={(e) => setBookPublisher(e.target.value)} 
-              placeholder="예: 문학수첩 또는 검색으로 입력" 
-            />
-            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              출판사명을 입력하거나 검색으로 선택하세요.
-            </small>
-          </div>
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label>별점</label>
-            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setRating(star)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: 0,
-                    fontSize: 32,
-                    lineHeight: 1,
-                    color: rating && star <= rating ? '#FFD700' : '#ddd',
-                    transition: 'color 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!rating) {
-                      e.currentTarget.style.color = '#FFD700'
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!rating || star > rating) {
-                      e.currentTarget.style.color = '#ddd'
-                    }
-                  }}
-                >
-                  ★
-                </button>
-              ))}
-              {rating && (
-                <span style={{ marginLeft: 8, color: '#666', fontSize: 'var(--font-size-sm)' }}>
-                  {rating}점
-                </span>
-              )}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--grid-gap-md)' }}>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+              <label htmlFor="book-publisher">출판사</label>
+              <input 
+                id="book-publisher"
+                name="book-publisher"
+                type="text"
+                value={bookPublisher} 
+                onChange={(e) => setBookPublisher(e.target.value)} 
+                placeholder="출판사명을 입력하거나 검색으로 선택하세요" 
+              />
             </div>
-            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              별을 클릭하여 점수를 선택하세요. (선택사항)
-            </small>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+              <label>별점</label>
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                      fontSize: 32,
+                      lineHeight: 1,
+                      color: rating && star <= rating ? '#FFD700' : '#ddd',
+                      transition: 'color 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!rating) {
+                        e.currentTarget.style.color = '#FFD700'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!rating || star > rating) {
+                        e.currentTarget.style.color = '#ddd'
+                      }
+                    }}
+                  >
+                    ★
+                  </button>
+                ))}
+                {rating && (
+                  <span style={{ marginLeft: 8, color: '#666', fontSize: 'var(--font-size-sm)' }}>
+                    {rating}점
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
             <label htmlFor="content-text">책을 읽고 생각하거나 느낀 점</label>
@@ -575,7 +565,7 @@ export default function RecordPage() {
               value={contentText} 
               onChange={(e) => setContentText(e.target.value)} 
               rows={6} 
-              placeholder="느낀 점을 적어보세요" 
+              placeholder="책을 읽고 생각하거나 느낀 점을 적어보세요" 
             />
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
@@ -609,10 +599,8 @@ export default function RecordPage() {
                 
                 setImageFile(file)
               }} 
+              title="이미지 파일만 업로드 가능하며, 최대 5MB까지 업로드할 수 있습니다"
             />
-            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              이미지 파일만 업로드 가능하며, 최대 5MB까지 업로드할 수 있습니다.
-            </small>
             {fileError && (
               <small className="text-negative" style={{ fontSize: 'var(--font-size-xs)' }}>
                 {fileError}
