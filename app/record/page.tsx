@@ -427,7 +427,7 @@ export default function RecordPage() {
                   style={{
                     position: 'absolute',
                     top: 4,
-                    right: 4,
+                    left: 4,
                     width: 28,
                     height: 28,
                     borderRadius: '50%',
