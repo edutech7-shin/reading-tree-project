@@ -6,6 +6,16 @@ import { getSupabaseClient } from '../../lib/supabase/client'
 import BookPicker from '../../components/BookPicker'
 
 export default function RecordPage() {
+  // 오늘 날짜를 YYYY-MM-DD 형식으로 가져오기 (한국 표준시)
+  const getTodayDate = () => {
+    const now = new Date()
+    const koreaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    const year = koreaTime.getFullYear()
+    const month = String(koreaTime.getMonth() + 1).padStart(2, '0')
+    const day = String(koreaTime.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const [bookTitle, setBookTitle] = useState('')
   const [bookAuthor, setBookAuthor] = useState('')
   const [bookCoverUrl, setBookCoverUrl] = useState<string | null>(null)
@@ -13,6 +23,8 @@ export default function RecordPage() {
   const [bookIsbn, setBookIsbn] = useState('')
   const [bookPublicationYear, setBookPublicationYear] = useState('')
   const [bookTotalPages, setBookTotalPages] = useState('')
+  const [recordDate, setRecordDate] = useState<string>(getTodayDate())
+  const [shortComment, setShortComment] = useState('')
   const [contentText, setContentText] = useState('')
   const [rating, setRating] = useState<number | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -212,6 +224,8 @@ export default function RecordPage() {
     setBookIsbn('')
     setBookPublicationYear('')
     setBookTotalPages('')
+    setRecordDate(getTodayDate())
+    setShortComment('')
     setRating(null)
     setContentText('')
     setImageFile(null)
@@ -311,6 +325,9 @@ export default function RecordPage() {
   // 전체 페이지 수 숫자 변환
   const totalPagesValue = bookTotalPages ? parseInt(bookTotalPages, 10) : null
 
+    // 작성 날짜를 date 형식으로 변환
+    const recordDateValue = recordDate || getTodayDate()
+
     const { error: insertError } = await supabase.from('book_records').insert({
       user_id: user.id,
       book_title: bookTitle || null,
@@ -320,6 +337,8 @@ export default function RecordPage() {
       book_isbn: bookIsbn || null,
       book_publication_date: publicationDateValue,
       book_total_pages: totalPagesValue,
+      record_date: recordDateValue,
+      short_comment: shortComment || null,
       content_text: contentText || null,
       content_image_url: contentImageUrl,
       rating: rating || null,
@@ -336,6 +355,8 @@ export default function RecordPage() {
       setBookIsbn('')
       setBookPublicationYear('')
       setBookTotalPages('')
+      setRecordDate(getTodayDate())
+      setShortComment('')
       setContentText('')
       setRating(null)
       setImageFile(null)
@@ -526,7 +547,21 @@ export default function RecordPage() {
               />
             </div>
             <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-              <label>별점</label>
+              <label htmlFor="record-date">작성 날짜</label>
+              <input 
+                id="record-date"
+                name="record-date"
+                type="date"
+                value={recordDate} 
+                onChange={(e) => setRecordDate(e.target.value)} 
+              />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--grid-gap-md)' }}>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+              <label>
+                별점 <span style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'normal' }}>[물방울+1]</span>
+              </label>
               <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -564,9 +599,24 @@ export default function RecordPage() {
                 )}
               </div>
             </div>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+              <label htmlFor="short-comment">
+                한 줄 소감 <span style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'normal' }}>[물방울+2]</span>
+              </label>
+              <input 
+                id="short-comment"
+                name="short-comment"
+                type="text"
+                value={shortComment} 
+                onChange={(e) => setShortComment(e.target.value)} 
+                placeholder="한 줄로 간단히 소감을 적어보세요"
+              />
+            </div>
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="content-text">책을 읽고 생각하거나 느낀 점</label>
+            <label htmlFor="content-text">
+              책을 읽고 생각하거나 느낀 점 <span style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'normal' }}>[물방울+5]</span>
+            </label>
             <textarea 
               id="content-text"
               name="content-text"
@@ -577,7 +627,9 @@ export default function RecordPage() {
             />
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="image-file">사진 첨부(선택)</label>
+            <label htmlFor="image-file">
+              파일첨부(그림, 마인드맵 등) <span style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'normal' }}>[물방울+2]</span>
+            </label>
             <input 
               id="image-file"
               name="image-file"
