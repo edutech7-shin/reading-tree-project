@@ -26,7 +26,6 @@ export default function BookPicker({ open, onClose, onSelect }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [items, setItems] = useState<UserBookItem[]>([])
-  const [query, setQuery] = useState('')
   const [sort, setSort] = useState<'recent' | 'oldest' | 'title'>('recent')
 
   useEffect(() => {
@@ -65,16 +64,7 @@ export default function BookPicker({ open, onClose, onSelect }: Props) {
   }, [open])
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    let arr = items.filter(b => {
-      if (!q) return true
-      return (
-        (b.title || '').toLowerCase().includes(q) ||
-        (b.author || '').toLowerCase().includes(q) ||
-        (b.publisher || '').toLowerCase().includes(q) ||
-        (b.isbn || '').toLowerCase().includes(q)
-      )
-    })
+    let arr = [...items]
     if (sort === 'recent') {
       arr = arr.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
     } else if (sort === 'oldest') {
@@ -83,7 +73,7 @@ export default function BookPicker({ open, onClose, onSelect }: Props) {
       arr = arr.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'ko'))
     }
     return arr
-  }, [items, query, sort])
+  }, [items, sort])
 
   if (!open) return null
 
@@ -113,21 +103,7 @@ export default function BookPicker({ open, onClose, onSelect }: Props) {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="책장 내에서 검색 (제목/저자/출판사/ISBN)"
-            style={{
-              flex: 1,
-              padding: 'var(--grid-gap-sm) var(--grid-gap-md)',
-              border: '1px solid var(--color-border-medium)',
-              borderRadius: 'var(--radius-small)',
-              fontSize: 'var(--font-size-md)',
-              fontFamily: 'inherit'
-            }}
-          />
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, justifyContent: 'flex-end' }}>
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as any)}
