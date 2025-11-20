@@ -410,63 +410,113 @@ export default function RecordPage() {
                 {bookTitle}{bookAuthor ? ` · 지은이: ${bookAuthor}` : ''}
               </div>
             )}
-            {bookCoverUrl && (
-              <div
-                style={{
-                  position: 'relative',
-                  display: 'inline-block',
-                  marginTop: 'var(--grid-gap-xs)'
-                }}
-                onMouseEnter={(e) => {
-                  const btn = e.currentTarget.querySelector('button') as HTMLButtonElement
-                  if (btn) btn.style.opacity = '1'
-                }}
-                onMouseLeave={(e) => {
-                  const btn = e.currentTarget.querySelector('button') as HTMLButtonElement
-                  if (btn) btn.style.opacity = '0'
-                }}
-              >
-                <img
-                  src={bookCoverUrl}
-                  alt={bookTitle}
-                  style={{ 
-                    width: 100, 
-                    height: 140, 
-                    objectFit: 'cover', 
-                    borderRadius: 'var(--radius-small)', 
-                    boxShadow: 'var(--shadow-card)',
-                    display: 'block'
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleClearBook()
-                  }}
-                  style={{
-                    position: 'absolute',
-                    top: 4,
-                    left: 4,
-                    width: 28,
-                    height: 28,
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                    color: 'white',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 16,
-                    opacity: 0,
-                    transition: 'opacity 0.2s',
-                    zIndex: 10
-                  }}
-                  title="선택 해제"
-                >
-                  ×
-                </button>
+            {/* 선택한 책 표지와 정보 입력 필드 */}
+            {(bookCoverUrl || bookTitle) && (
+              <div style={{ 
+                display: 'flex', 
+                gap: 'var(--grid-gap-md)', 
+                marginTop: 'var(--grid-gap-md)',
+                alignItems: 'flex-start'
+              }}>
+                {/* 책 표지 */}
+                {bookCoverUrl && (
+                  <div
+                    style={{
+                      position: 'relative',
+                      display: 'inline-block',
+                      flexShrink: 0
+                    }}
+                    onMouseEnter={(e) => {
+                      const btn = e.currentTarget.querySelector('button') as HTMLButtonElement
+                      if (btn) btn.style.opacity = '1'
+                    }}
+                    onMouseLeave={(e) => {
+                      const btn = e.currentTarget.querySelector('button') as HTMLButtonElement
+                      if (btn) btn.style.opacity = '0'
+                    }}
+                  >
+                    <img
+                      src={bookCoverUrl}
+                      alt={bookTitle}
+                      style={{ 
+                        width: 100, 
+                        height: 140, 
+                        objectFit: 'cover', 
+                        borderRadius: 'var(--radius-small)', 
+                        boxShadow: 'var(--shadow-card)',
+                        display: 'block'
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleClearBook()
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: 4,
+                        left: 4,
+                        width: 28,
+                        height: 28,
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        color: 'white',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 16,
+                        opacity: 0,
+                        transition: 'opacity 0.2s',
+                        zIndex: 10
+                      }}
+                      title="선택 해제"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+                {/* 책 정보 입력 필드 (표지 오른쪽) */}
+                <div style={{ flex: 1, display: 'grid', gap: 'var(--grid-gap-md)' }}>
+                  <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+                    <label htmlFor="book-title" style={{ color: '#dc3545', fontWeight: 'var(--font-weight-bold)' }}>책 제목</label>
+                    <input 
+                      id="book-title"
+                      name="book-title"
+                      type="text"
+                      value={bookTitle} 
+                      onChange={(e) => setBookTitle(e.target.value)} 
+                      placeholder="책 제목을 입력하세요"
+                      style={{ borderColor: '#007bff', borderWidth: '2px' }}
+                    />
+                  </div>
+                  <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+                    <label htmlFor="book-author" style={{ color: '#dc3545', fontWeight: 'var(--font-weight-bold)' }}>저자</label>
+                    <input 
+                      id="book-author"
+                      name="book-author"
+                      type="text"
+                      value={bookAuthor} 
+                      onChange={(e) => setBookAuthor(e.target.value)} 
+                      placeholder="저자명을 입력하세요"
+                      style={{ borderColor: '#007bff', borderWidth: '2px' }}
+                    />
+                  </div>
+                  <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+                    <label htmlFor="book-publisher" style={{ color: '#dc3545', fontWeight: 'var(--font-weight-bold)' }}>출판사</label>
+                    <input 
+                      id="book-publisher"
+                      name="book-publisher"
+                      type="text"
+                      value={bookPublisher} 
+                      onChange={(e) => setBookPublisher(e.target.value)} 
+                      placeholder="출판사명을 입력하세요"
+                      style={{ borderColor: '#007bff', borderWidth: '2px' }}
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -557,65 +607,6 @@ export default function RecordPage() {
               }}
             />
           )}
-          
-          {/* 책 정보 입력 필드 */}
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-md)', marginTop: 'var(--grid-gap-md)' }}>
-            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-              <label htmlFor="book-title">책 제목</label>
-              <input 
-                id="book-title"
-                name="book-title"
-                type="text"
-                value={bookTitle} 
-                onChange={(e) => setBookTitle(e.target.value)} 
-                placeholder="책 제목을 입력하세요" 
-              />
-            </div>
-            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-              <label htmlFor="book-author">저자</label>
-              <input 
-                id="book-author"
-                name="book-author"
-                type="text"
-                value={bookAuthor} 
-                onChange={(e) => setBookAuthor(e.target.value)} 
-                placeholder="저자명을 입력하세요" 
-              />
-            </div>
-            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-              <label htmlFor="book-title">책 제목</label>
-              <input 
-                id="book-title"
-                name="book-title"
-                type="text"
-                value={bookTitle} 
-                onChange={(e) => setBookTitle(e.target.value)} 
-                placeholder="책 제목을 입력하세요" 
-              />
-            </div>
-            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-              <label htmlFor="book-author">저자</label>
-              <input 
-                id="book-author"
-                name="book-author"
-                type="text"
-                value={bookAuthor} 
-                onChange={(e) => setBookAuthor(e.target.value)} 
-                placeholder="저자명을 입력하세요" 
-              />
-            </div>
-            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-              <label htmlFor="book-publisher">출판사</label>
-              <input 
-                id="book-publisher"
-                name="book-publisher"
-                type="text"
-                value={bookPublisher} 
-                onChange={(e) => setBookPublisher(e.target.value)} 
-                placeholder="출판사명을 입력하세요"
-              />
-            </div>
-          </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--grid-gap-md)' }}>
             <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
