@@ -28,38 +28,60 @@ export default function RecordPage() {
     publicationYear?: string | null
     totalPages?: number | null
   }>>([])
+  const [recentRecords, setRecentRecords] = useState<Array<{
+    id: number
+    book_title: string | null
+    book_author: string | null
+    book_cover_url: string | null
+    created_at: string
+  }>>([])
   const [selectedBookId, setSelectedBookId] = useState<number | ''>('')
   const [pickerOpen, setPickerOpen] = useState(false)
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
   useEffect(() => {
-    async function loadUserBooks() {
+    async function loadData() {
       const supabase = getSupabaseClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data, error } = await supabase
+      
+      // 책장 목록 로드
+      const { data: booksData, error: booksError } = await supabase
         .from('user_books')
         .select('id, book_title, book_author, book_cover_url, book_publisher, book_isbn, book_publication_year, book_total_pages')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-      if (error) {
-        console.error('[Record] user_books load error:', error)
-        return
+      if (booksError) {
+        console.error('[Record] user_books load error:', booksError)
+      } else {
+        const mapped = (booksData || []).map((b) => ({
+          id: b.id as number,
+          title: (b as any).book_title || '',
+          author: (b as any).book_author || '',
+          coverUrl: (b as any).book_cover_url || null,
+          isbn: (b as any).book_isbn || null,
+          publisher: (b as any).book_publisher || null,
+          publicationYear: (b as any).book_publication_year || null,
+          totalPages: (b as any).book_total_pages ?? null,
+        }))
+        setUserBooks(mapped)
       }
-      const mapped = (data || []).map((b) => ({
-        id: b.id as number,
-        title: (b as any).book_title || '',
-        author: (b as any).book_author || '',
-        coverUrl: (b as any).book_cover_url || null,
-        isbn: (b as any).book_isbn || null,
-        publisher: (b as any).book_publisher || null,
-        publicationYear: (b as any).book_publication_year || null,
-        totalPages: (b as any).book_total_pages ?? null,
-      }))
-      setUserBooks(mapped)
+      
+      // 최근 독서 기록 로드
+      const { data: recordsData, error: recordsError } = await supabase
+        .from('book_records')
+        .select('id, book_title, book_author, book_cover_url, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10)
+      if (recordsError) {
+        console.error('[Record] recent records load error:', recordsError)
+      } else {
+        setRecentRecords((recordsData || []) as any)
+      }
     }
-    loadUserBooks()
+    loadData()
   }, [])
 
   function handleBookSelect(book: { 
@@ -211,29 +233,102 @@ export default function RecordPage() {
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 'var(--grid-gap-md)' }}>
           {/* 책 선택: 내 책장에서만 선택 가능 - 모달 열기 */}
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label>책 선택</label>
-            <div style={{ display: 'flex', gap: 'var(--grid-gap-xs)', alignItems: 'center' }}>
-              <button type="button" className="btn primary" onClick={() => setPickerOpen(true)}>책장에서 선택</button>
-              {bookTitle && <span style={{ color: '#666' }}>{bookTitle}{bookAuthor ? ` · ${bookAuthor}` : ''}</span>}
+            <div>
+              <label style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', marginBottom: 'var(--grid-gap-xs)', display: 'block' }}>책 선택</label>
+              <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)', display: 'block', marginBottom: 'var(--grid-gap-sm)' }}>
+                독서록을 쓰려면 책장에 먼저 추가하세요.
+              </small>
             </div>
-            {bookCoverUrl && (
-              <img
-                src={bookCoverUrl}
-                alt={bookTitle}
-                style={{ 
-                  width: 100, 
-                  height: 140, 
-                  objectFit: 'cover', 
-                  borderRadius: 'var(--radius-small)', 
-                  marginTop: 'var(--grid-gap-xs)',
-                  boxShadow: 'var(--shadow-card)'
-                }}
-              />
+            <button type="button" className="btn primary" onClick={() => setPickerOpen(true)} style={{ width: '100%', padding: 'var(--grid-gap-md)' }}>
+              책장에서 선택
+            </button>
+            {bookTitle && (
+              <div style={{ marginTop: 'var(--grid-gap-xs)', color: '#666', fontSize: 'var(--font-size-sm)' }}>
+                {bookTitle}{bookAuthor ? ` · 지은이: ${bookAuthor}` : ''}
+              </div>
             )}
-            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              책장은 책장 페이지에서 추가할 수 있습니다. (책장 → ＋ 새 책 추가)
-            </small>
           </div>
+          
+          {/* 최근에 읽은 책 */}
+          {recentRecords.length > 0 && (
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+              <label style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)' }}>최근에 읽은 책</label>
+              <div style={{ 
+                display: 'flex', 
+                gap: 'var(--grid-gap-md)', 
+                overflowX: 'auto', 
+                paddingBottom: 'var(--grid-gap-xs)',
+                scrollbarWidth: 'thin'
+              }}>
+                {recentRecords.map((record) => (
+                  <div
+                    key={record.id}
+                    onClick={() => {
+                      setBookTitle(record.book_title || '')
+                      setBookAuthor(record.book_author || '')
+                      setBookCoverUrl(record.book_cover_url)
+                      // 출판사, ISBN 등은 최근 기록에 없으므로 비워둠
+                    }}
+                    style={{
+                      minWidth: 120,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 'var(--grid-gap-xs)',
+                      padding: 'var(--grid-gap-xs)',
+                      borderRadius: 'var(--radius-small)',
+                      border: '1px solid var(--color-border-medium)',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--color-background-secondary)'
+                      e.currentTarget.style.borderColor = 'var(--color-border-strong)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                      e.currentTarget.style.borderColor = 'var(--color-border-medium)'
+                    }}
+                  >
+                    {record.book_cover_url ? (
+                      <img
+                        src={record.book_cover_url}
+                        alt={record.book_title || ''}
+                        style={{
+                          width: '100%',
+                          aspectRatio: '3/4',
+                          objectFit: 'cover',
+                          borderRadius: 'var(--radius-small)'
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '100%',
+                        aspectRatio: '3/4',
+                        backgroundColor: 'var(--color-background-secondary)',
+                        borderRadius: 'var(--radius-small)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--color-text-tertiary)',
+                        fontSize: 'var(--font-size-xs)'
+                      }}>
+                        표지 없음
+                      </div>
+                    )}
+                    <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)' }}>
+                      {record.book_title || '(제목 없음)'}
+                    </div>
+                    {record.book_author && (
+                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                        지은이: {record.book_author}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
           {pickerOpen && (
             <BookPicker
               open={pickerOpen}
@@ -245,6 +340,44 @@ export default function RecordPage() {
               }}
             />
           )}
+          
+          {/* 책 정보 입력 필드 */}
+          <div style={{ display: 'grid', gap: 'var(--grid-gap-md)', marginTop: 'var(--grid-gap-md)' }}>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+              <label htmlFor="book-title">책 제목</label>
+              <input 
+                id="book-title"
+                name="book-title"
+                type="text"
+                value={bookTitle} 
+                onChange={(e) => setBookTitle(e.target.value)} 
+                placeholder="책 제목을 입력하세요" 
+              />
+            </div>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+              <label htmlFor="book-author">저자</label>
+              <input 
+                id="book-author"
+                name="book-author"
+                type="text"
+                value={bookAuthor} 
+                onChange={(e) => setBookAuthor(e.target.value)} 
+                placeholder="저자명을 입력하세요" 
+              />
+            </div>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+              <label htmlFor="book-publisher">출판사</label>
+              <input 
+                id="book-publisher"
+                name="book-publisher"
+                type="text"
+                value={bookPublisher} 
+                onChange={(e) => setBookPublisher(e.target.value)} 
+                placeholder="출판사명을 입력하세요" 
+              />
+            </div>
+          </div>
+          
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
             <label htmlFor="book-total-pages">전체 페이지 수</label>
             <input 
@@ -258,48 +391,6 @@ export default function RecordPage() {
             />
             <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
               모르는 경우 비워두세요. 검색 결과에서 입력해도 됩니다.
-            </small>
-          </div>
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="book-title">책 제목</label>
-            <input 
-              id="book-title"
-              name="book-title"
-              type="text"
-              value={bookTitle} 
-              onChange={(e) => setBookTitle(e.target.value)} 
-              placeholder="예: 해리포터 또는 검색으로 입력" 
-            />
-            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              책 제목을 입력하거나 검색으로 선택하세요.
-            </small>
-          </div>
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="book-author">저자</label>
-            <input 
-              id="book-author"
-              name="book-author"
-              type="text"
-              value={bookAuthor} 
-              onChange={(e) => setBookAuthor(e.target.value)} 
-              placeholder="예: J.K. 롤링 또는 검색으로 입력" 
-            />
-            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              저자명을 입력하거나 검색으로 선택하세요.
-            </small>
-          </div>
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="book-publisher">출판사</label>
-            <input 
-              id="book-publisher"
-              name="book-publisher"
-              type="text"
-              value={bookPublisher} 
-              onChange={(e) => setBookPublisher(e.target.value)} 
-              placeholder="예: 문학수첩 또는 검색으로 입력" 
-            />
-            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              출판사명을 입력하거나 검색으로 선택하세요.
             </small>
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
