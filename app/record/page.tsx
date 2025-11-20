@@ -180,8 +180,8 @@ export default function RecordPage() {
       return dateB - dateA
     })
     
-    // 최근 3개만 선택
-    const finalData = unsubmittedBooks.slice(0, 3)
+    // 최근 5개만 선택
+    const finalData = unsubmittedBooks.slice(0, 5)
     
     const mapped = finalData.map((r: any) => ({
       id: r.id,
@@ -552,8 +552,8 @@ export default function RecordPage() {
               )}
               {/* 책 정보 입력 필드 (표지 오른쪽) */}
               <div style={{ flex: 1, display: 'grid', gap: 'var(--grid-gap-md)' }}>
-                <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-                  <label htmlFor="book-title" style={{ color: '#dc3545', fontWeight: 'var(--font-weight-bold)' }}>책 제목</label>
+                <div style={{ display: 'flex', gap: 'var(--grid-gap-sm)', alignItems: 'center' }}>
+                  <label htmlFor="book-title" style={{ minWidth: 80, fontWeight: 'var(--font-weight-bold)' }}>책 제목</label>
                   <input 
                     id="book-title"
                     name="book-title"
@@ -561,11 +561,11 @@ export default function RecordPage() {
                     value={bookTitle} 
                     onChange={(e) => setBookTitle(e.target.value)} 
                     placeholder="책 제목을 입력하세요"
-                    style={{ borderColor: '#007bff', borderWidth: '2px' }}
+                    style={{ flex: 1 }}
                   />
                 </div>
-                <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-                  <label htmlFor="book-author" style={{ color: '#dc3545', fontWeight: 'var(--font-weight-bold)' }}>저자</label>
+                <div style={{ display: 'flex', gap: 'var(--grid-gap-sm)', alignItems: 'center' }}>
+                  <label htmlFor="book-author" style={{ minWidth: 80, fontWeight: 'var(--font-weight-bold)' }}>저자</label>
                   <input 
                     id="book-author"
                     name="book-author"
@@ -573,11 +573,11 @@ export default function RecordPage() {
                     value={bookAuthor} 
                     onChange={(e) => setBookAuthor(e.target.value)} 
                     placeholder="저자명을 입력하세요"
-                    style={{ borderColor: '#007bff', borderWidth: '2px' }}
+                    style={{ flex: 1 }}
                   />
                 </div>
-                <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-                  <label htmlFor="book-publisher" style={{ color: '#dc3545', fontWeight: 'var(--font-weight-bold)' }}>출판사</label>
+                <div style={{ display: 'flex', gap: 'var(--grid-gap-sm)', alignItems: 'center' }}>
+                  <label htmlFor="book-publisher" style={{ minWidth: 80, fontWeight: 'var(--font-weight-bold)' }}>출판사</label>
                   <input 
                     id="book-publisher"
                     name="book-publisher"
@@ -585,7 +585,7 @@ export default function RecordPage() {
                     value={bookPublisher} 
                     onChange={(e) => setBookPublisher(e.target.value)} 
                     placeholder="출판사명을 입력하세요"
-                    style={{ borderColor: '#007bff', borderWidth: '2px' }}
+                    style={{ flex: 1 }}
                   />
                 </div>
               </div>
