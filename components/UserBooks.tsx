@@ -99,6 +99,20 @@ export default function UserBooks() {
     await load()
   }
 
+  async function deleteBook(book: UserBook) {
+    if (!confirm(`"${book.book_title || '제목 없음'}" 책을 책장에서 삭제하시겠습니까?`)) {
+      return
+    }
+    const { error } = await supabase.from('user_books')
+      .delete()
+      .eq('id', book.id)
+    if (error) {
+      setError(error.message)
+      return
+    }
+    await load()
+  }
+
   return (
     <div className="card" style={{ marginTop: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -129,17 +143,63 @@ export default function UserBooks() {
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
                 {reading.map((b) => (
-                  <div key={b.id} style={{ border: '1px solid #eee', borderRadius: 8, padding: 12, display: 'flex', gap: 12 }}>
+                  <div 
+                    key={b.id} 
+                    style={{ 
+                      border: '1px solid #eee', 
+                      borderRadius: 8, 
+                      padding: 12, 
+                      display: 'flex', 
+                      gap: 12,
+                      position: 'relative'
+                    }}
+                    onMouseEnter={(e) => {
+                      const btn = e.currentTarget.querySelector('.delete-btn') as HTMLButtonElement
+                      if (btn) btn.style.opacity = '1'
+                    }}
+                    onMouseLeave={(e) => {
+                      const btn = e.currentTarget.querySelector('.delete-btn') as HTMLButtonElement
+                      if (btn) btn.style.opacity = '0'
+                    }}
+                  >
                     {b.book_cover_url && (
-                      <img src={b.book_cover_url} alt={b.book_title ?? ''} style={{ width: 48, height: 68, objectFit: 'cover', borderRadius: 4 }} />
+                      <img src={b.book_cover_url} alt={b.book_title ?? ''} style={{ width: 96, height: 136, objectFit: 'cover', borderRadius: 4 }} />
                     )}
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600 }}>{b.book_title}</div>
                       <div style={{ fontSize: 12, color: '#666' }}>{b.book_author}</div>
                       <button className="btn" style={{ marginTop: 8, fontSize: 12 }} onClick={() => toggleStatus(b)}>
-                        완료로 이동
+                        다 읽음
                       </button>
                     </div>
+                    <button
+                      className="delete-btn"
+                      type="button"
+                      onClick={() => deleteBook(b)}
+                      style={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        width: 24,
+                        height: 24,
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        color: 'white',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 14,
+                        opacity: 0,
+                        transition: 'opacity 0.2s',
+                        zIndex: 10,
+                        padding: 0
+                      }}
+                      title="삭제"
+                    >
+                      ×
+                    </button>
                   </div>
                 ))}
               </div>
@@ -153,17 +213,63 @@ export default function UserBooks() {
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
                 {finished.map((b) => (
-                  <div key={b.id} style={{ border: '1px solid #eee', borderRadius: 8, padding: 12, display: 'flex', gap: 12 }}>
+                  <div 
+                    key={b.id} 
+                    style={{ 
+                      border: '1px solid #eee', 
+                      borderRadius: 8, 
+                      padding: 12, 
+                      display: 'flex', 
+                      gap: 12,
+                      position: 'relative'
+                    }}
+                    onMouseEnter={(e) => {
+                      const btn = e.currentTarget.querySelector('.delete-btn') as HTMLButtonElement
+                      if (btn) btn.style.opacity = '1'
+                    }}
+                    onMouseLeave={(e) => {
+                      const btn = e.currentTarget.querySelector('.delete-btn') as HTMLButtonElement
+                      if (btn) btn.style.opacity = '0'
+                    }}
+                  >
                     {b.book_cover_url && (
-                      <img src={b.book_cover_url} alt={b.book_title ?? ''} style={{ width: 48, height: 68, objectFit: 'cover', borderRadius: 4 }} />
+                      <img src={b.book_cover_url} alt={b.book_title ?? ''} style={{ width: 96, height: 136, objectFit: 'cover', borderRadius: 4 }} />
                     )}
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600 }}>{b.book_title}</div>
                       <div style={{ fontSize: 12, color: '#666' }}>{b.book_author}</div>
                       <button className="btn" style={{ marginTop: 8, fontSize: 12 }} onClick={() => toggleStatus(b)}>
-                        다시 읽는 중
+                        읽는 중
                       </button>
                     </div>
+                    <button
+                      className="delete-btn"
+                      type="button"
+                      onClick={() => deleteBook(b)}
+                      style={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        width: 24,
+                        height: 24,
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        color: 'white',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 14,
+                        opacity: 0,
+                        transition: 'opacity 0.2s',
+                        zIndex: 10,
+                        padding: 0
+                      }}
+                      title="삭제"
+                    >
+                      ×
+                    </button>
                   </div>
                 ))}
               </div>

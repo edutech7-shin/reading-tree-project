@@ -11,9 +11,22 @@ export default function EditRecordPage() {
   const router = useRouter()
   const recordId = params?.id ? parseInt(String(params.id)) : null
 
+  // 오늘 날짜를 YYYY-MM-DD 형식으로 가져오기 (한국 표준시)
+  const getTodayDate = () => {
+    const now = new Date()
+    const koreaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    const year = koreaTime.getFullYear()
+    const month = String(koreaTime.getMonth() + 1).padStart(2, '0')
+    const day = String(koreaTime.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const [bookTitle, setBookTitle] = useState('')
   const [bookAuthor, setBookAuthor] = useState('')
   const [bookCoverUrl, setBookCoverUrl] = useState<string | null>(null)
+  const [recordDate, setRecordDate] = useState<string>(getTodayDate())
+  const [shortComment, setShortComment] = useState('')
+  const [rating, setRating] = useState<number | null>(null)
   const [contentText, setContentText] = useState('')
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -67,6 +80,9 @@ export default function EditRecordPage() {
       setBookTitle(record.book_title || '')
       setBookAuthor(record.book_author || '')
       setBookCoverUrl(record.book_cover_url)
+      setRecordDate(record.record_date || getTodayDate())
+      setShortComment(record.short_comment || '')
+      setRating(record.rating || null)
       setContentText(record.content_text || '')
       setExistingImageUrl(record.content_image_url)
       
@@ -148,6 +164,9 @@ export default function EditRecordPage() {
       contentImageUrl = urlData.publicUrl
     }
 
+    // 작성 날짜를 date 형식으로 변환
+    const recordDateValue = recordDate || getTodayDate()
+
     // 기록 업데이트 (반려된 기록은 다시 pending으로 변경)
     const { error: updateError } = await supabase
       .from('book_records')
@@ -155,6 +174,9 @@ export default function EditRecordPage() {
         book_title: bookTitle || null,
         book_author: bookAuthor || null,
         book_cover_url: bookCoverUrl,
+        record_date: recordDateValue,
+        short_comment: shortComment || null,
+        rating: rating || null,
         content_text: contentText || null,
         content_image_url: contentImageUrl,
         status: 'pending', // 수정 시 다시 승인 대기 상태로 변경
@@ -230,19 +252,89 @@ export default function EditRecordPage() {
             placeholder="예: J.K. 롤링 또는 검색으로 입력" 
           />
         </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gap: 8 }}>
+            <label htmlFor="record-date">작성 날짜</label>
+            <input 
+              id="record-date"
+              name="record-date"
+              type="date"
+              value={recordDate} 
+              onChange={(e) => setRecordDate(e.target.value)} 
+            />
+          </div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            <label>
+              별점 <span style={{ fontSize: 12, color: '#666', fontWeight: 'normal' }}>[물방울+1]</span>
+            </label>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    fontSize: 32,
+                    lineHeight: 1,
+                    color: rating && star <= rating ? '#FFD700' : '#ddd',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!rating) {
+                      e.currentTarget.style.color = '#FFD700'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!rating || star > rating) {
+                      e.currentTarget.style.color = '#ddd'
+                    }
+                  }}
+                >
+                  ★
+                </button>
+              ))}
+              {rating && (
+                <span style={{ marginLeft: 8, color: '#666', fontSize: 14 }}>
+                  {rating}점
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
         <div style={{ display: 'grid', gap: 8 }}>
-          <label htmlFor="content-text">감상(텍스트)</label>
+          <label htmlFor="short-comment">
+            한 줄 소감 <span style={{ fontSize: 12, color: '#666', fontWeight: 'normal' }}>[물방울+2]</span>
+          </label>
+          <input 
+            id="short-comment"
+            name="short-comment"
+            type="text"
+            value={shortComment} 
+            onChange={(e) => setShortComment(e.target.value)} 
+            placeholder="한 줄로 간단히 소감을 적어보세요"
+          />
+        </div>
+        <div style={{ display: 'grid', gap: 8 }}>
+          <label htmlFor="content-text">
+            책을 읽고 생각하거나 느낀 점 <span style={{ fontSize: 12, color: '#666', fontWeight: 'normal' }}>[물방울+5]</span>
+          </label>
           <textarea 
             id="content-text"
             name="content-text"
             value={contentText} 
             onChange={(e) => setContentText(e.target.value)} 
             rows={6} 
-            placeholder="느낀 점을 적어보세요" 
+            placeholder="책을 읽고 생각하거나 느낀 점을 적어보세요" 
           />
         </div>
         <div style={{ display: 'grid', gap: 8 }}>
-          <label htmlFor="image-file">사진 첨부(선택)</label>
+          <label htmlFor="image-file">
+            파일첨부(그림, 마인드맵 등) <span style={{ fontSize: 12, color: '#666', fontWeight: 'normal' }}>[물방울+2]</span>
+          </label>
           {existingImageUrl && !imageFile && (
             <div style={{ marginBottom: 8 }}>
               <p style={{ fontSize: 14, marginBottom: 4 }}>현재 이미지:</p>

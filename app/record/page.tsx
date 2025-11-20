@@ -6,6 +6,16 @@ import { getSupabaseClient } from '../../lib/supabase/client'
 import BookPicker from '../../components/BookPicker'
 
 export default function RecordPage() {
+  // 오늘 날짜를 YYYY-MM-DD 형식으로 가져오기 (한국 표준시)
+  const getTodayDate = () => {
+    const now = new Date()
+    const koreaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    const year = koreaTime.getFullYear()
+    const month = String(koreaTime.getMonth() + 1).padStart(2, '0')
+    const day = String(koreaTime.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const [bookTitle, setBookTitle] = useState('')
   const [bookAuthor, setBookAuthor] = useState('')
   const [bookCoverUrl, setBookCoverUrl] = useState<string | null>(null)
@@ -13,7 +23,10 @@ export default function RecordPage() {
   const [bookIsbn, setBookIsbn] = useState('')
   const [bookPublicationYear, setBookPublicationYear] = useState('')
   const [bookTotalPages, setBookTotalPages] = useState('')
+  const [recordDate, setRecordDate] = useState<string>(getTodayDate())
+  const [shortComment, setShortComment] = useState('')
   const [contentText, setContentText] = useState('')
+  const [rating, setRating] = useState<number | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -33,6 +46,10 @@ export default function RecordPage() {
     book_title: string | null
     book_author: string | null
     book_cover_url: string | null
+    book_publisher: string | null
+    book_isbn: string | null
+    book_publication_year: string | null
+    book_total_pages: number | null
     created_at: string
   }>>([])
   const [selectedBookId, setSelectedBookId] = useState<number | ''>('')
@@ -84,6 +101,108 @@ export default function RecordPage() {
     loadData()
   }, [])
 
+  // 최근 기록 로드 함수 (컴포넌트 레벨로 이동하여 재사용 가능하게)
+  async function loadRecentRecords() {
+    const supabase = getSupabaseClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      console.log('[Record] No user, skipping recent records load')
+      return
+    }
+    console.log('[Record] Loading recent records for user:', user.id)
+    
+    // book_records에서 이미 제출한 책 목록 가져오기 (제외할 책들)
+    const { data: recordsData, error: recordsError } = await supabase
+      .from('book_records')
+      .select('id, book_title, book_author, book_isbn')
+      .eq('user_id', user.id)
+    
+    if (recordsError) {
+      console.error('[Record] book_records load error:', recordsError)
+    } else {
+      console.log('[Record] book_records loaded:', recordsData?.length || 0, 'records (already submitted)')
+    }
+    
+    // 이미 제출한 책들의 식별자 집합 생성 (ISBN 또는 제목+저자)
+    const submittedBooks = new Set<string>()
+    if (recordsData) {
+      recordsData.forEach((r: any) => {
+        if (r.book_isbn) {
+          submittedBooks.add(`isbn_${r.book_isbn}`)
+        } else {
+          const key = `title_${(r.book_title || '').trim()}_${(r.book_author || '').trim()}`
+          if (key !== 'title__') { // 빈 제목+저자가 아닌 경우만
+            submittedBooks.add(key)
+          }
+        }
+      })
+    }
+    console.log('[Record] Submitted books set size:', submittedBooks.size)
+    
+    // user_books에서 최근 책 가져오기 (더 많이 가져와서 필터링)
+    const { data: booksData, error: booksError } = await supabase
+      .from('user_books')
+      .select('id, book_title, book_author, book_cover_url, book_publisher, book_isbn, book_publication_year, book_total_pages, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20) // 충분히 가져와서 필터링 후 정렬
+    
+    if (booksError) {
+      console.error('[Record] user_books load error:', booksError)
+    } else {
+      console.log('[Record] user_books loaded:', booksData?.length || 0, 'books')
+    }
+    
+    // user_books에서 이미 제출한 책 제외
+    const unsubmittedBooks = (booksData || []).filter((book: any) => {
+      // ISBN으로 체크
+      if (book.book_isbn) {
+        if (submittedBooks.has(`isbn_${book.book_isbn}`)) {
+          console.log('[Record] Excluding book (ISBN match):', book.book_title)
+          return false
+        }
+      }
+      // ISBN이 없거나 매칭되지 않으면 제목+저자로 체크
+      const key = `title_${(book.book_title || '').trim()}_${(book.book_author || '').trim()}`
+      if (key !== 'title__' && submittedBooks.has(key)) {
+        console.log('[Record] Excluding book (title+author match):', book.book_title)
+        return false
+      }
+      return true
+    })
+    
+    console.log('[Record] Unsubmitted books after filtering:', unsubmittedBooks.length, 'books')
+    
+    // created_at 기준으로 정렬 (최신순)
+    unsubmittedBooks.sort((a: any, b: any) => {
+      const dateA = new Date(a.created_at).getTime()
+      const dateB = new Date(b.created_at).getTime()
+      return dateB - dateA
+    })
+    
+    // 최근 3개만 선택
+    const finalData = unsubmittedBooks.slice(0, 3)
+    
+    const mapped = finalData.map((r: any) => ({
+      id: r.id,
+      book_title: r.book_title,
+      book_author: r.book_author,
+      book_cover_url: r.book_cover_url,
+      book_publisher: r.book_publisher,
+      book_isbn: r.book_isbn,
+      book_publication_year: r.book_publication_year || null,
+      book_total_pages: r.book_total_pages,
+      created_at: r.created_at || new Date().toISOString(),
+    }))
+    
+    console.log('[Record] Final recent records:', mapped.length, 'items (unsubmitted books only)')
+    setRecentRecords(mapped)
+  }
+
+  useEffect(() => {
+    loadRecentRecords()
+  }, [])
+
   function handleBookSelect(book: { 
     title: string
     author: string
@@ -100,6 +219,33 @@ export default function RecordPage() {
     setBookIsbn(book.isbn || '')
     setBookPublicationYear(book.publicationYear || '')
     setBookTotalPages(book.totalPages?.toString() || '')
+    setRating(null)
+  }
+
+  function handleRecentBookSelect(record: typeof recentRecords[0]) {
+    setBookTitle(record.book_title || '')
+    setBookAuthor(record.book_author || '')
+    setBookCoverUrl(record.book_cover_url)
+    setBookPublisher(record.book_publisher || '')
+    setBookIsbn(record.book_isbn || '')
+    setBookPublicationYear(record.book_publication_year || '')
+    setBookTotalPages(record.book_total_pages?.toString() || '')
+    setRating(null)
+  }
+
+  function handleClearBook() {
+    setBookTitle('')
+    setBookAuthor('')
+    setBookCoverUrl(null)
+    setBookPublisher('')
+    setBookIsbn('')
+    setBookPublicationYear('')
+    setBookTotalPages('')
+    setRecordDate(getTodayDate())
+    setShortComment('')
+    setRating(null)
+    setContentText('')
+    setImageFile(null)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -196,6 +342,9 @@ export default function RecordPage() {
   // 전체 페이지 수 숫자 변환
   const totalPagesValue = bookTotalPages ? parseInt(bookTotalPages, 10) : null
 
+    // 작성 날짜를 date 형식으로 변환
+    const recordDateValue = recordDate || getTodayDate()
+
     const { error: insertError } = await supabase.from('book_records').insert({
       user_id: user.id,
       book_title: bookTitle || null,
@@ -204,9 +353,12 @@ export default function RecordPage() {
       book_publisher: bookPublisher || null,
       book_isbn: bookIsbn || null,
       book_publication_date: publicationDateValue,
-    book_total_pages: totalPagesValue,
+      book_total_pages: totalPagesValue,
+      record_date: recordDateValue,
+      short_comment: shortComment || null,
       content_text: contentText || null,
       content_image_url: contentImageUrl,
+      rating: rating || null,
       status: 'pending'
     })
 
@@ -220,14 +372,25 @@ export default function RecordPage() {
       setBookIsbn('')
       setBookPublicationYear('')
       setBookTotalPages('')
+      setRecordDate(getTodayDate())
+      setShortComment('')
       setContentText('')
+      setRating(null)
       setImageFile(null)
       setMessage('제출되었습니다. 승인 대기 중입니다!')
+      // 최근 기록 다시 로드 (loadRecentRecords 함수 재사용)
+      await loadRecentRecords()
     }
   }
 
   return (
     <main className="container" style={{ maxWidth: 720 }}>
+      <style dangerouslySetInnerHTML={{__html: `
+        input::placeholder,
+        textarea::placeholder {
+          font-size: 80% !important;
+        }
+      `}} />
       <div className="card" style={{ marginTop: 'var(--card-spacing)' }}>
         <h1>독서록</h1>
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 'var(--grid-gap-md)' }}>
@@ -247,6 +410,65 @@ export default function RecordPage() {
                 {bookTitle}{bookAuthor ? ` · 지은이: ${bookAuthor}` : ''}
               </div>
             )}
+            {bookCoverUrl && (
+              <div
+                style={{
+                  position: 'relative',
+                  display: 'inline-block',
+                  marginTop: 'var(--grid-gap-xs)'
+                }}
+                onMouseEnter={(e) => {
+                  const btn = e.currentTarget.querySelector('button') as HTMLButtonElement
+                  if (btn) btn.style.opacity = '1'
+                }}
+                onMouseLeave={(e) => {
+                  const btn = e.currentTarget.querySelector('button') as HTMLButtonElement
+                  if (btn) btn.style.opacity = '0'
+                }}
+              >
+                <img
+                  src={bookCoverUrl}
+                  alt={bookTitle}
+                  style={{ 
+                    width: 100, 
+                    height: 140, 
+                    objectFit: 'cover', 
+                    borderRadius: 'var(--radius-small)', 
+                    boxShadow: 'var(--shadow-card)',
+                    display: 'block'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleClearBook()
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    left: 4,
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    color: 'white',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 16,
+                    opacity: 0,
+                    transition: 'opacity 0.2s',
+                    zIndex: 10
+                  }}
+                  title="선택 해제"
+                >
+                  ×
+                </button>
+              </div>
+            )}
           </div>
           
           {/* 최근에 읽은 책 */}
@@ -263,12 +485,7 @@ export default function RecordPage() {
                 {recentRecords.map((record) => (
                   <div
                     key={record.id}
-                    onClick={() => {
-                      setBookTitle(record.book_title || '')
-                      setBookAuthor(record.book_author || '')
-                      setBookCoverUrl(record.book_cover_url)
-                      // 출판사, ISBN 등은 최근 기록에 없으므로 비워둠
-                    }}
+                    onClick={() => handleRecentBookSelect(record)}
                     style={{
                       minWidth: 120,
                       cursor: 'pointer',
@@ -366,6 +583,28 @@ export default function RecordPage() {
               />
             </div>
             <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+              <label htmlFor="book-title">책 제목</label>
+              <input 
+                id="book-title"
+                name="book-title"
+                type="text"
+                value={bookTitle} 
+                onChange={(e) => setBookTitle(e.target.value)} 
+                placeholder="책 제목을 입력하세요" 
+              />
+            </div>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+              <label htmlFor="book-author">저자</label>
+              <input 
+                id="book-author"
+                name="book-author"
+                type="text"
+                value={bookAuthor} 
+                onChange={(e) => setBookAuthor(e.target.value)} 
+                placeholder="저자명을 입력하세요" 
+              />
+            </div>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
               <label htmlFor="book-publisher">출판사</label>
               <input 
                 id="book-publisher"
@@ -373,67 +612,108 @@ export default function RecordPage() {
                 type="text"
                 value={bookPublisher} 
                 onChange={(e) => setBookPublisher(e.target.value)} 
-                placeholder="출판사명을 입력하세요" 
+                placeholder="출판사명을 입력하세요"
               />
             </div>
           </div>
           
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="book-total-pages">전체 페이지 수</label>
-            <input 
-              id="book-total-pages"
-              name="book-total-pages"
-              type="number"
-              min="1"
-              value={bookTotalPages} 
-              onChange={(e) => setBookTotalPages(e.target.value)} 
-              placeholder="예: 320" 
-            />
-            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              모르는 경우 비워두세요. 검색 결과에서 입력해도 됩니다.
-            </small>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--grid-gap-md)' }}>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+              <label htmlFor="record-date">작성 날짜</label>
+              <input 
+                id="record-date"
+                name="record-date"
+                type="date"
+                value={recordDate} 
+                onChange={(e) => setRecordDate(e.target.value)} 
+              />
+            </div>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+              <label htmlFor="book-total-pages">전체 페이지 수</label>
+              <input 
+                id="book-total-pages"
+                name="book-total-pages"
+                type="number"
+                min="1"
+                value={bookTotalPages} 
+                onChange={(e) => setBookTotalPages(e.target.value)} 
+                placeholder="예: 320" 
+              />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--grid-gap-md)' }}>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+              <label>
+                별점 <span style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'normal' }}>[물방울+1]</span>
+              </label>
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                      fontSize: 32,
+                      lineHeight: 1,
+                      color: rating && star <= rating ? '#FFD700' : '#ddd',
+                      transition: 'color 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!rating) {
+                        e.currentTarget.style.color = '#FFD700'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!rating || star > rating) {
+                        e.currentTarget.style.color = '#ddd'
+                      }
+                    }}
+                  >
+                    ★
+                  </button>
+                ))}
+                {rating && (
+                  <span style={{ marginLeft: 8, color: '#666', fontSize: 'var(--font-size-sm)' }}>
+                    {rating}점
+                  </span>
+                )}
+              </div>
+            </div>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+              <label htmlFor="short-comment">
+                한 줄 소감 <span style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'normal' }}>[물방울+2]</span>
+              </label>
+              <input 
+                id="short-comment"
+                name="short-comment"
+                type="text"
+                value={shortComment} 
+                onChange={(e) => setShortComment(e.target.value)} 
+                placeholder="한 줄로 간단히 소감을 적어보세요"
+              />
+            </div>
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="book-isbn">ISBN</label>
-            <input 
-              id="book-isbn"
-              name="book-isbn"
-              type="text"
-              value={bookIsbn} 
-              onChange={(e) => setBookIsbn(e.target.value)} 
-              placeholder="예: 9788936434267 또는 검색으로 입력" 
-            />
-            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              ISBN을 입력하거나 검색으로 선택하세요.
-            </small>
-          </div>
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="book-publication-year">출판연도</label>
-            <input 
-              id="book-publication-year"
-              name="book-publication-year"
-              type="text"
-              value={bookPublicationYear} 
-              onChange={(e) => setBookPublicationYear(e.target.value)} 
-              placeholder="예: 2023 (YYYY 형식)" 
-            />
-            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              출판연도를 YYYY 형식으로 입력하세요.
-            </small>
-          </div>
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="content-text">감상(텍스트)</label>
+            <label htmlFor="content-text">
+              책을 읽고 생각하거나 느낀 점 <span style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'normal' }}>[물방울+5]</span>
+            </label>
             <textarea 
               id="content-text"
               name="content-text"
               value={contentText} 
               onChange={(e) => setContentText(e.target.value)} 
               rows={6} 
-              placeholder="느낀 점을 적어보세요" 
+              placeholder="책을 읽고 생각하거나 느낀 점을 적어보세요"
             />
           </div>
           <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="image-file">사진 첨부(선택)</label>
+            <label htmlFor="image-file">
+              파일첨부(그림, 마인드맵 등) <span style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'normal' }}>[물방울+2]</span>
+            </label>
             <input 
               id="image-file"
               name="image-file"
@@ -463,10 +743,8 @@ export default function RecordPage() {
                 
                 setImageFile(file)
               }} 
+              title="이미지 파일만 업로드 가능하며, 최대 5MB까지 업로드할 수 있습니다"
             />
-            <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              이미지 파일만 업로드 가능하며, 최대 5MB까지 업로드할 수 있습니다.
-            </small>
             {fileError && (
               <small className="text-negative" style={{ fontSize: 'var(--font-size-xs)' }}>
                 {fileError}

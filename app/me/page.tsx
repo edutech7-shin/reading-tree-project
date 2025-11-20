@@ -45,7 +45,7 @@ export default async function MyPage() {
   // 내 독서 기록 목록 가져오기
   const { data: readingRecords } = await supabase
     .from('book_records')
-    .select('id, book_title, book_author, book_cover_url, content_text, status, teacher_comment, created_at')
+    .select('id, book_title, book_author, book_cover_url, content_text, status, teacher_comment, created_at, rating')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(20)
@@ -207,6 +207,20 @@ export default async function MyPage() {
                     {record.book_title || '(제목 없음)'}
                     {record.book_author && <small style={{ color: '#666', marginLeft: 8 }}>{record.book_author}</small>}
                   </div>
+                  {record.rating && (
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 4,
+                      fontSize: 14,
+                      marginTop: 4
+                    }}>
+                      <span style={{ color: '#666' }}>별점:</span>
+                      <span style={{ color: '#FFD700' }}>
+                        {'★'.repeat(record.rating)}
+                      </span>
+                    </div>
+                  )}
                   {record.content_text && (
                     <p style={{ fontSize: 14, color: '#555', marginTop: 4, marginBottom: 0 }}>
                       {record.content_text.length > 100
