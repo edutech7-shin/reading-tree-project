@@ -70,7 +70,7 @@ export function ApproveMissionsDashboard({ completions: initialCompletions }: Pr
 
     if (completionsData) {
       // Supabase 관계 쿼리 결과를 타입에 맞게 변환
-      const transformed = completionsData.map((c: any) => {
+      const transformed: Completion[] = completionsData.map((c: any) => {
         const assignment = Array.isArray(c.mission_assignments) ? c.mission_assignments[0] : c.mission_assignments
         const mission = assignment && (Array.isArray(assignment.missions) ? assignment.missions[0] : assignment.missions)
         const student = Array.isArray(c.class_students) ? c.class_students[0] : c.class_students
@@ -94,7 +94,17 @@ export function ApproveMissionsDashboard({ completions: initialCompletions }: Pr
                c.mission_assignments.missions && 
                c.mission_assignments.missions.teacher_id === user.id &&
                c.class_students
-      })
+      }).map((c: any) => ({
+        // 필터링 후에는 mission_assignments가 null이 아님을 보장
+        id: c.id,
+        assignment_id: c.assignment_id,
+        student_id: c.student_id,
+        proof_text: c.proof_text,
+        proof_image_url: c.proof_image_url,
+        completed_at: c.completed_at,
+        mission_assignments: c.mission_assignments as { mission_id: number; missions: { id: number; title: string; type: string; points: number } },
+        class_students: c.class_students as { id: string; name: string }
+      }))
       setCompletions(transformed)
     }
     setLoading(false)
