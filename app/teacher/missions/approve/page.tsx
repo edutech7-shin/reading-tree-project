@@ -56,17 +56,30 @@ export default async function ApproveMissionsPage() {
     throw new Error('완료 기록을 불러올 수 없습니다.')
   }
 
-  // 교사의 미션인지 필터링
-  const filteredCompletions = (completions || []).filter((completion: any) => {
-    const assignment = completion.mission_assignments
-    const mission = assignment?.missions
-    // 교사 ID 확인은 클라이언트에서 처리
-    return mission
-  })
+  // Supabase 관계 쿼리 결과를 타입에 맞게 변환
+  const transformedCompletions = (completions || []).map((c: any) => {
+    const assignment = Array.isArray(c.mission_assignments) ? c.mission_assignments[0] : c.mission_assignments
+    const mission = assignment && (Array.isArray(assignment.missions) ? assignment.missions[0] : assignment.missions)
+    const student = Array.isArray(c.class_students) ? c.class_students[0] : c.class_students
+    
+    return {
+      id: c.id,
+      assignment_id: c.assignment_id,
+      student_id: c.student_id,
+      proof_text: c.proof_text,
+      proof_image_url: c.proof_image_url,
+      completed_at: c.completed_at,
+      mission_assignments: assignment ? {
+        mission_id: assignment.mission_id,
+        missions: mission
+      } : null,
+      class_students: student
+    }
+  }).filter((c: any) => c.mission_assignments && c.mission_assignments.missions && c.class_students)
 
   return (
     <main className='container'>
-      <ApproveMissionsDashboard completions={filteredCompletions} />
+      <ApproveMissionsDashboard completions={transformedCompletions} />
     </main>
   )
 }

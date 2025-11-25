@@ -69,11 +69,33 @@ export function ApproveMissionsDashboard({ completions: initialCompletions }: Pr
       .order('completed_at', { ascending: false })
 
     if (completionsData) {
-      // 교사의 미션만 필터링
-      const filtered = completionsData.filter((c: any) => {
-        return c.mission_assignments?.missions?.teacher_id === user.id
+      // Supabase 관계 쿼리 결과를 타입에 맞게 변환
+      const transformed = completionsData.map((c: any) => {
+        const assignment = Array.isArray(c.mission_assignments) ? c.mission_assignments[0] : c.mission_assignments
+        const mission = assignment && (Array.isArray(assignment.missions) ? assignment.missions[0] : assignment.missions)
+        const student = Array.isArray(c.class_students) ? c.class_students[0] : c.class_students
+        
+        return {
+          id: c.id,
+          assignment_id: c.assignment_id,
+          student_id: c.student_id,
+          proof_text: c.proof_text,
+          proof_image_url: c.proof_image_url,
+          completed_at: c.completed_at,
+          mission_assignments: assignment ? {
+            mission_id: assignment.mission_id,
+            missions: mission
+          } : null,
+          class_students: student
+        }
+      }).filter((c: any) => {
+        // 교사의 미션만 필터링하고 유효한 데이터만
+        return c.mission_assignments && 
+               c.mission_assignments.missions && 
+               c.mission_assignments.missions.teacher_id === user.id &&
+               c.class_students
       })
-      setCompletions(filtered)
+      setCompletions(transformed)
     }
     setLoading(false)
   }
@@ -155,6 +177,9 @@ export function ApproveMissionsDashboard({ completions: initialCompletions }: Pr
 
       <div style={{ display: 'grid', gap: 'var(--grid-gap-md)' }}>
         {completions.map((completion) => {
+          if (!completion.mission_assignments || !completion.mission_assignments.missions || !completion.class_students) {
+            return null
+          }
           const mission = completion.mission_assignments.missions
           const student = completion.class_students
           return (
