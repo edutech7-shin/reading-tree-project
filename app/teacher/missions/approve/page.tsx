@@ -76,6 +76,17 @@ export default async function ApproveMissionsPage() {
       class_students: student
     }
   }).filter((c: any) => c.mission_assignments && c.mission_assignments.missions && c.class_students)
+    .map((c: any) => ({
+      // 필터링 후에는 mission_assignments가 null이 아님을 보장
+      id: c.id,
+      assignment_id: c.assignment_id,
+      student_id: c.student_id,
+      proof_text: c.proof_text,
+      proof_image_url: c.proof_image_url,
+      completed_at: c.completed_at,
+      mission_assignments: c.mission_assignments as { mission_id: number; missions: { id: number; title: string; type: string; points: number } },
+      class_students: c.class_students as { id: string; name: string }
+    }))
 
   return (
     <main className='container'>
