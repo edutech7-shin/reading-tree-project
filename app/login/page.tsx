@@ -86,7 +86,7 @@ export default function LoginPage() {
   return (
     <main className="container" style={{ maxWidth: 420 }}>
       <div className="card" style={{ marginTop: 'var(--card-spacing)' }}>
-        <h1>로그인</h1>
+      <h1>로그인</h1>
 
         {error && (
           <div 
@@ -102,50 +102,50 @@ export default function LoginPage() {
           </div>
         )}
 
-        <button
-          className="btn primary"
-          onClick={onGoogleLogin}
-          disabled={!origin}
+      <button
+        className="btn primary"
+        onClick={onGoogleLogin}
+        disabled={!origin}
           style={{ marginBottom: 'var(--grid-gap-md)', width: '100%' }}
-        >
-          🔐 Google로 로그인
-        </button>
+      >
+        🔐 Google로 로그인
+      </button>
 
         <div className="text-center text-secondary" style={{ margin: 'var(--grid-gap-md) 0' }}>또는</div>
 
         <form onSubmit={onLogin} style={{ display: 'grid', gap: 'var(--grid-gap-sm)' }}>
-          <div>
+        <div>
             <label htmlFor="login-email">이메일</label>
-            <input 
-              id="login-email"
-              name="email"
-              placeholder="이메일" 
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              required 
-            />
-          </div>
-          <div>
+          <input 
+            id="login-email"
+            name="email"
+            placeholder="이메일" 
+            type="email" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+            required 
+          />
+        </div>
+        <div>
             <label htmlFor="login-password">비밀번호</label>
-            <input 
-              id="login-password"
-              name="password"
-              placeholder="비밀번호" 
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
-            />
-          </div>
+          <input 
+            id="login-password"
+            name="password"
+            placeholder="비밀번호" 
+            type="password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
+          />
+        </div>
           <button className="btn primary" disabled={loading} style={{ width: '100%' }}>
-            {loading ? '로그인 중...' : '이메일로 로그인'}
-          </button>
-        </form>
+          {loading ? '로그인 중...' : '이메일로 로그인'}
+        </button>
+      </form>
 
         <p className="text-center" style={{ marginTop: 'var(--grid-gap-md)' }}>
           계정이 없으신가요? <Link href="/signup" style={{ color: 'var(--color-primary)', textDecoration: 'underline' }}>회원가입</Link>
-        </p>
+      </p>
 
         <div style={{ marginTop: 'var(--grid-gap-md)', display: 'flex', gap: 'var(--grid-gap-xs)', flexWrap: 'wrap' }}>
           <button className="btn" onClick={onLogout} style={{ flex: 1, minWidth: '120px' }}>로그아웃</button>

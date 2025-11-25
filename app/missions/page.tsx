@@ -40,8 +40,15 @@ export default async function MissionsPage() {
       .limit(1)
       .maybeSingle()
 
+    if (classStudentError) {
+      console.error('[Missions] Error fetching class_students:', classStudentError)
+    }
+
     if (!classStudentError && classStudent) {
       studentId = classStudent.id
+      console.log('[Missions] Found studentId:', studentId, 'for name:', profile.name)
+    } else {
+      console.log('[Missions] No class_students found for name:', profile.name)
     }
   }
 
