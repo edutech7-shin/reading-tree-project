@@ -160,7 +160,12 @@ export default function BookSearch({ onSelect }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--grid-gap-md)' }}>
-              <h3 style={{ margin: 0 }}>검색 결과</h3>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 'var(--font-size-xl)' }}>🔍 책 검색</h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: 'var(--font-size-sm)', color: '#666' }}>
+                  책 제목이나 저자 이름으로 검색해보세요
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => {
@@ -171,122 +176,217 @@ export default function BookSearch({ onSelect }: Props) {
                   setPagesByIndex({})
                 }}
                 style={{
-                  background: 'none',
+                  background: 'var(--color-background-secondary)',
                   border: 'none',
-                  fontSize: 24,
+                  fontSize: 20,
                   cursor: 'pointer',
                   color: '#666',
                   padding: 0,
-                  width: 32,
-                  height: 32,
+                  width: 36,
+                  height: 36,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderRadius: '50%',
-                  transition: 'background-color 0.2s'
+                  transition: 'all 0.2s',
+                  fontWeight: 'bold'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f0f0f0'
+                  e.currentTarget.style.backgroundColor = '#e0e0e0'
+                  e.currentTarget.style.transform = 'scale(1.1)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent'
+                  e.currentTarget.style.backgroundColor = 'var(--color-background-secondary)'
+                  e.currentTarget.style.transform = 'scale(1)'
                 }}
+                aria-label="검색 창 닫기"
                 title="닫기"
               >
                 ×
               </button>
             </div>
 
+            {searching && (
+              <div style={{ 
+                padding: 'var(--grid-gap-lg)', 
+                textAlign: 'center',
+                color: '#666'
+              }}>
+                <div style={{ fontSize: '48px', marginBottom: 'var(--grid-gap-sm)' }}>🔍</div>
+                <p style={{ fontSize: 'var(--font-size-md)' }}>책을 찾고 있어요...</p>
+                <p style={{ fontSize: 'var(--font-size-sm)', color: '#999', marginTop: 'var(--grid-gap-xs)' }}>
+                  잠시만 기다려주세요
+                </p>
+              </div>
+            )}
+
             {error && (
               <div style={{ 
-                color: 'crimson', 
+                color: 'var(--color-negative)', 
                 marginBottom: 12, 
-                padding: 8, 
+                padding: 12, 
                 backgroundColor: '#fee', 
-                borderRadius: 4 
+                borderRadius: 'var(--radius-medium)',
+                fontSize: 'var(--font-size-sm)',
+                border: '1px solid #fcc'
               }}>
-                {error}
+                <strong>⚠️ 오류:</strong> {error}
               </div>
             )}
 
             {!searching && results.length === 0 && !error && query && (
               <div style={{ 
-                color: '#666', 
-                marginBottom: 12, 
-                padding: 8, 
-                textAlign: 'center' 
+                padding: 'var(--grid-gap-lg)', 
+                textAlign: 'center',
+                backgroundColor: 'var(--color-background-secondary)',
+                borderRadius: 'var(--radius-medium)'
               }}>
-                검색 결과가 없습니다.
+                <div style={{ fontSize: '48px', marginBottom: 'var(--grid-gap-sm)' }}>📚</div>
+                <p style={{ color: '#666', fontSize: 'var(--font-size-md)', marginBottom: 'var(--grid-gap-xs)' }}>
+                  검색 결과가 없어요
+                </p>
+                <p style={{ color: '#999', fontSize: 'var(--font-size-sm)' }}>
+                  다른 키워드로 검색해보세요
+                </p>
               </div>
             )}
 
             {results.length > 0 && (
-              <div style={{ display: 'grid', gap: 8, maxHeight: '400px', overflow: 'auto' }}>
-                {results.map((book, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      padding: 12,
-                      border: '1px solid #eee',
-                      borderRadius: 8,
-                      display: 'flex',
-                      gap: 12,
-                      alignItems: 'flex-start'
-                    }}
-                  >
-                    {book.coverUrl && (
-                      <img
-                        src={book.coverUrl}
-                        alt={book.title}
-                        style={{ width: 50, height: 70, objectFit: 'cover', borderRadius: 4 }}
-                      />
-                    )}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600 }}>{book.title}</div>
-                      <div style={{ fontSize: 14, color: '#666' }}>{book.author}</div>
-                      {book.publisher && (
-                        <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
-                          {book.publisher} {book.publicationYear && `· ${book.publicationYear}`}
+              <>
+                <div style={{ 
+                  marginBottom: 'var(--grid-gap-sm)', 
+                  padding: '8px 12px', 
+                  backgroundColor: 'var(--color-background-secondary)', 
+                  borderRadius: 'var(--radius-small)',
+                  fontSize: 'var(--font-size-sm)',
+                  color: '#666'
+                }}>
+                  💡 <strong>{results.length}권</strong>의 책을 찾았어요! 원하는 책을 선택해주세요.
+                </div>
+                <div style={{ display: 'grid', gap: 12, maxHeight: '400px', overflowY: 'auto', paddingRight: 4 }}>
+                  {results.map((book, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: 16,
+                        border: '2px solid var(--color-border-light)',
+                        borderRadius: 'var(--radius-medium)',
+                        display: 'flex',
+                        gap: 16,
+                        alignItems: 'flex-start',
+                        transition: 'all 0.2s',
+                        backgroundColor: 'white'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-primary)'
+                        e.currentTarget.style.boxShadow = 'var(--shadow-card)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-border-light)'
+                        e.currentTarget.style.boxShadow = 'none'
+                      }}
+                    >
+                      {book.coverUrl ? (
+                        <img
+                          src={book.coverUrl}
+                          alt={book.title}
+                          style={{ 
+                            width: 80, 
+                            height: 112, 
+                            objectFit: 'cover', 
+                            borderRadius: 'var(--radius-small)',
+                            boxShadow: 'var(--shadow-card)',
+                            flexShrink: 0
+                          }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: 80,
+                          height: 112,
+                          backgroundColor: 'var(--color-background-secondary)',
+                          borderRadius: 'var(--radius-small)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#999',
+                          fontSize: 'var(--font-size-xs)',
+                          border: '2px dashed var(--color-border-medium)',
+                          flexShrink: 0
+                        }}>
+                          표지 없음
                         </div>
                       )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ 
+                          fontWeight: 'var(--font-weight-semibold)', 
+                          fontSize: 'var(--font-size-md)',
+                          marginBottom: 4,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical'
+                        }}>
+                          {book.title}
+                        </div>
+                        <div style={{ fontSize: 'var(--font-size-sm)', color: '#666', marginBottom: 8 }}>
+                          {book.author}
+                        </div>
+                        {book.publisher && (
+                          <div style={{ fontSize: 'var(--font-size-xs)', color: '#999', marginBottom: 12 }}>
+                            {book.publisher} {book.publicationYear && `· ${book.publicationYear}`}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 120 }}>
+                            <label htmlFor={`pages-${idx}`} style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'var(--font-weight-semibold)' }}>
+                              전체 페이지 수
+                            </label>
+                            <input
+                              id={`pages-${idx}`}
+                              name={`pages-${idx}`}
+                              type="number"
+                              min={1}
+                              value={pagesByIndex[idx] ?? (book.totalPages ?? '')}
+                              onChange={(e) => {
+                                const value = e.target.value
+                                setPagesByIndex((prev) => ({ ...prev, [idx]: value }))
+                              }}
+                              placeholder="예: 320"
+                              style={{
+                                padding: '10px 12px',
+                                border: '1px solid var(--color-border-medium)',
+                                borderRadius: 'var(--radius-small)',
+                                fontSize: 'var(--font-size-sm)',
+                                width: '100%',
+                                minWidth: 120
+                              }}
+                              aria-label="전체 페이지 수 입력"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="btn primary"
+                            onClick={() => handleSelect(book, idx)}
+                            style={{ 
+                              whiteSpace: 'nowrap',
+                              fontSize: 'var(--font-size-md)',
+                              padding: '10px 20px',
+                              minHeight: 44
+                            }}
+                            aria-label={`${book.title} 선택하기`}
+                          >
+                            ✅ 선택하기
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ display: 'grid', gap: 6, minWidth: 140 }}>
-                      <label htmlFor={`pages-${idx}`} style={{ fontSize: 12, color: '#666' }}>
-                        전체 페이지 수
-                      </label>
-                      <input
-                        id={`pages-${idx}`}
-                        name={`pages-${idx}`}
-                        type="number"
-                        min={1}
-                        value={pagesByIndex[idx] ?? (book.totalPages ?? '')}
-                        onChange={(e) => {
-                          const value = e.target.value
-                          setPagesByIndex((prev) => ({ ...prev, [idx]: value }))
-                        }}
-                        placeholder="예: 320"
-                        style={{
-                          padding: 8,
-                          border: '1px solid #eee',
-                          borderRadius: 6,
-                          width: 120
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="btn primary"
-                        onClick={() => handleSelect(book, idx)}
-                        style={{ whiteSpace: 'nowrap' }}
-                      >
-                        선택
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
             )}
 
-            <div style={{ marginTop: 16, textAlign: 'center' }}>
+            <div style={{ marginTop: 20, textAlign: 'center', paddingTop: 16, borderTop: '1px solid var(--color-border-light)' }}>
               <button 
                 className="btn" 
                 onClick={() => {
@@ -296,8 +396,14 @@ export default function BookSearch({ onSelect }: Props) {
                   setError(null)
                   setPagesByIndex({})
                 }}
+                style={{
+                  fontSize: 'var(--font-size-md)',
+                  padding: '12px 32px',
+                  minWidth: 120
+                }}
+                aria-label="검색 취소"
               >
-                취소
+                닫기
               </button>
             </div>
           </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getSupabaseClient } from '../lib/supabase/client'
 import BookSearch from './BookSearch'
+import { useRouter } from 'next/navigation'
 
 type UserBook = {
   id: number
@@ -14,15 +15,23 @@ type UserBook = {
   book_publication_year: string | null
   book_total_pages: number | null
   status: 'reading' | 'finished'
+  created_at?: string
 }
+
+type SortOption = 'recent' | 'title' | 'author'
 
 export default function UserBooks() {
   const supabase = getSupabaseClient()
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [reading, setReading] = useState<UserBook[]>([])
   const [finished, setFinished] = useState<UserBook[]>([])
   const [showSearch, setShowSearch] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [selectedBook, setSelectedBook] = useState<UserBook | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<UserBook | null>(null)
+  const [sortOption, setSortOption] = useState<SortOption>('recent')
+  const [filterStatus, setFilterStatus] = useState<'all' | 'reading' | 'finished'>('all')
 
   async function load() {
     setLoading(true)
@@ -48,14 +57,37 @@ export default function UserBooks() {
       if (b.status === 'finished') f.push(b as UserBook)
       else r.push(b as UserBook)
     }
-    setReading(r)
-    setFinished(f)
+    
+    // 정렬 적용
+    const sortBooks = (books: UserBook[]) => {
+      const sorted = [...books]
+      switch (sortOption) {
+        case 'title':
+          sorted.sort((a, b) => (a.book_title || '').localeCompare(b.book_title || ''))
+          break
+        case 'author':
+          sorted.sort((a, b) => (a.book_author || '').localeCompare(b.book_author || ''))
+          break
+        case 'recent':
+        default:
+          sorted.sort((a, b) => {
+            const dateA = a.created_at ? new Date(a.created_at).getTime() : 0
+            const dateB = b.created_at ? new Date(b.created_at).getTime() : 0
+            return dateB - dateA
+          })
+          break
+      }
+      return sorted
+    }
+    
+    setReading(sortBooks(r))
+    setFinished(sortBooks(f))
     setLoading(false)
   }
 
   useEffect(() => {
     load()
-  }, [])
+  }, [sortOption])
 
   async function addBook(book: { 
     title: string
@@ -100,9 +132,6 @@ export default function UserBooks() {
   }
 
   async function deleteBook(book: UserBook) {
-    if (!confirm(`"${book.book_title || '제목 없음'}" 책을 책장에서 삭제하시겠습니까?`)) {
-      return
-    }
     const { error } = await supabase.from('user_books')
       .delete()
       .eq('id', book.id)
@@ -110,173 +139,711 @@ export default function UserBooks() {
       setError(error.message)
       return
     }
+    setShowDeleteConfirm(null)
     await load()
   }
 
+  // 독서록 작성 페이지로 이동
+  function goToRecord(book: UserBook) {
+    router.push('/record')
+  }
+
+  // 통계 계산
+  const totalBooks = reading.length + finished.length
+  const readingCount = reading.length
+  const finishedCount = finished.length
+
+  // 필터링된 책 목록
+  const getFilteredBooks = () => {
+    if (filterStatus === 'reading') return reading
+    if (filterStatus === 'finished') return finished
+    return [...reading, ...finished]
+  }
+
   return (
-    <div className="card" style={{ marginTop: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ margin: 0 }}>내 책장</h3>
-        <button className="btn primary" onClick={() => setShowSearch(true)}>＋ 새 책 추가</button>
+    <>
+      <style dangerouslySetInnerHTML={{__html: `
+        @media (max-width: 768px) {
+          .bookshelf-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .bookshelf-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+          }
+        }
+        @media (min-width: 1025px) {
+          .bookshelf-grid {
+            grid-template-columns: repeat(4, 1fr) !important;
+          }
+        }
+        button:focus-visible {
+          outline: 3px solid var(--color-primary);
+          outline-offset: 2px;
+        }
+      `}} />
+      
+      <div className="card" style={{ marginTop: 16 }}>
+        {/* 헤더: 제목, 통계, 추가 버튼 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--grid-gap-sm)' }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)' }}>내 책장</h3>
+            {!loading && (
+              <div style={{ fontSize: 'var(--font-size-sm)', color: '#666', marginTop: 4 }}>
+                총 {totalBooks}권 · 읽는 중 {readingCount}권 · 다 읽음 {finishedCount}권
+              </div>
+            )}
+          </div>
+          <button 
+            className="btn primary" 
+            onClick={() => setShowSearch(true)}
+            style={{ fontSize: 'var(--font-size-md)', padding: '12px 24px' }}
+            aria-label="새 책 추가하기"
+          >
+            📚 ＋ 새 책 추가
+          </button>
+        </div>
+
+        {/* 필터 및 정렬 */}
+        {!loading && totalBooks > 0 && (
+          <div style={{ 
+            display: 'flex', 
+            gap: 'var(--grid-gap-sm)', 
+            marginTop: 'var(--grid-gap-md)',
+            flexWrap: 'wrap',
+            alignItems: 'center'
+          }}>
+            <div style={{ display: 'flex', gap: 'var(--grid-gap-xs)', alignItems: 'center' }}>
+              <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)' }}>보기:</label>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {(['all', 'reading', 'finished'] as const).map((status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => setFilterStatus(status)}
+                    className={filterStatus === status ? 'btn primary' : 'btn'}
+                    style={{ 
+                      fontSize: 'var(--font-size-sm)', 
+                      padding: '6px 12px',
+                      whiteSpace: 'nowrap'
+                    }}
+                    aria-label={status === 'all' ? '전체 보기' : status === 'reading' ? '읽는 중만 보기' : '다 읽은 책만 보기'}
+                  >
+                    {status === 'all' ? '전체' : status === 'reading' ? '읽는 중' : '다 읽음'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 'var(--grid-gap-xs)', alignItems: 'center', marginLeft: 'auto' }}>
+              <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)' }}>정렬:</label>
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value as SortOption)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 'var(--radius-small)',
+                  border: '1px solid var(--color-border-medium)',
+                  fontSize: 'var(--font-size-sm)',
+                  cursor: 'pointer'
+                }}
+                aria-label="정렬 기준 선택"
+              >
+                <option value="recent">최근 추가순</option>
+                <option value="title">제목순</option>
+                <option value="author">저자순</option>
+              </select>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-negative-light text-negative" style={{ padding: 12, borderRadius: 6, marginTop: 12, fontSize: 'var(--font-size-sm)' }}>
+            {error}
+          </div>
+        )}
+
+        {showSearch && (
+          <div style={{ marginTop: 12 }}>
+            <BookSearch onSelect={addBook} />
+          </div>
+        )}
+
+        {loading ? (
+          <div style={{ padding: 'var(--grid-gap-lg)', textAlign: 'center' }}>
+            <div style={{ fontSize: 'var(--font-size-lg)', color: '#999' }}>📚</div>
+            <p style={{ color: '#999', padding: 12, fontSize: 'var(--font-size-md)' }}>책장을 불러오는 중...</p>
+          </div>
+        ) : (
+          <>
+            {/* 필터링된 책 목록 표시 */}
+            {filterStatus === 'all' ? (
+              <>
+                <section style={{ marginTop: 'var(--grid-gap-md)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--grid-gap-xs)', marginBottom: 'var(--grid-gap-sm)' }}>
+                    <h4 style={{ margin: 0, fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)' }}>
+                      📖 읽고 있어요
+                    </h4>
+                    <span style={{ fontSize: 'var(--font-size-sm)', color: '#666', backgroundColor: 'var(--color-background-secondary)', padding: '2px 8px', borderRadius: 12 }}>
+                      {readingCount}권
+                    </span>
+                  </div>
+                  {reading.length === 0 ? (
+                    <div style={{ 
+                      padding: 'var(--grid-gap-lg)', 
+                      textAlign: 'center',
+                      backgroundColor: 'var(--color-background-secondary)',
+                      borderRadius: 'var(--radius-medium)',
+                      border: '2px dashed var(--color-border-medium)'
+                    }}>
+                      <div style={{ fontSize: '48px', marginBottom: 'var(--grid-gap-sm)' }}>📚</div>
+                      <p style={{ color: '#666', fontSize: 'var(--font-size-md)', marginBottom: 'var(--grid-gap-xs)' }}>
+                        읽고 있는 책이 없어요
+                      </p>
+                      <p style={{ color: '#999', fontSize: 'var(--font-size-sm)' }}>
+                        위의 "＋ 새 책 추가" 버튼을 눌러서 책을 추가해보세요!
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bookshelf-grid" style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', 
+                      gap: 'var(--grid-gap-md)'
+                    }}>
+                      {reading.map((b) => (
+                        <BookCard 
+                          key={b.id} 
+                          book={b} 
+                          onSelect={() => setSelectedBook(b)}
+                          onToggleStatus={() => toggleStatus(b)}
+                          onDelete={() => setShowDeleteConfirm(b)}
+                          onWriteRecord={() => goToRecord(b)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                <section style={{ marginTop: 'var(--grid-gap-lg)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--grid-gap-xs)', marginBottom: 'var(--grid-gap-sm)' }}>
+                    <h4 style={{ margin: 0, fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)' }}>
+                      ✅ 다 읽었어요
+                    </h4>
+                    <span style={{ fontSize: 'var(--font-size-sm)', color: '#666', backgroundColor: 'var(--color-background-secondary)', padding: '2px 8px', borderRadius: 12 }}>
+                      {finishedCount}권
+                    </span>
+                  </div>
+                  {finished.length === 0 ? (
+                    <div style={{ 
+                      padding: 'var(--grid-gap-lg)', 
+                      textAlign: 'center',
+                      backgroundColor: 'var(--color-background-secondary)',
+                      borderRadius: 'var(--radius-medium)',
+                      border: '2px dashed var(--color-border-medium)'
+                    }}>
+                      <div style={{ fontSize: '48px', marginBottom: 'var(--grid-gap-sm)' }}>🎉</div>
+                      <p style={{ color: '#666', fontSize: 'var(--font-size-md)', marginBottom: 'var(--grid-gap-xs)' }}>
+                        다 읽은 책이 없어요
+                      </p>
+                      <p style={{ color: '#999', fontSize: 'var(--font-size-sm)' }}>
+                        책을 다 읽으면 여기에 표시돼요!
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bookshelf-grid" style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', 
+                      gap: 'var(--grid-gap-md)'
+                    }}>
+                      {finished.map((b) => (
+                        <BookCard 
+                          key={b.id} 
+                          book={b} 
+                          onSelect={() => setSelectedBook(b)}
+                          onToggleStatus={() => toggleStatus(b)}
+                          onDelete={() => setShowDeleteConfirm(b)}
+                          onWriteRecord={() => goToRecord(b)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </>
+            ) : (
+              <section style={{ marginTop: 'var(--grid-gap-md)' }}>
+                {getFilteredBooks().length === 0 ? (
+                  <div style={{ 
+                    padding: 'var(--grid-gap-lg)', 
+                    textAlign: 'center',
+                    backgroundColor: 'var(--color-background-secondary)',
+                    borderRadius: 'var(--radius-medium)',
+                    border: '2px dashed var(--color-border-medium)'
+                  }}>
+                    <div style={{ fontSize: '48px', marginBottom: 'var(--grid-gap-sm)' }}>📚</div>
+                    <p style={{ color: '#666', fontSize: 'var(--font-size-md)' }}>
+                      {filterStatus === 'reading' ? '읽고 있는 책이 없어요' : '다 읽은 책이 없어요'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bookshelf-grid" style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', 
+                    gap: 'var(--grid-gap-md)'
+                  }}>
+                    {getFilteredBooks().map((b) => (
+                      <BookCard 
+                        key={b.id} 
+                        book={b} 
+                        onSelect={() => setSelectedBook(b)}
+                        onToggleStatus={() => toggleStatus(b)}
+                        onDelete={() => setShowDeleteConfirm(b)}
+                        onWriteRecord={() => goToRecord(b)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+          </>
+        )}
       </div>
 
-      {error && (
-        <div className="bg-negative-light text-negative" style={{ padding: 12, borderRadius: 6, marginTop: 12 }}>
-          {error}
-        </div>
+      {/* 책 상세 정보 모달 */}
+      {selectedBook && (
+        <BookDetailModal 
+          book={selectedBook} 
+          onClose={() => setSelectedBook(null)}
+          onToggleStatus={() => {
+            toggleStatus(selectedBook)
+            setSelectedBook(null)
+          }}
+          onDelete={() => {
+            setShowDeleteConfirm(selectedBook)
+            setSelectedBook(null)
+          }}
+          onWriteRecord={() => {
+            goToRecord(selectedBook)
+            setSelectedBook(null)
+          }}
+        />
       )}
 
-      {showSearch && (
-        <div style={{ marginTop: 12 }}>
-          <BookSearch onSelect={addBook} />
-        </div>
+      {/* 삭제 확인 모달 */}
+      {showDeleteConfirm && (
+        <DeleteConfirmModal
+          book={showDeleteConfirm}
+          onConfirm={() => deleteBook(showDeleteConfirm)}
+          onCancel={() => setShowDeleteConfirm(null)}
+        />
       )}
+    </>
+  )
+}
 
-      {loading ? (
-        <p style={{ color: '#999', padding: 12 }}>불러오는 중...</p>
+// 책 카드 컴포넌트
+function BookCard({ 
+  book, 
+  onSelect, 
+  onToggleStatus, 
+  onDelete,
+  onWriteRecord
+}: { 
+  book: UserBook
+  onSelect: () => void
+  onToggleStatus: () => void
+  onDelete: () => void
+  onWriteRecord: () => void
+}) {
+  return (
+    <div 
+      style={{ 
+        border: '2px solid var(--color-border-light)', 
+        borderRadius: 'var(--radius-medium)', 
+        padding: 'var(--grid-gap-sm)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--grid-gap-xs)',
+        position: 'relative',
+        backgroundColor: 'white',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        minHeight: 280
+      }}
+      onClick={onSelect}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = 'var(--color-primary)'
+        e.currentTarget.style.boxShadow = 'var(--shadow-card)'
+        e.currentTarget.style.transform = 'translateY(-2px)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = 'var(--color-border-light)'
+        e.currentTarget.style.boxShadow = 'none'
+        e.currentTarget.style.transform = 'translateY(0)'
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onSelect()
+        }
+      }}
+      tabIndex={0}
+      role="button"
+      aria-label={`${book.book_title || '제목 없음'} - ${book.book_author || '저자 없음'} 상세 정보 보기`}
+    >
+      {/* 삭제 버튼 - 항상 보이게 */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          onDelete()
+        }}
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          width: 32,
+          height: 32,
+          borderRadius: '50%',
+          backgroundColor: 'rgba(239, 68, 68, 0.9)',
+          color: 'white',
+          border: 'none',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 18,
+          zIndex: 10,
+          padding: 0,
+          boxShadow: 'var(--shadow-card)'
+        }}
+        aria-label="책 삭제하기"
+        title="삭제"
+      >
+        ×
+      </button>
+
+      {/* 책 표지 */}
+      {book.book_cover_url ? (
+        <img 
+          src={book.book_cover_url} 
+          alt={book.book_title ?? ''} 
+          style={{ 
+            width: '100%', 
+            height: 200, 
+            objectFit: 'cover', 
+            borderRadius: 'var(--radius-small)',
+            boxShadow: 'var(--shadow-card)'
+          }} 
+        />
       ) : (
-        <>
-          <section style={{ marginTop: 12 }}>
-            <h4 style={{ margin: '8px 0' }}>읽고 있어요</h4>
-            {reading.length === 0 ? (
-              <p style={{ color: '#999', padding: 8 }}>읽고 있는 책이 없습니다.</p>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
-                {reading.map((b) => (
-                  <div 
-                    key={b.id} 
-                    style={{ 
-                      border: '1px solid #eee', 
-                      borderRadius: 8, 
-                      padding: 12, 
-                      display: 'flex', 
-                      gap: 12,
-                      position: 'relative'
-                    }}
-                    onMouseEnter={(e) => {
-                      const btn = e.currentTarget.querySelector('.delete-btn') as HTMLButtonElement
-                      if (btn) btn.style.opacity = '1'
-                    }}
-                    onMouseLeave={(e) => {
-                      const btn = e.currentTarget.querySelector('.delete-btn') as HTMLButtonElement
-                      if (btn) btn.style.opacity = '0'
-                    }}
-                  >
-                    {b.book_cover_url && (
-                      <img src={b.book_cover_url} alt={b.book_title ?? ''} style={{ width: 96, height: 136, objectFit: 'cover', borderRadius: 4 }} />
-                    )}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600 }}>{b.book_title}</div>
-                      <div style={{ fontSize: 12, color: '#666' }}>{b.book_author}</div>
-                      <button className="btn" style={{ marginTop: 8, fontSize: 12 }} onClick={() => toggleStatus(b)}>
-                        다 읽음
-                      </button>
-                    </div>
-                    <button
-                      className="delete-btn"
-                      type="button"
-                      onClick={() => deleteBook(b)}
-                      style={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                        color: 'white',
-                        border: 'none',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 14,
-                        opacity: 0,
-                        transition: 'opacity 0.2s',
-                        zIndex: 10,
-                        padding: 0
-                      }}
-                      title="삭제"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section style={{ marginTop: 16 }}>
-            <h4 style={{ margin: '8px 0' }}>다 읽었어요</h4>
-            {finished.length === 0 ? (
-              <p style={{ color: '#999', padding: 8 }}>다 읽은 책이 없습니다.</p>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
-                {finished.map((b) => (
-                  <div 
-                    key={b.id} 
-                    style={{ 
-                      border: '1px solid #eee', 
-                      borderRadius: 8, 
-                      padding: 12, 
-                      display: 'flex', 
-                      gap: 12,
-                      position: 'relative'
-                    }}
-                    onMouseEnter={(e) => {
-                      const btn = e.currentTarget.querySelector('.delete-btn') as HTMLButtonElement
-                      if (btn) btn.style.opacity = '1'
-                    }}
-                    onMouseLeave={(e) => {
-                      const btn = e.currentTarget.querySelector('.delete-btn') as HTMLButtonElement
-                      if (btn) btn.style.opacity = '0'
-                    }}
-                  >
-                    {b.book_cover_url && (
-                      <img src={b.book_cover_url} alt={b.book_title ?? ''} style={{ width: 96, height: 136, objectFit: 'cover', borderRadius: 4 }} />
-                    )}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600 }}>{b.book_title}</div>
-                      <div style={{ fontSize: 12, color: '#666' }}>{b.book_author}</div>
-                      <button className="btn" style={{ marginTop: 8, fontSize: 12 }} onClick={() => toggleStatus(b)}>
-                        읽는 중
-                      </button>
-                    </div>
-                    <button
-                      className="delete-btn"
-                      type="button"
-                      onClick={() => deleteBook(b)}
-                      style={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                        color: 'white',
-                        border: 'none',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 14,
-                        opacity: 0,
-                        transition: 'opacity 0.2s',
-                        zIndex: 10,
-                        padding: 0
-                      }}
-                      title="삭제"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </>
+        <div style={{
+          width: '100%',
+          height: 200,
+          backgroundColor: 'var(--color-background-secondary)',
+          borderRadius: 'var(--radius-small)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#999',
+          fontSize: 'var(--font-size-sm)',
+          border: '2px dashed var(--color-border-medium)'
+        }}>
+          표지 없음
+        </div>
       )}
+
+      {/* 책 정보 */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ 
+          fontWeight: 'var(--font-weight-semibold)', 
+          fontSize: 'var(--font-size-md)',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          lineHeight: 1.3,
+          minHeight: 40
+        }}>
+          {book.book_title || '제목 없음'}
+        </div>
+        <div style={{ 
+          fontSize: 'var(--font-size-sm)', 
+          color: '#666',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap'
+        }}>
+          {book.book_author || '저자 없음'}
+        </div>
+      </div>
+
+      {/* 상태 변경 버튼 */}
+      <button 
+        className={book.status === 'reading' ? 'btn primary' : 'btn'}
+        style={{ 
+          marginTop: 'auto',
+          fontSize: 'var(--font-size-sm)', 
+          padding: '10px 16px',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6
+        }} 
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleStatus()
+        }}
+        aria-label={book.status === 'reading' ? '다 읽음으로 변경' : '읽는 중으로 변경'}
+      >
+        {book.status === 'reading' ? (
+          <>✅ 다 읽음</>
+        ) : (
+          <>📖 읽는 중</>
+        )}
+      </button>
+    </div>
+  )
+}
+
+// 책 상세 정보 모달
+function BookDetailModal({
+  book,
+  onClose,
+  onToggleStatus,
+  onDelete,
+  onWriteRecord
+}: {
+  book: UserBook
+  onClose: () => void
+  onToggleStatus: () => void
+  onDelete: () => void
+  onWriteRecord: () => void
+}) {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: 'var(--grid-gap-md)'
+      }}
+      onClick={onClose}
+    >
+      <div
+        className="card"
+        style={{
+          maxWidth: 600,
+          width: '100%',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          position: 'relative'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            width: 36,
+            height: 36,
+            borderRadius: '50%',
+            backgroundColor: 'var(--color-background-secondary)',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 20,
+            zIndex: 10
+          }}
+          aria-label="닫기"
+        >
+          ×
+        </button>
+
+        <div style={{ display: 'flex', gap: 'var(--grid-gap-md)', marginBottom: 'var(--grid-gap-md)' }}>
+          {book.book_cover_url ? (
+            <img
+              src={book.book_cover_url}
+              alt={book.book_title ?? ''}
+              style={{
+                width: 150,
+                height: 210,
+                objectFit: 'cover',
+                borderRadius: 'var(--radius-medium)',
+                boxShadow: 'var(--shadow-card)',
+                flexShrink: 0
+              }}
+            />
+          ) : (
+            <div style={{
+              width: 150,
+              height: 210,
+              backgroundColor: 'var(--color-background-secondary)',
+              borderRadius: 'var(--radius-medium)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#999',
+              fontSize: 'var(--font-size-sm)',
+              border: '2px dashed var(--color-border-medium)'
+            }}>
+              표지 없음
+            </div>
+          )}
+
+          <div style={{ flex: 1 }}>
+            <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-xs)', fontSize: 'var(--font-size-xl)' }}>
+              {book.book_title || '제목 없음'}
+            </h3>
+            <div style={{ fontSize: 'var(--font-size-md)', color: '#666', marginBottom: 'var(--grid-gap-sm)' }}>
+              {book.book_author || '저자 없음'}
+            </div>
+            
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)', fontSize: 'var(--font-size-sm)' }}>
+              {book.book_publisher && (
+                <div>
+                  <strong>출판사:</strong> {book.book_publisher}
+                </div>
+              )}
+              {book.book_publication_year && (
+                <div>
+                  <strong>출판연도:</strong> {book.book_publication_year}
+                </div>
+              )}
+              {book.book_total_pages && (
+                <div>
+                  <strong>페이지 수:</strong> {book.book_total_pages}페이지
+                </div>
+              )}
+              {book.book_isbn && (
+                <div>
+                  <strong>ISBN:</strong> {book.book_isbn}
+                </div>
+              )}
+              <div>
+                <strong>상태:</strong> {book.status === 'reading' ? '📖 읽는 중' : '✅ 다 읽음'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 'var(--grid-gap-sm)', flexWrap: 'wrap' }}>
+          <button
+            className="btn primary"
+            onClick={onWriteRecord}
+            style={{ flex: 1, minWidth: 150, fontSize: 'var(--font-size-md)', padding: '12px 24px' }}
+            aria-label="독서록 작성하기"
+          >
+            ✍️ 독서록 쓰기
+          </button>
+          <button
+            className="btn"
+            onClick={onToggleStatus}
+            style={{ flex: 1, minWidth: 150, fontSize: 'var(--font-size-md)', padding: '12px 24px' }}
+            aria-label={book.status === 'reading' ? '다 읽음으로 변경' : '읽는 중으로 변경'}
+          >
+            {book.status === 'reading' ? '✅ 다 읽음으로 변경' : '📖 읽는 중으로 변경'}
+          </button>
+          <button
+            className="btn"
+            onClick={onDelete}
+            style={{ 
+              flex: 1, 
+              minWidth: 150, 
+              fontSize: 'var(--font-size-md)', 
+              padding: '12px 24px',
+              backgroundColor: 'var(--color-negative)',
+              color: 'white'
+            }}
+            aria-label="책 삭제하기"
+          >
+            🗑️ 삭제하기
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// 삭제 확인 모달
+function DeleteConfirmModal({
+  book,
+  onConfirm,
+  onCancel
+}: {
+  book: UserBook
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1001,
+        padding: 'var(--grid-gap-md)'
+      }}
+      onClick={onCancel}
+    >
+      <div
+        className="card"
+        style={{
+          maxWidth: 400,
+          width: '100%'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 style={{ marginTop: 0, color: 'var(--color-negative)' }}>⚠️ 책 삭제하기</h3>
+        <p style={{ fontSize: 'var(--font-size-md)', marginBottom: 'var(--grid-gap-md)' }}>
+          <strong>"{book.book_title || '제목 없음'}"</strong> 책을 책장에서 삭제하시겠어요?
+        </p>
+        <p style={{ fontSize: 'var(--font-size-sm)', color: '#666', marginBottom: 'var(--grid-gap-md)' }}>
+          삭제하면 다시 되돌릴 수 없어요.
+        </p>
+        <div style={{ display: 'flex', gap: 'var(--grid-gap-sm)', justifyContent: 'flex-end' }}>
+          <button
+            className="btn"
+            onClick={onCancel}
+            style={{ fontSize: 'var(--font-size-md)', padding: '10px 20px' }}
+            aria-label="취소"
+          >
+            취소
+          </button>
+          <button
+            className="btn"
+            onClick={onConfirm}
+            style={{ 
+              fontSize: 'var(--font-size-md)', 
+              padding: '10px 20px',
+              backgroundColor: 'var(--color-negative)',
+              color: 'white'
+            }}
+            aria-label="삭제 확인"
+          >
+            삭제하기
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
