@@ -169,7 +169,7 @@ export default async function MyPage() {
       <div className="card">
         <div>이메일: {user.email}</div>
         <div>이름: {profile.name}</div>
-        <div>역할: {normalizedRole === 'admin' ? '관리자' : '교사'}</div>
+        <div>역할: {normalizedRole === 'admin' ? '관리자' : normalizedRole === 'teacher' ? '교사' : '학생'}</div>
         <div>개인 레벨: {profile.level}</div>
         <div>내 잎사귀: 🍃 {approvedCount ?? 0}개</div>
         <div>내 물방울: 💧 {profile.points}점</div>

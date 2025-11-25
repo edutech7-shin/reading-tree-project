@@ -21,23 +21,50 @@ export default async function StudentMissionsPage() {
     .eq('id', user.id)
     .maybeSingle()
 
-  if (profileError || profile?.role !== 'student') {
+  if (profileError) {
+    return (
+      <main className='container'>
+        <div className="card">
+          <p>프로필 정보를 불러올 수 없습니다.</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (!profile) {
+    redirect('/')
+  }
+
+  // role이 'student'가 아니면 리다이렉트
+  const normalizedRole = (profile.role ?? '').trim().toLowerCase()
+  if (normalizedRole !== 'student') {
     redirect('/')
   }
 
   // 학생의 class_students 레코드 찾기 (name으로 매칭)
-  const { data: studentRecord } = await supabase
+  const { data: studentRecord, error: studentRecordError } = await supabase
     .from('class_students')
-    .select('id')
+    .select('id, name, student_number')
     .eq('name', profile.name)
     .limit(1)
     .maybeSingle()
+
+  if (studentRecordError) {
+    console.error('[StudentMissionsPage] Student record error:', studentRecordError)
+  }
 
   if (!studentRecord) {
     return (
       <main className='container'>
         <div className="card">
-          <p>학생 정보를 찾을 수 없습니다.</p>
+          <h3 style={{ marginTop: 0 }}>학생 정보를 찾을 수 없습니다</h3>
+          <p style={{ color: '#666', fontSize: 'var(--font-size-sm)' }}>
+            이름: {profile.name}<br />
+            역할: {profile.role}
+          </p>
+          <p style={{ color: '#666', fontSize: 'var(--font-size-sm)', marginTop: 12 }}>
+            교사가 학생을 반에 등록해야 미션을 받을 수 있습니다.
+          </p>
         </div>
       </main>
     )
