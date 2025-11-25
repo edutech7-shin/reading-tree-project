@@ -242,7 +242,7 @@ export default function TopNav() {
         <Link href="/me">책장</Link>
         <Link href="/record">독서록</Link>
         {!loading && isLoggedIn && userRole === 'student' && (
-          <Link href="/me/missions">내 미션</Link>
+          <Link href="/missions">미션</Link>
         )}
         <Link href="/">독서 나무</Link>
         {!loading && isLoggedIn && userRole === 'admin' && (
