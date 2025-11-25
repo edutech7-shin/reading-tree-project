@@ -44,7 +44,7 @@ export default async function StudentMissionsPage() {
   }
 
   // 할당된 미션 가져오기
-  const { data: assignments, error: assignmentsError } = await supabase
+  const { data: assignmentsRaw, error: assignmentsError } = await supabase
     .from('mission_assignments')
     .select(`
       id,
@@ -72,6 +72,18 @@ export default async function StudentMissionsPage() {
   if (assignmentsError) {
     throw new Error('미션 정보를 불러올 수 없습니다.')
   }
+
+  // Supabase 관계 쿼리 결과를 타입에 맞게 변환
+  const assignments = (assignmentsRaw || []).map((a: any) => ({
+    id: a.id,
+    mission_id: a.mission_id,
+    start_date: a.start_date,
+    end_date: a.end_date,
+    status: a.status,
+    assigned_at: a.assigned_at,
+    completed_at: a.completed_at,
+    missions: Array.isArray(a.missions) ? a.missions[0] : a.missions
+  })).filter((a: any) => a.missions) // missions가 없는 경우 필터링
 
   // 완료 기록 가져오기
   const assignmentIds = (assignments || []).map(a => a.id)
