@@ -54,6 +54,7 @@ export default function RecordPage() {
   }>>([])
   const [selectedBookId, setSelectedBookId] = useState<number | ''>('')
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [currentStep, setCurrentStep] = useState(1) // 1: 책 선택, 2: 기본 정보, 3: 감상평, 4: 확인
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
@@ -380,6 +381,8 @@ export default function RecordPage() {
       setMessage('제출되었습니다. 승인 대기 중입니다!')
       // 최근 기록 다시 로드 (loadRecentRecords 함수 재사용)
       await loadRecentRecords()
+      // 단계 초기화
+      setCurrentStep(1)
     }
   }
 
@@ -393,9 +396,59 @@ export default function RecordPage() {
       `}} />
       <div className="card" style={{ marginTop: 'var(--card-spacing)' }}>
         <h1>독서록</h1>
+        
+        {/* 단계 표시 */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: 'var(--grid-gap-md)',
+          paddingBottom: 'var(--grid-gap-md)',
+          borderBottom: '2px solid var(--color-border-medium)'
+        }}>
+          {[1, 2, 3, 4].map((step) => (
+            <div key={step} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+              <div style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                backgroundColor: currentStep >= step ? 'var(--color-primary)' : 'var(--color-background-secondary)',
+                color: currentStep >= step ? 'white' : 'var(--color-text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 'var(--font-weight-bold)',
+                fontSize: 'var(--font-size-sm)',
+                marginRight: 'var(--grid-gap-xs)'
+              }}>
+                {currentStep > step ? '✓' : step}
+              </div>
+              <span style={{
+                fontSize: 'var(--font-size-sm)',
+                color: currentStep >= step ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                fontWeight: currentStep === step ? 'var(--font-weight-bold)' : 'normal'
+              }}>
+                {step === 1 ? '책 선택' : step === 2 ? '기본 정보' : step === 3 ? '감상평' : '확인'}
+              </span>
+              {step < 4 && (
+                <div style={{
+                  flex: 1,
+                  height: 2,
+                  backgroundColor: currentStep > step ? 'var(--color-primary)' : 'var(--color-border-medium)',
+                  marginLeft: 'var(--grid-gap-xs)',
+                  marginRight: 'var(--grid-gap-xs)'
+                }} />
+              )}
+            </div>
+          ))}
+        </div>
+
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 'var(--grid-gap-md)' }}>
-          {/* 책 선택: 내 책장에서만 선택 가능 - 모달 열기 */}
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+          {/* 1단계: 책 선택 */}
+          {currentStep === 1 && (
+            <>
+              {/* 책 선택: 내 책장에서만 선택 가능 - 모달 열기 */}
+              <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
             <div>
               <label style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', marginBottom: 'var(--grid-gap-xs)', display: 'block' }}>책 선택</label>
               <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)', display: 'block', marginBottom: 'var(--grid-gap-sm)' }}>
@@ -480,10 +533,10 @@ export default function RecordPage() {
                 ))}
               </div>
             </div>
-          )}
-          
-          {/* 선택한 책 표지와 정보 입력 필드 */}
-          {(bookCoverUrl || bookTitle) && (
+              )}
+              
+              {/* 선택한 책 표지와 정보 입력 필드 */}
+              {(bookCoverUrl || bookTitle) && (
             <div style={{ 
               display: 'flex', 
               gap: 'var(--grid-gap-md)', 
@@ -590,6 +643,366 @@ export default function RecordPage() {
                 </div>
               </div>
             </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--grid-gap-md)' }}>
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => {
+                    if (bookTitle || bookCoverUrl) {
+                      setCurrentStep(2)
+                    } else {
+                      setMessage('책을 선택해주세요.')
+                    }
+                  }}
+                  disabled={!bookTitle && !bookCoverUrl}
+                >
+                  다음 단계 →
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* 2단계: 기본 정보 입력 */}
+          {currentStep === 2 && (
+            <>
+              <div style={{ display: 'grid', gap: 'var(--grid-gap-md)' }}>
+                {/* 선택한 책 표지와 정보 입력 필드 */}
+                {(bookCoverUrl || bookTitle) && (
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: 'var(--grid-gap-md)', 
+                    marginBottom: 'var(--grid-gap-md)',
+                    alignItems: 'flex-start'
+                  }}>
+                    {bookCoverUrl && (
+                      <img
+                        src={bookCoverUrl}
+                        alt={bookTitle}
+                        style={{ 
+                          width: 120, 
+                          height: 168, 
+                          objectFit: 'cover', 
+                          borderRadius: 'var(--radius-small)', 
+                          boxShadow: 'var(--shadow-card)',
+                          display: 'block',
+                          flexShrink: 0
+                        }}
+                      />
+                    )}
+                    <div style={{ flex: 1, display: 'grid', gap: 'var(--grid-gap-sm)' }}>
+                      <div style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)' }}>
+                        {bookTitle || '(제목 없음)'}
+                      </div>
+                      {bookAuthor && (
+                        <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+                          {bookAuthor}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--grid-gap-md)' }}>
+                  <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+                    <label htmlFor="book-isbn">ISBN</label>
+                    <input 
+                      id="book-isbn"
+                      name="book-isbn"
+                      type="text"
+                      value={bookIsbn} 
+                      onChange={(e) => setBookIsbn(e.target.value)} 
+                      placeholder="ISBN을 입력하세요"
+                    />
+                  </div>
+                  <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+                    <label htmlFor="book-publication-year">출판 연도</label>
+                    <input 
+                      id="book-publication-year"
+                      name="book-publication-year"
+                      type="text"
+                      value={bookPublicationYear} 
+                      onChange={(e) => setBookPublicationYear(e.target.value)} 
+                      placeholder="예: 2024"
+                    />
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--grid-gap-md)' }}>
+                  <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+                    <label htmlFor="record-date">작성 날짜</label>
+                    <input 
+                      id="record-date"
+                      name="record-date"
+                      type="date"
+                      value={recordDate} 
+                      onChange={(e) => setRecordDate(e.target.value)} 
+                    />
+                  </div>
+                  <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+                    <label htmlFor="book-total-pages">전체 페이지 수</label>
+                    <input 
+                      id="book-total-pages"
+                      name="book-total-pages"
+                      type="number"
+                      min="1"
+                      value={bookTotalPages} 
+                      onChange={(e) => setBookTotalPages(e.target.value)} 
+                      placeholder="예: 320" 
+                    />
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--grid-gap-md)' }}>
+                  <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+                    <label>
+                      별점 <span style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'normal' }}>[물방울+1]</span>
+                    </label>
+                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setRating(star)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: 0,
+                            fontSize: 32,
+                            lineHeight: 1,
+                            color: rating && star <= rating ? '#FFD700' : '#ddd',
+                            transition: 'color 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!rating) {
+                              e.currentTarget.style.color = '#FFD700'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!rating || star > rating) {
+                              e.currentTarget.style.color = '#ddd'
+                            }
+                          }}
+                        >
+                          ★
+                        </button>
+                      ))}
+                      {rating && (
+                        <span style={{ marginLeft: 8, color: '#666', fontSize: 'var(--font-size-sm)' }}>
+                          {rating}점
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+                    <label htmlFor="short-comment">
+                      한 줄 소감 <span style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'normal' }}>[물방울+2]</span>
+                    </label>
+                    <input 
+                      id="short-comment"
+                      name="short-comment"
+                      type="text"
+                      value={shortComment} 
+                      onChange={(e) => setShortComment(e.target.value)} 
+                      placeholder="한 줄로 간단히 소감을 적어보세요"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--grid-gap-md)' }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setCurrentStep(1)}
+                >
+                  ← 이전
+                </button>
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => setCurrentStep(3)}
+                >
+                  다음 단계 →
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* 3단계: 감상평 작성 및 이미지 첨부 */}
+          {currentStep === 3 && (
+            <>
+              <div style={{ display: 'grid', gap: 'var(--grid-gap-md)' }}>
+                <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+                  <label htmlFor="content-text">
+                    책을 읽고 생각하거나 느낀 점 <span style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'normal' }}>[물방울+5]</span>
+                  </label>
+                  <textarea 
+                    id="content-text"
+                    name="content-text"
+                    value={contentText} 
+                    onChange={(e) => setContentText(e.target.value)} 
+                    rows={8} 
+                    placeholder="책을 읽고 생각하거나 느낀 점을 적어보세요"
+                  />
+                </div>
+                <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+                  <label htmlFor="image-file">
+                    파일첨부(그림, 마인드맵 등) <span style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'normal' }}>[물방울+2]</span>
+                  </label>
+                  <input 
+                    id="image-file"
+                    name="image-file"
+                    type="file" 
+                    accept="image/*" 
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null
+                      setFileError(null)
+                      
+                      if (file) {
+                        if (!file.type.startsWith('image/')) {
+                          setFileError('이미지 파일만 업로드 가능합니다.')
+                          setImageFile(null)
+                          e.target.value = ''
+                          return
+                        }
+                        
+                        if (file.size > MAX_FILE_SIZE) {
+                          setFileError(`파일 크기가 5MB를 초과합니다. (현재: ${(file.size / 1024 / 1024).toFixed(2)}MB)`)
+                          setImageFile(null)
+                          e.target.value = ''
+                          return
+                        }
+                      }
+                      
+                      setImageFile(file)
+                    }} 
+                    title="이미지 파일만 업로드 가능하며, 최대 5MB까지 업로드할 수 있습니다"
+                  />
+                  {fileError && (
+                    <small className="text-negative" style={{ fontSize: 'var(--font-size-xs)' }}>
+                      {fileError}
+                    </small>
+                  )}
+                  {imageFile && !fileError && (
+                    <small className="text-secondary" style={{ fontSize: 'var(--font-size-xs)' }}>
+                      선택된 파일: {imageFile.name} ({(imageFile.size / 1024).toFixed(1)} KB)
+                    </small>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--grid-gap-md)' }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setCurrentStep(2)}
+                >
+                  ← 이전
+                </button>
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => setCurrentStep(4)}
+                >
+                  다음 단계 →
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* 4단계: 최종 확인 및 제출 */}
+          {currentStep === 4 && (
+            <>
+              <div className="card" style={{ backgroundColor: 'var(--color-background-secondary)', marginBottom: 'var(--grid-gap-md)' }}>
+                <h3 style={{ marginTop: 0 }}>작성 내용 확인</h3>
+                <div style={{ display: 'grid', gap: 'var(--grid-gap-sm)' }}>
+                  <div>
+                    <strong>책 제목:</strong> {bookTitle || '(없음)'}
+                  </div>
+                  {bookAuthor && (
+                    <div>
+                      <strong>저자:</strong> {bookAuthor}
+                    </div>
+                  )}
+                  {bookPublisher && (
+                    <div>
+                      <strong>출판사:</strong> {bookPublisher}
+                    </div>
+                  )}
+                  {bookIsbn && (
+                    <div>
+                      <strong>ISBN:</strong> {bookIsbn}
+                    </div>
+                  )}
+                  {bookPublicationYear && (
+                    <div>
+                      <strong>출판 연도:</strong> {bookPublicationYear}
+                    </div>
+                  )}
+                  {bookTotalPages && (
+                    <div>
+                      <strong>전체 페이지 수:</strong> {bookTotalPages}
+                    </div>
+                  )}
+                  <div>
+                    <strong>작성 날짜:</strong> {recordDate}
+                  </div>
+                  {rating && (
+                    <div>
+                      <strong>별점:</strong> {'★'.repeat(rating)} ({rating}점)
+                    </div>
+                  )}
+                  {shortComment && (
+                    <div>
+                      <strong>한 줄 소감:</strong> {shortComment}
+                    </div>
+                  )}
+                  {contentText && (
+                    <div>
+                      <strong>감상평:</strong>
+                      <p style={{ marginTop: 'var(--grid-gap-xs)', whiteSpace: 'pre-wrap' }}>{contentText}</p>
+                    </div>
+                  )}
+                  {imageFile && (
+                    <div>
+                      <strong>첨부 파일:</strong> {imageFile.name}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {message && (
+                <div 
+                  className={message.includes('실패') || message.includes('오류') ? 'bg-negative-light text-negative' : 'bg-positive-light text-positive'}
+                  style={{ 
+                    padding: 'var(--grid-gap-sm) var(--grid-gap-md)', 
+                    borderRadius: 'var(--radius-small)',
+                    fontSize: 'var(--font-size-sm)',
+                    marginBottom: 'var(--grid-gap-md)'
+                  }}
+                >
+                  {message}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--grid-gap-md)' }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setCurrentStep(3)}
+                >
+                  ← 이전
+                </button>
+                <button
+                  type="submit"
+                  className="btn primary"
+                  disabled={submitting}
+                >
+                  {submitting ? '제출 중...' : '제출하기'}
+                </button>
+              </div>
+            </>
           )}
           
           {pickerOpen && (
@@ -600,164 +1013,12 @@ export default function RecordPage() {
                 setSelectedBookId(b.id)
                 handleBookSelect(b)
                 setPickerOpen(false)
+                if (currentStep === 1) {
+                  setCurrentStep(2)
+                }
               }}
             />
           )}
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--grid-gap-md)' }}>
-            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-              <label htmlFor="record-date">작성 날짜</label>
-              <input 
-                id="record-date"
-                name="record-date"
-                type="date"
-                value={recordDate} 
-                onChange={(e) => setRecordDate(e.target.value)} 
-              />
-            </div>
-            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-              <label htmlFor="book-total-pages">전체 페이지 수</label>
-              <input 
-                id="book-total-pages"
-                name="book-total-pages"
-                type="number"
-                min="1"
-                value={bookTotalPages} 
-                onChange={(e) => setBookTotalPages(e.target.value)} 
-                placeholder="예: 320" 
-              />
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--grid-gap-md)' }}>
-            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-              <label>
-                별점 <span style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'normal' }}>[물방울+1]</span>
-              </label>
-              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setRating(star)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: 0,
-                      fontSize: 32,
-                      lineHeight: 1,
-                      color: rating && star <= rating ? '#FFD700' : '#ddd',
-                      transition: 'color 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!rating) {
-                        e.currentTarget.style.color = '#FFD700'
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!rating || star > rating) {
-                        e.currentTarget.style.color = '#ddd'
-                      }
-                    }}
-                  >
-                    ★
-                  </button>
-                ))}
-                {rating && (
-                  <span style={{ marginLeft: 8, color: '#666', fontSize: 'var(--font-size-sm)' }}>
-                    {rating}점
-                  </span>
-                )}
-              </div>
-            </div>
-            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-              <label htmlFor="short-comment">
-                한 줄 소감 <span style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'normal' }}>[물방울+2]</span>
-              </label>
-              <input 
-                id="short-comment"
-                name="short-comment"
-                type="text"
-                value={shortComment} 
-                onChange={(e) => setShortComment(e.target.value)} 
-                placeholder="한 줄로 간단히 소감을 적어보세요"
-          />
-        </div>
-          </div>
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="content-text">
-              책을 읽고 생각하거나 느낀 점 <span style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'normal' }}>[물방울+5]</span>
-            </label>
-          <textarea 
-            id="content-text"
-            name="content-text"
-            value={contentText} 
-            onChange={(e) => setContentText(e.target.value)} 
-            rows={6} 
-              placeholder="책을 읽고 생각하거나 느낀 점을 적어보세요"
-          />
-        </div>
-          <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
-            <label htmlFor="image-file">
-              파일첨부(그림, 마인드맵 등) <span style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'normal' }}>[물방울+2]</span>
-            </label>
-          <input 
-            id="image-file"
-            name="image-file"
-            type="file" 
-            accept="image/*" 
-            onChange={(e) => {
-              const file = e.target.files?.[0] || null
-              setFileError(null)
-              
-              if (file) {
-                // 파일 타입 검증
-                if (!file.type.startsWith('image/')) {
-                  setFileError('이미지 파일만 업로드 가능합니다.')
-                  setImageFile(null)
-                  e.target.value = '' // 입력 초기화
-                  return
-                }
-                
-                // 파일 크기 검증
-                if (file.size > MAX_FILE_SIZE) {
-                  setFileError(`파일 크기가 5MB를 초과합니다. (현재: ${(file.size / 1024 / 1024).toFixed(2)}MB)`)
-                  setImageFile(null)
-                  e.target.value = '' // 입력 초기화
-                  return
-                }
-              }
-              
-              setImageFile(file)
-            }} 
-              title="이미지 파일만 업로드 가능하며, 최대 5MB까지 업로드할 수 있습니다"
-          />
-          {fileError && (
-              <small className="text-negative" style={{ fontSize: 'var(--font-size-xs)' }}>
-              {fileError}
-            </small>
-          )}
-          {imageFile && !fileError && (
-              <small className="text-secondary" style={{ fontSize: 'var(--font-size-xs)' }}>
-              선택된 파일: {imageFile.name} ({(imageFile.size / 1024).toFixed(1)} KB)
-            </small>
-          )}
-        </div>
-        {message && (
-            <div 
-              className={message.includes('실패') || message.includes('오류') ? 'bg-negative-light text-negative' : 'bg-positive-light text-positive'}
-              style={{ 
-                padding: 'var(--grid-gap-sm) var(--grid-gap-md)', 
-                borderRadius: 'var(--radius-small)',
-                fontSize: 'var(--font-size-sm)'
-              }}
-            >
-            {message}
-          </div>
-        )}
-          <button className="btn primary" disabled={submitting} type="submit" style={{ width: '100%' }}>
-          {submitting ? '제출 중...' : '제출하기'}
-        </button>
       </form>
       </div>
     </main>
