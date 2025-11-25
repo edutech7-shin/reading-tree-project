@@ -241,12 +241,18 @@ export default function TopNav() {
         </Link>
         <Link href="/me">책장</Link>
         <Link href="/record">독서록</Link>
+        {!loading && isLoggedIn && userRole === 'student' && (
+          <Link href="/me/missions">내 미션</Link>
+        )}
         <Link href="/">독서 나무</Link>
         {!loading && isLoggedIn && userRole === 'admin' && (
           <Link href="/admin/dashboard">관리자</Link>
         )}
         {!loading && isLoggedIn && isTeacher && (
-          <Link href="/teacher">학급 관리</Link>
+          <>
+            <Link href="/teacher">학급 관리</Link>
+            <Link href="/teacher/missions">미션 관리</Link>
+          </>
         )}
         <span className="spacer" />
         {loading ? (
