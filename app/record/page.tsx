@@ -50,7 +50,6 @@ export default function RecordPage() {
     book_isbn: string | null
     book_publication_year: string | null
     book_total_pages: number | null
-    created_at: string
   }>>([])
   const [selectedBookId, setSelectedBookId] = useState<number | ''>('')
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -116,47 +115,32 @@ export default function RecordPage() {
   }
 
   useEffect(() => {
-    async function loadData() {
+    async function loadUserBooks() {
       const supabase = getSupabaseClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      
-      // 책장 목록 로드
-      const { data: booksData, error: booksError } = await supabase
+      const { data, error } = await supabase
         .from('user_books')
         .select('id, book_title, book_author, book_cover_url, book_publisher, book_isbn, book_publication_year, book_total_pages')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-      if (booksError) {
-        console.error('[Record] user_books load error:', booksError)
-      } else {
-        const mapped = (booksData || []).map((b) => ({
-          id: b.id as number,
-          title: (b as any).book_title || '',
-          author: (b as any).book_author || '',
-          coverUrl: (b as any).book_cover_url || null,
-          isbn: (b as any).book_isbn || null,
-          publisher: (b as any).book_publisher || null,
-          publicationYear: (b as any).book_publication_year || null,
-          totalPages: (b as any).book_total_pages ?? null,
-        }))
-        setUserBooks(mapped)
+      if (error) {
+        console.error('[Record] user_books load error:', error)
+        return
       }
-      
-      // 최근 독서 기록 로드
-      const { data: recordsData, error: recordsError } = await supabase
-        .from('book_records')
-        .select('id, book_title, book_author, book_cover_url, created_at')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10)
-      if (recordsError) {
-        console.error('[Record] recent records load error:', recordsError)
-      } else {
-        setRecentRecords((recordsData || []) as any)
-      }
+      const mapped = (data || []).map((b) => ({
+        id: b.id as number,
+        title: (b as any).book_title || '',
+        author: (b as any).book_author || '',
+        coverUrl: (b as any).book_cover_url || null,
+        isbn: (b as any).book_isbn || null,
+        publisher: (b as any).book_publisher || null,
+        publicationYear: (b as any).book_publication_year || null,
+        totalPages: (b as any).book_total_pages ?? null,
+      }))
+      setUserBooks(mapped)
     }
-    loadData()
+    loadUserBooks()
   }, [])
 
   // 최근 기록 로드 함수 (컴포넌트 레벨로 이동하여 재사용 가능하게)
@@ -238,8 +222,8 @@ export default function RecordPage() {
       return dateB - dateA
     })
     
-    // 최근 5개만 선택
-    const finalData = unsubmittedBooks.slice(0, 5)
+    // 최근 3개만 선택
+    const finalData = unsubmittedBooks.slice(0, 3)
     
     const mapped = finalData.map((r: any) => ({
       id: r.id,
@@ -250,7 +234,6 @@ export default function RecordPage() {
       book_isbn: r.book_isbn,
       book_publication_year: r.book_publication_year || null,
       book_total_pages: r.book_total_pages,
-      created_at: r.created_at || new Date().toISOString(),
     }))
     
     console.log('[Record] Final recent records:', mapped.length, 'items (unsubmitted books only)')
@@ -552,7 +535,6 @@ export default function RecordPage() {
       `}} />
       <div className="card" style={{ marginTop: 'var(--card-spacing)' }}>
         <h1>독서록</h1>
-<<<<<<< HEAD
         
         {/* 진행 단계 표시 */}
         <div style={{ 
@@ -818,7 +800,6 @@ export default function RecordPage() {
               }}
             />
           )}
-<<<<<<< HEAD
 
           {/* 2단계: 기본 정보 */}
           {currentStep === 2 && (
@@ -1320,5 +1301,4 @@ export default function RecordPage() {
     </main>
   )
 }
-
 
