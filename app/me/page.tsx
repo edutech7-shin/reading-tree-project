@@ -93,11 +93,54 @@ export default async function MyPage() {
     )
   }
 
+  // 우리 반 정보 가져오기 (학생인 경우)
+  let classInfo: {
+    className: string | null
+    classLevel: number
+    classLeaves: number
+    classTarget: number
+    classmateCount: number
+  } | null = null
+
+  if (normalizedRole === 'student' && profile?.name) {
+    // class_students에서 자신의 teacher_id 찾기
+    const { data: classStudent } = await supabase
+      .from('class_students')
+      .select('teacher_id')
+      .eq('name', profile.name)
+      .limit(1)
+      .maybeSingle()
+
+    if (classStudent?.teacher_id) {
+      // 반 나무 정보 가져오기
+      const { data: classTree } = await supabase
+        .from('class_trees')
+        .select('class_name, current_level, current_leaves, level_up_target')
+        .limit(1)
+        .maybeSingle()
+
+      // 같은 반 친구 수 세기
+      const { count: classmateCount } = await supabase
+        .from('class_students')
+        .select('*', { count: 'exact', head: true })
+        .eq('teacher_id', classStudent.teacher_id)
+
+      classInfo = {
+        className: classTree?.class_name || null,
+        classLevel: classTree?.current_level ?? 1,
+        classLeaves: classTree?.current_leaves ?? 0,
+        classTarget: classTree?.level_up_target ?? 50,
+        classmateCount: classmateCount ?? 0
+      }
+    }
+  }
+
   return (
     <main className="container">
       <h1>내 책장</h1>
 
       <div className="card">
+        <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)' }}>내 정보</h3>
         <div>이메일: {user.email}</div>
         <div>이름: {profile.name}</div>
         <div>역할: {normalizedRole === 'admin' ? '관리자' : normalizedRole === 'teacher' ? '교사' : '학생'}</div>
@@ -105,6 +148,19 @@ export default async function MyPage() {
         <div>내 잎사귀: 🍃 {approvedCount ?? 0}개</div>
         <div>내 물방울: 💧 {profile.points}점</div>
       </div>
+
+      {/* 우리 반 정보 (학생인 경우만 표시) */}
+      {classInfo && (
+        <div className="card" style={{ marginTop: 16 }}>
+          <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)' }}>우리 반</h3>
+          {classInfo.className && (
+            <div>반 이름: {classInfo.className}</div>
+          )}
+          <div>반 나무 레벨: 🌳 Lv.{classInfo.classLevel}</div>
+          <div>반 나무 잎사귀: 🍃 {classInfo.classLeaves} / {classInfo.classTarget}개</div>
+          <div>반 친구 수: 👥 {classInfo.classmateCount}명</div>
+        </div>
+      )}
 
       {/** 책장 (읽고 있어요 / 다 읽었어요) */}
       {/* Client 컴포넌트를 동적 import하여 CSR로 렌더링 */}
