@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import NextDynamic from 'next/dynamic'
 const UserBooksClient = NextDynamic(() => import('../../components/UserBooks'), { ssr: false })
-const NotificationItem = NextDynamic(() => import('../../components/NotificationItem'), { ssr: false })
 
 export const dynamic = 'force-dynamic'
 
@@ -51,18 +50,6 @@ export default async function MyPage() {
     .order('created_at', { ascending: false })
     .limit(20)
 
-  // 알림 가져오기
-  const { data: notifications, error: notificationsError } = await supabase
-    .from('notifications')
-    .select('id, type, title, message, is_read, created_at')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(10)
-  
-  // 알림 로딩 에러가 있어도 계속 진행 (알림이 없을 수도 있음)
-  if (notificationsError) {
-    console.error('[MyPage] Notifications load error:', notificationsError)
-  }
 
   // 프로필이 없으면 설정 페이지로 리다이렉트
   if (!profile) {
@@ -106,41 +93,9 @@ export default async function MyPage() {
     )
   }
 
-  const unreadCount = notifications?.filter(n => !n.is_read).length ?? 0
-
   return (
     <main className="container">
-      <h1>책장</h1>
-      
-      {/* 알림 섹션 - 알림이 있거나 없어도 항상 표시 */}
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h3 style={{ margin: 0 }}>알림</h3>
-          {unreadCount > 0 && (
-            <span style={{ 
-              backgroundColor: '#dc3545', 
-              color: 'white', 
-              borderRadius: '12px', 
-              padding: '2px 8px', 
-              fontSize: 12,
-              fontWeight: 600
-            }}>
-              {unreadCount}개
-            </span>
-          )}
-        </div>
-        {notifications && notifications.length > 0 ? (
-          <div style={{ display: 'grid', gap: 8 }}>
-            {notifications.map((notification) => (
-              <NotificationItem key={notification.id} notification={notification} />
-            ))}
-          </div>
-        ) : (
-          <p style={{ color: '#999', textAlign: 'center', padding: 12, fontSize: 14 }}>
-            알림이 없습니다.
-          </p>
-        )}
-      </div>
+      <h1>내 책장</h1>
 
       <div className="card">
         <div>이메일: {user.email}</div>
