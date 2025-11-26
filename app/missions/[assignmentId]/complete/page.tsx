@@ -95,10 +95,38 @@ export default function MissionCompletePage() {
         return
       }
 
-      if (assignmentData.status !== 'active') {
+      // 기간 미션인지 확인 (end_date가 있는 경우)
+      const isPeriodMission = assignmentData.end_date !== null
+      
+      // 기간 미션이 아닌 경우, 이미 완료되었는지 확인
+      if (!isPeriodMission && assignmentData.status !== 'active') {
         setMessage('이 미션은 이미 완료되었거나 만료되었습니다.')
         setLoading(false)
         return
+      }
+
+      // 기간 미션인 경우, 오늘 이미 완료했는지 확인
+      if (isPeriodMission) {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const todayEnd = new Date(today)
+        todayEnd.setHours(23, 59, 59, 999)
+
+        const { data: todayCompletions } = await supabase
+          .from('mission_completions')
+          .select('id')
+          .eq('assignment_id', assignmentId)
+          .eq('student_id', classStudent.id)
+          .gte('completed_at', today.toISOString())
+          .lte('completed_at', todayEnd.toISOString())
+          .eq('verification_status', 'approved')
+          .limit(1)
+
+        if (todayCompletions && todayCompletions.length > 0) {
+          setMessage('오늘 이미 이 미션을 완료했습니다. 내일 다시 시도해주세요!')
+          setLoading(false)
+          return
+        }
       }
 
       setAssignment(assignmentData)
@@ -208,6 +236,9 @@ export default function MissionCompletePage() {
       proofImageUrl = urlData.publicUrl
     }
 
+    // 기간 미션인지 확인 (end_date가 있는 경우)
+    const isPeriodMission = assignment.end_date !== null
+
     // 미션 완료 기록 생성
     const { data: completion, error: completionError } = await supabase
       .from('mission_completions')
@@ -228,6 +259,22 @@ export default function MissionCompletePage() {
       setMessage('미션 완료 처리에 실패했습니다.')
       setSubmitting(false)
       return
+    }
+
+    // 기간 미션이 아닌 경우에만 mission_assignments의 status를 completed로 변경
+    if (!isPeriodMission) {
+      const { error: updateError } = await supabase
+        .from('mission_assignments')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', assignment.id)
+
+      if (updateError) {
+        console.error('[Mission Complete] Assignment update error:', updateError)
+        // 업데이트 실패해도 완료는 기록됨
+      }
     }
 
     // 자체 검증(self)인 경우 즉시 포인트 지급

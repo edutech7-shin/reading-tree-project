@@ -93,25 +93,49 @@ export default async function MissionsPage() {
     }
   }
 
-  // 미션 완료 정보 가져오기
+  // 미션 완료 정보 가져오기 (오늘 완료한 기록 포함)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const todayEnd = new Date(today)
+  todayEnd.setHours(23, 59, 59, 999)
+
   const { data: completions, error: completionsError } = studentId ? await supabase
     .from('mission_completions')
     .select('assignment_id, verification_status, completed_at, points_awarded')
     .eq('student_id', studentId) : { data: null, error: null }
 
   const completionMap = new Map()
+  const todayCompletionMap = new Map()
+  
   if (completions && !completionsError) {
     completions.forEach((completion: any) => {
-      completionMap.set(completion.assignment_id, completion)
+      const completionDate = new Date(completion.completed_at)
+      const isToday = completionDate >= today && completionDate <= todayEnd
+      
+      // 오늘 완료한 기록인지 확인
+      if (isToday && completion.verification_status === 'approved') {
+        todayCompletionMap.set(completion.assignment_id, completion)
+      }
+      
+      // 가장 최근 완료 기록 저장
+      const existing = completionMap.get(completion.assignment_id)
+      if (!existing || new Date(completion.completed_at) > new Date(existing.completed_at)) {
+        completionMap.set(completion.assignment_id, completion)
+      }
     })
   }
 
   // 각 미션에 완료 정보 추가
   missions = missions.map((mission) => {
     const completion = completionMap.get(mission.assignmentId)
+    const todayCompletion = todayCompletionMap.get(mission.assignmentId)
+    const isPeriodMission = mission.endDate !== null
+    
     return {
       ...mission,
-      completion: completion || null
+      completion: completion || null,
+      todayCompletion: todayCompletion || null,
+      isPeriodMission
     }
   })
 
@@ -243,7 +267,24 @@ export default async function MissionsPage() {
                 )}
               </div>
 
-              {mission.status === 'active' && !mission.completion && (
+              {/* 기간 미션인 경우 오늘 완료 여부 확인 */}
+              {mission.status === 'active' && mission.isPeriodMission && mission.todayCompletion && (
+                <div style={{ 
+                  marginTop: 'var(--grid-gap-sm)', 
+                  padding: 'var(--grid-gap-sm)', 
+                  backgroundColor: 'var(--color-success-light)',
+                  borderRadius: 'var(--radius-small)',
+                  color: 'var(--color-success)'
+                }}>
+                  ✅ 오늘 미션을 완료했습니다!
+                </div>
+              )}
+
+              {/* 미션 완료 버튼: 기간 미션이 아니고 완료되지 않았거나, 기간 미션이고 오늘 완료하지 않은 경우 */}
+              {mission.status === 'active' && (
+                (!mission.isPeriodMission && !mission.completion) || 
+                (mission.isPeriodMission && !mission.todayCompletion)
+              ) && (
                 <div style={{ marginTop: 'var(--grid-gap-sm)' }}>
                   <Link
                     href={`/missions/${mission.assignmentId}/complete`}
