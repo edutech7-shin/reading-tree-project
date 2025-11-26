@@ -1,0 +1,9 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/daily-mission-notifications",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}
+
