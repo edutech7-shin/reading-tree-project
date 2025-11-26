@@ -395,7 +395,7 @@ export default function RecordPage() {
         }
       `}} />
       <div className="card" style={{ marginTop: 'var(--card-spacing)' }}>
-        <h1>독서록</h1>
+        <h1>독후 활동</h1>
         
         {/* 단계 표시 */}
         <div style={{ 
@@ -452,7 +452,7 @@ export default function RecordPage() {
             <div>
               <label style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', marginBottom: 'var(--grid-gap-xs)', display: 'block' }}>책 선택</label>
               <small className="text-tertiary" style={{ fontSize: 'var(--font-size-xs)', display: 'block', marginBottom: 'var(--grid-gap-sm)' }}>
-                독서록을 쓰려면 책장에 먼저 추가하세요.
+                독후 활동을 쓰려면 책장에 먼저 추가하세요.
               </small>
             </div>
             <button type="button" className="btn primary" onClick={() => setPickerOpen(true)} style={{ width: '100%', padding: 'var(--grid-gap-md)' }}>

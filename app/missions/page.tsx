@@ -24,7 +24,7 @@ export default async function MissionsPage() {
   if (profileError || !profile) {
     return (
       <main className="container">
-        <h1>미션</h1>
+        <h1>독서 습관 기르기</h1>
         <p>프로필 정보를 불러올 수 없습니다.</p>
       </main>
     )

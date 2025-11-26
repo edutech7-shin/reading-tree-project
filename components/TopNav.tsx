@@ -239,10 +239,10 @@ export default function TopNav() {
         }}>
           독서 나무
         </Link>
-        <Link href="/me">책장</Link>
-        <Link href="/record">독서록</Link>
+        <Link href="/me">내 책장</Link>
+        <Link href="/record">독후 활동</Link>
         {!loading && isLoggedIn && userRole === 'student' && (
-          <Link href="/missions">미션</Link>
+          <Link href="/missions">독서 습관 기르기</Link>
         )}
         {!loading && isLoggedIn && userRole === 'admin' && (
           <Link href="/admin/dashboard">관리자</Link>
