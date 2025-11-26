@@ -120,32 +120,33 @@ export default async function Home() {
   // 최근 20개만 표시
   const recentActivities = activities.slice(0, 20)
 
-  // 최근 우리 반 친구들이 읽고 있는 책 목록 가져오기 (최근 등록 순, 9권)
-  const { data: readingBooks } = await supabase
-    .from('user_books')
+  // 최근 우리 반 친구들이 읽은 책 목록 가져오기 (승인된 독서 기록 기준, 최근 승인 순, 9권)
+  const { data: readBooks } = await supabase
+    .from('book_records')
     .select(`
       id,
       book_title,
       book_author,
       book_cover_url,
-      created_at,
-      profiles!user_books_user_id_fkey (
+      approved_at,
+      profiles!book_records_user_id_fkey (
         name
       )
     `)
-    .eq('status', 'reading')
-    .order('created_at', { ascending: false })
+    .eq('status', 'approved')
+    .not('approved_at', 'is', null)
+    .order('approved_at', { ascending: false })
     .limit(9)
 
-  const recentReadingBooks = readingBooks?.map((book: any) => {
-    const profile = Array.isArray(book.profiles) ? book.profiles[0] : book.profiles
+  const recentReadBooks = readBooks?.map((record: any) => {
+    const profile = Array.isArray(record.profiles) ? record.profiles[0] : record.profiles
     return {
-      id: book.id,
-      title: book.book_title,
-      author: book.book_author,
-      coverUrl: book.book_cover_url,
+      id: record.id,
+      title: record.book_title,
+      author: record.book_author,
+      coverUrl: record.book_cover_url,
       studentName: profile?.name || '알 수 없음',
-      createdAt: book.created_at
+      approvedAt: record.approved_at
     }
   }).filter((book: any) => book.studentName !== '알 수 없음') || []
 
@@ -174,18 +175,18 @@ export default async function Home() {
             <ClassTree level={level} currentLeaves={currentLeaves} targetLeaves={targetLeaves} />
           </div>
 
-          {/* 나무 그래픽 아래: 최근 읽고 있는 책 목록 (가로 3권, 세로 3줄) */}
-          {recentReadingBooks.length > 0 && (
+          {/* 나무 그래픽 아래: 최근 읽은 책 목록 (가로 3권, 세로 3줄) */}
+          {recentReadBooks.length > 0 && (
             <div className="card" style={{ marginTop: 'var(--grid-gap-md)' }}>
               <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)' }}>
-                📖 최근 우리 반 친구들이 읽고 있는 책
+                📖 최근 우리 반 친구들이 읽은 책
               </h3>
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: 'repeat(3, 1fr)',
                 gap: 'var(--grid-gap-sm)'
               }}>
-                {recentReadingBooks.map((book) => (
+                {recentReadBooks.map((book) => (
                   <div
                     key={book.id}
                     style={{
