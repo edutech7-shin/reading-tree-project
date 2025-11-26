@@ -120,7 +120,7 @@ export default async function Home() {
   // 최근 20개만 표시
   const recentActivities = activities.slice(0, 20)
 
-  // 최근 우리 반 친구들이 읽고 있는 책 목록 가져오기
+  // 최근 우리 반 친구들이 읽고 있는 책 목록 가져오기 (최근 등록 순, 9권)
   const { data: readingBooks } = await supabase
     .from('user_books')
     .select(`
@@ -135,7 +135,7 @@ export default async function Home() {
     `)
     .eq('status', 'reading')
     .order('created_at', { ascending: false })
-    .limit(12)
+    .limit(9)
 
   const recentReadingBooks = readingBooks?.map((book: any) => {
     const profile = Array.isArray(book.profiles) ? book.profiles[0] : book.profiles
@@ -174,46 +174,68 @@ export default async function Home() {
             <ClassTree level={level} currentLeaves={currentLeaves} targetLeaves={targetLeaves} />
           </div>
 
-          {/* 나무 그래픽 아래: 최근 읽고 있는 책 목록 */}
+          {/* 나무 그래픽 아래: 최근 읽고 있는 책 목록 (가로 3권, 세로 3줄) */}
           {recentReadingBooks.length > 0 && (
             <div className="card" style={{ marginTop: 'var(--grid-gap-md)' }}>
               <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)' }}>
                 📖 최근 우리 반 친구들이 읽고 있는 책
               </h3>
-              <div style={{ display: 'grid', gap: 'var(--grid-gap-sm)' }}>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: 'var(--grid-gap-sm)'
+              }}>
                 {recentReadingBooks.map((book) => (
                   <div
                     key={book.id}
                     style={{
                       display: 'flex',
-                      gap: 'var(--grid-gap-sm)',
+                      flexDirection: 'column',
                       alignItems: 'center',
                       padding: 'var(--grid-gap-xs)',
                       border: '1px solid var(--color-border)',
                       borderRadius: 'var(--radius-small)',
-                      backgroundColor: 'var(--color-bg-secondary)'
+                      backgroundColor: 'var(--color-bg-secondary)',
+                      textAlign: 'center'
                     }}
                   >
-                    {book.coverUrl && (
+                    {book.coverUrl ? (
                       <img
                         src={book.coverUrl}
                         alt={book.title || ''}
                         style={{
-                          width: 50,
-                          height: 70,
+                          width: '100%',
+                          aspectRatio: '3/4',
                           objectFit: 'cover',
-                          borderRadius: 'var(--radius-small)'
+                          borderRadius: 'var(--radius-small)',
+                          marginBottom: 'var(--grid-gap-xs)'
                         }}
                       />
+                    ) : (
+                      <div style={{
+                        width: '100%',
+                        aspectRatio: '3/4',
+                        backgroundColor: 'var(--color-border-light)',
+                        borderRadius: 'var(--radius-small)',
+                        marginBottom: 'var(--grid-gap-xs)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--color-text-tertiary)',
+                        fontSize: 'var(--font-size-xs)'
+                      }}>
+                        표지 없음
+                      </div>
                     )}
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ width: '100%' }}>
                       <div style={{ 
                         fontWeight: 'var(--font-weight-semibold)', 
-                        fontSize: 'var(--font-size-sm)',
-                        marginBottom: 2,
+                        fontSize: 'var(--font-size-xs)',
+                        marginBottom: 4,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        lineHeight: 1.4
                       }}>
                         {book.title || '(제목 없음)'}
                       </div>
@@ -221,7 +243,7 @@ export default async function Home() {
                         <div style={{ 
                           fontSize: 'var(--font-size-xs)', 
                           color: 'var(--color-text-secondary)',
-                          marginBottom: 2,
+                          marginBottom: 4,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap'
