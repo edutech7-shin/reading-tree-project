@@ -120,7 +120,7 @@ export default async function Home() {
   // 최근 20개만 표시
   const recentActivities = activities.slice(0, 20)
 
-  // 최근 우리 반 친구들이 읽은 책 목록 가져오기 (승인된 독서 기록 기준, 최근 승인 순, 9권)
+  // 최근 우리 반 친구들이 읽은 책 목록 가져오기 (각 학생별 최근 1권씩, 최대 9명)
   const { data: readBooks } = await supabase
     .from('book_records')
     .select(`
@@ -136,19 +136,36 @@ export default async function Home() {
     .eq('status', 'approved')
     .not('approved_at', 'is', null)
     .order('approved_at', { ascending: false })
-    .limit(9)
 
-  const recentReadBooks = readBooks?.map((record: any) => {
-    const profile = Array.isArray(record.profiles) ? record.profiles[0] : record.profiles
-    return {
-      id: record.id,
-      title: record.book_title,
-      author: record.book_author,
-      coverUrl: record.book_cover_url,
-      studentName: profile?.name || '알 수 없음',
-      approvedAt: record.approved_at
-    }
-  }).filter((book: any) => book.studentName !== '알 수 없음') || []
+  // 각 학생별로 최근 1권씩만 추출
+  const studentBookMap = new Map<string, any>()
+  
+  if (readBooks) {
+    readBooks.forEach((record: any) => {
+      const profile = Array.isArray(record.profiles) ? record.profiles[0] : record.profiles
+      const studentName = profile?.name
+      
+      if (studentName && !studentBookMap.has(studentName)) {
+        studentBookMap.set(studentName, {
+          id: record.id,
+          title: record.book_title,
+          author: record.book_author,
+          coverUrl: record.book_cover_url,
+          studentName: studentName,
+          approvedAt: record.approved_at
+        })
+      }
+    })
+  }
+
+  // 학생별로 추출한 책들을 승인 날짜 순으로 정렬하고 최대 9권만 선택
+  const recentReadBooks = Array.from(studentBookMap.values())
+    .sort((a, b) => {
+      const dateA = new Date(a.approvedAt).getTime()
+      const dateB = new Date(b.approvedAt).getTime()
+      return dateB - dateA
+    })
+    .slice(0, 9)
 
   return (
     <main className="container">
