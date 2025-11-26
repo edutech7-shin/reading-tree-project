@@ -25,8 +25,8 @@ export default async function Home() {
   const targetLeaves = classTree?.level_up_target ?? 50
   const remaining = Math.max(0, targetLeaves - currentLeaves)
 
-  // 우리 반 나무를 자라게 한 활동 가져오기
-  const activities: Activity[] = []
+  // 우리 반 나무를 자라게 한 활동 가져오기 (학생별 최대 2개씩)
+  const allActivities: Activity[] = []
 
   // 1. 승인된 독서 기록 가져오기
   const { data: approvedRecords } = await supabase
@@ -42,13 +42,12 @@ export default async function Home() {
     .eq('status', 'approved')
     .not('approved_at', 'is', null)
     .order('approved_at', { ascending: false })
-    .limit(20)
 
   if (approvedRecords) {
     approvedRecords.forEach((record: any) => {
       const profile = Array.isArray(record.profiles) ? record.profiles[0] : record.profiles
       if (profile?.name && record.approved_at) {
-        activities.push({
+        allActivities.push({
           id: `book-${record.id}`,
           type: 'book',
           studentName: profile.name,
@@ -77,7 +76,6 @@ export default async function Home() {
     `)
     .eq('verification_status', 'approved')
     .order('completed_at', { ascending: false })
-    .limit(20)
 
   if (completedMissions) {
     completedMissions.forEach((completion: any) => {
@@ -99,7 +97,7 @@ export default async function Home() {
         : null
       
       if (student?.name && (completion.verified_at || completion.completed_at)) {
-        activities.push({
+        allActivities.push({
           id: `mission-${completion.id}`,
           type: 'mission',
           studentName: student.name,
@@ -111,14 +109,37 @@ export default async function Home() {
   }
 
   // 최신 순으로 정렬
-  activities.sort((a, b) => {
+  allActivities.sort((a, b) => {
     const dateA = new Date(a.timestamp).getTime()
     const dateB = new Date(b.timestamp).getTime()
     return dateB - dateA
   })
 
-  // 최근 20개만 표시
-  const recentActivities = activities.slice(0, 20)
+  // 각 학생별로 최대 2개씩만 추출
+  const studentActivityMap = new Map<string, Activity[]>()
+  
+  allActivities.forEach((activity) => {
+    const studentName = activity.studentName
+    if (!studentActivityMap.has(studentName)) {
+      studentActivityMap.set(studentName, [])
+    }
+    
+    const studentActivities = studentActivityMap.get(studentName)!
+    if (studentActivities.length < 2) {
+      studentActivities.push(activity)
+    }
+  })
+
+  // 모든 학생의 활동을 합쳐서 다시 최신 순으로 정렬
+  const activitiesByStudent = Array.from(studentActivityMap.values()).flat()
+  activitiesByStudent.sort((a, b) => {
+    const dateA = new Date(a.timestamp).getTime()
+    const dateB = new Date(b.timestamp).getTime()
+    return dateB - dateA
+  })
+
+  // 최대 20개만 표시
+  const recentActivities = activitiesByStudent.slice(0, 20)
 
   // 최근 우리 반 친구들이 읽은 책 목록 가져오기 (각 학생별 최근 1권씩, 최대 9명)
   const { data: readBooks } = await supabase
