@@ -141,8 +141,13 @@ export default async function Home() {
   // 최대 20개만 표시
   const recentActivities = activitiesByStudent.slice(0, 20)
 
-  // 최근 우리 반 친구들이 읽은 책 목록 가져오기 (각 학생별 최근 1권씩, 최대 9명)
-  const { data: readBooks } = await supabase
+  // 최근 우리 반 친구들이 읽은 책 목록 가져오기
+  // 1. book_records에서 승인된 독서 기록
+  // 2. user_books에서 다 읽은 책 (status='finished')
+  // 각 학생별 최근 1권씩, 최대 9명
+
+  // 1. 승인된 독서 기록 가져오기 (책 목록용)
+  const { data: approvedRecordsForBooks } = await supabase
     .from('book_records')
     .select(`
       id,
@@ -158,32 +163,71 @@ export default async function Home() {
     .not('approved_at', 'is', null)
     .order('approved_at', { ascending: false })
 
+  // 2. 다 읽은 책 가져오기 (user_books)
+  const { data: finishedBooks } = await supabase
+    .from('user_books')
+    .select(`
+      id,
+      book_title,
+      book_author,
+      book_cover_url,
+      created_at,
+      profiles!user_books_user_id_fkey (
+        name
+      )
+    `)
+    .eq('status', 'finished')
+    .order('created_at', { ascending: false })
+
   // 각 학생별로 최근 1권씩만 추출
   const studentBookMap = new Map<string, any>()
   
-  if (readBooks) {
-    readBooks.forEach((record: any) => {
+  // 먼저 승인된 독서 기록 추가
+  if (approvedRecordsForBooks) {
+    approvedRecordsForBooks.forEach((record: any) => {
       const profile = Array.isArray(record.profiles) ? record.profiles[0] : record.profiles
       const studentName = profile?.name
       
       if (studentName && !studentBookMap.has(studentName)) {
         studentBookMap.set(studentName, {
-          id: record.id,
+          id: `record-${record.id}`,
           title: record.book_title,
           author: record.book_author,
           coverUrl: record.book_cover_url,
           studentName: studentName,
-          approvedAt: record.approved_at
+          timestamp: record.approved_at,
+          source: 'approved_record'
         })
       }
     })
   }
 
-  // 학생별로 추출한 책들을 승인 날짜 순으로 정렬하고 최대 9권만 선택
+  // 다 읽은 책 추가 (승인된 기록이 없는 학생만)
+  if (finishedBooks) {
+    finishedBooks.forEach((book: any) => {
+      const profile = Array.isArray(book.profiles) ? book.profiles[0] : book.profiles
+      const studentName = profile?.name
+      
+      // 이미 승인된 기록이 있는 학생은 건너뛰기
+      if (studentName && !studentBookMap.has(studentName)) {
+        studentBookMap.set(studentName, {
+          id: `book-${book.id}`,
+          title: book.book_title,
+          author: book.book_author,
+          coverUrl: book.book_cover_url,
+          studentName: studentName,
+          timestamp: book.created_at,
+          source: 'finished_book'
+        })
+      }
+    })
+  }
+
+  // 학생별로 추출한 책들을 시간 순으로 정렬하고 최대 9권만 선택
   const recentReadBooks = Array.from(studentBookMap.values())
     .sort((a, b) => {
-      const dateA = new Date(a.approvedAt).getTime()
-      const dateB = new Date(b.approvedAt).getTime()
+      const dateA = new Date(a.timestamp).getTime()
+      const dateB = new Date(b.timestamp).getTime()
       return dateB - dateA
     })
     .slice(0, 9)
