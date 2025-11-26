@@ -120,6 +120,35 @@ export default async function Home() {
   // 최근 20개만 표시
   const recentActivities = activities.slice(0, 20)
 
+  // 최근 우리 반 친구들이 읽고 있는 책 목록 가져오기
+  const { data: readingBooks } = await supabase
+    .from('user_books')
+    .select(`
+      id,
+      book_title,
+      book_author,
+      book_cover_url,
+      created_at,
+      profiles!user_books_user_id_fkey (
+        name
+      )
+    `)
+    .eq('status', 'reading')
+    .order('created_at', { ascending: false })
+    .limit(12)
+
+  const recentReadingBooks = readingBooks?.map((book: any) => {
+    const profile = Array.isArray(book.profiles) ? book.profiles[0] : book.profiles
+    return {
+      id: book.id,
+      title: book.book_title,
+      author: book.book_author,
+      coverUrl: book.book_cover_url,
+      studentName: profile?.name || '알 수 없음',
+      createdAt: book.created_at
+    }
+  }).filter((book: any) => book.studentName !== '알 수 없음') || []
+
   return (
     <main className="container">
       <section className="hero">
@@ -131,18 +160,96 @@ export default async function Home() {
         </p>
       </section>
 
-      <section className="treeWrap">
-        <ClassTree level={level} currentLeaves={currentLeaves} targetLeaves={targetLeaves} />
-      </section>
+      {/* 나무 그래픽과 활동 목록을 좌우로 배치 */}
+      <section style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+        gap: 'var(--grid-gap-md)',
+        marginTop: 'var(--grid-gap-md)',
+        alignItems: 'start'
+      }}>
+        {/* 왼쪽: 나무 그래픽 */}
+        <div>
+          <div className="treeWrap">
+            <ClassTree level={level} currentLeaves={currentLeaves} targetLeaves={targetLeaves} />
+          </div>
 
-      {/* 우리 반 나무를 자라게 한 활동 목록 */}
-      {recentActivities.length > 0 && (
-        <section style={{ marginTop: 'var(--grid-gap-md)' }}>
+          {/* 나무 그래픽 아래: 최근 읽고 있는 책 목록 */}
+          {recentReadingBooks.length > 0 && (
+            <div className="card" style={{ marginTop: 'var(--grid-gap-md)' }}>
+              <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)' }}>
+                📖 최근 우리 반 친구들이 읽고 있는 책
+              </h3>
+              <div style={{ display: 'grid', gap: 'var(--grid-gap-sm)' }}>
+                {recentReadingBooks.map((book) => (
+                  <div
+                    key={book.id}
+                    style={{
+                      display: 'flex',
+                      gap: 'var(--grid-gap-sm)',
+                      alignItems: 'center',
+                      padding: 'var(--grid-gap-xs)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-small)',
+                      backgroundColor: 'var(--color-bg-secondary)'
+                    }}
+                  >
+                    {book.coverUrl && (
+                      <img
+                        src={book.coverUrl}
+                        alt={book.title || ''}
+                        style={{
+                          width: 50,
+                          height: 70,
+                          objectFit: 'cover',
+                          borderRadius: 'var(--radius-small)'
+                        }}
+                      />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ 
+                        fontWeight: 'var(--font-weight-semibold)', 
+                        fontSize: 'var(--font-size-sm)',
+                        marginBottom: 2,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {book.title || '(제목 없음)'}
+                      </div>
+                      {book.author && (
+                        <div style={{ 
+                          fontSize: 'var(--font-size-xs)', 
+                          color: 'var(--color-text-secondary)',
+                          marginBottom: 2,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {book.author}
+                        </div>
+                      )}
+                      <div style={{ 
+                        fontSize: 'var(--font-size-xs)', 
+                        color: 'var(--color-text-tertiary)'
+                      }}>
+                        {book.studentName}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 오른쪽: 우리 반 나무를 자라게 한 활동 목록 */}
+        {recentActivities.length > 0 && (
           <div className="card">
             <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)' }}>
               🌱 우리 반 나무를 자라게 한 활동
             </h3>
-            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)' }}>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)', maxHeight: '600px', overflowY: 'auto' }}>
               {recentActivities.map((activity) => (
                 <div
                   key={activity.id}
@@ -159,11 +266,17 @@ export default async function Home() {
                   <span style={{ fontSize: 'var(--font-size-lg)' }}>
                     {activity.type === 'book' ? '📚' : '🎯'}
                   </span>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 'var(--font-weight-semibold)', marginBottom: 2 }}>
                       {activity.studentName}
                     </div>
-                    <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+                    <div style={{ 
+                      fontSize: 'var(--font-size-sm)', 
+                      color: 'var(--color-text-secondary)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
                       {activity.type === 'book' ? '독서 기록 승인' : '미션 완료'}: {activity.content}
                     </div>
                   </div>
@@ -179,12 +292,7 @@ export default async function Home() {
               ))}
             </div>
           </div>
-        </section>
-      )}
-
-      <section className="ctaRow">
-        <Link className="btn primary" href="/record">✍️ 독서록</Link>
-        <Link className="btn" href="/me">책장 보기</Link>
+        )}
       </section>
     </main>
   )
