@@ -244,7 +244,6 @@ export default function TopNav() {
         {!loading && isLoggedIn && userRole === 'student' && (
           <Link href="/missions">미션</Link>
         )}
-        <Link href="/">독서 나무</Link>
         {!loading && isLoggedIn && userRole === 'admin' && (
           <Link href="/admin/dashboard">관리자</Link>
         )}
