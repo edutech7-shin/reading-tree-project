@@ -151,12 +151,83 @@ export default async function MyPage() {
     }
   }
 
-  // 어린이 인기 도서 가져오기 (최대 5권)
-  const { data: popularBooks } = await supabase
-    .from('popular_children_books')
-    .select('*')
-    .order('display_order', { ascending: true })
-    .limit(5)
+  // 어린이 인기 도서 가져오기 (최대 5권) - 도서관 정보나루 API에서 대출 급상승 도서 가져오기
+  let popularBooks: any[] = []
+  
+  // 도서관 정보나루 API에서 대출 급상승 도서 가져오기
+  const LIBRARY_API_KEY = process.env.LIBRARY_API_KEY?.trim()
+  
+  if (LIBRARY_API_KEY) {
+    try {
+      // 오늘 날짜를 YYYY-MM-DD 형식으로 가져오기
+      const today = new Date()
+      const year = today.getFullYear()
+      const month = String(today.getMonth() + 1).padStart(2, '0')
+      const day = String(today.getDate()).padStart(2, '0')
+      const searchDt = `${year}-${month}-${day}`
+      
+      // 도서관 정보나루 대출 급상승 도서 API 호출
+      const apiUrl = new URL('http://data4library.kr/api/hotTrend')
+      apiUrl.searchParams.set('authKey', LIBRARY_API_KEY)
+      apiUrl.searchParams.set('searchDt', searchDt)
+      apiUrl.searchParams.set('format', 'json')
+      
+      const response = await fetch(apiUrl.toString(), {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; ReadingTree/1.0)'
+        },
+        cache: 'no-store'
+      })
+      
+      if (response.ok) {
+        const data: any = await response.json()
+        
+        // 응답 데이터 파싱 (API 응답 구조에 따라 조정)
+        // 구조 1: response.result.docs
+        // 구조 2: response.results.result.docs
+        const docs = data.response?.result?.docs || 
+                     data.response?.results?.result?.docs || 
+                     data.response?.docs || 
+                     []
+        
+        for (const item of docs.slice(0, 5)) {
+          const doc = item.doc || item
+          if (!doc) continue
+          
+          const book = {
+            id: `api-${doc.isbn13 || doc.isbn || Math.random()}`,
+            book_title: doc.bookname || doc.title || '',
+            book_author: doc.authors || doc.author || '',
+            book_cover_url: doc.bookImageURL || doc.cover_url || null,
+            book_isbn: doc.isbn13 || doc.isbn || null,
+            book_publisher: doc.publisher || null,
+            book_publication_year: doc.publication_year || doc.publicationYear || null,
+            book_total_pages: null,
+            display_order: 0
+          }
+          
+          // 제목이 있는 경우만 추가
+          if (book.book_title) {
+            popularBooks.push(book)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[MyPage] Error fetching popular books from API:', error)
+    }
+  }
+  
+  // API에서 가져온 데이터가 없으면 데이터베이스에서 가져오기 (fallback)
+  if (popularBooks.length === 0) {
+    const { data: dbBooks } = await supabase
+      .from('popular_children_books')
+      .select('*')
+      .order('display_order', { ascending: true })
+      .limit(5)
+    
+    popularBooks = dbBooks || []
+  }
 
   // 선생님 추천 도서 가져오기 (최대 5권)
   // 현재 사용자의 teacher_id를 찾아서 해당 교사의 추천 도서 가져오기
