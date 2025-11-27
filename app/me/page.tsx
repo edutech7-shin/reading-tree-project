@@ -37,7 +37,10 @@ export default async function MyPage() {
   console.log('[MyPage] Normalized role/status:', normalizedRole, normalizedStatus)
   
   // status가 null이거나 빈 문자열이면 'active'로 간주 (기존 사용자 호환성)
-  const effectiveStatus = normalizedStatus || 'active'
+  // 'active' 또는 'approved'가 아니면 'pending'으로 간주하지 않고 'active'로 처리
+  const effectiveStatus = normalizedStatus && ['active', 'approved', 'pending', 'suspended'].includes(normalizedStatus)
+    ? normalizedStatus
+    : 'active'
 
   const { count: approvedCount } = await supabase
     .from('book_records')
@@ -55,24 +58,9 @@ export default async function MyPage() {
 
 
   // 프로필이 없으면 설정 페이지로 리다이렉트
+  // (프로필이 없으면 자동으로 생성되므로 이 경우는 거의 발생하지 않음)
   if (!profile) {
-    return (
-      <main className="container">
-        <h1>내 책장</h1>
-        <div className="card">
-          <p>이메일: {user.email}</p>
-          <p style={{ color: '#f97316', marginTop: 12 }}>
-            ⚠️ 관리자 승인 대기 중입니다.
-          </p>
-          <p style={{ fontSize: 14, marginTop: 8 }}>
-            관리자가 가입을 승인하면 Reading Tree를 사용할 수 있습니다. 승인 완료 시 안내 메일을 전송할 예정입니다.
-          </p>
-          <a href="/setup" className="btn primary" style={{ marginTop: 16, display: 'inline-block' }}>
-            승인 안내 보기
-          </a>
-        </div>
-      </main>
-    )
+    redirect('/setup')
   }
 
   if (normalizedRole === 'admin') {
@@ -81,7 +69,7 @@ export default async function MyPage() {
 
   // status가 'pending' 또는 'suspended'인 경우에만 승인 대기 메시지 표시
   // null, 빈 문자열, 'active', 'approved'는 정상 사용 가능
-  if (normalizedStatus && !['active', 'approved'].includes(normalizedStatus) && normalizedStatus !== '') {
+  if (effectiveStatus === 'pending' || effectiveStatus === 'suspended') {
     return (
       <main className="container">
         <h1>내 책장</h1>
