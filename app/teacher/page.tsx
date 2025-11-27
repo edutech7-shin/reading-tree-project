@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from '../../lib/supabase/server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import TreeSettings from '../../components/TreeSettings'
+import RecommendedBooksManager from '../../components/RecommendedBooksManager'
 
 export const dynamic = 'force-dynamic'
 
@@ -71,6 +72,9 @@ export default async function TeacherDashboard() {
         <Link href="/teacher/approve" className="btn" style={{ flex: 1, minWidth: '160px', textAlign: 'center' }}>독서 기록 승인</Link>
         <Link href="/teacher/students" className="btn" style={{ flex: 1, minWidth: '160px', textAlign: 'center' }}>학생 관리</Link>
       </div>
+
+      {/* 추천 도서 관리 */}
+      <RecommendedBooksManager />
     </main>
   )
 }
