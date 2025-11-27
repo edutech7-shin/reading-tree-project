@@ -343,23 +343,29 @@ export default async function Home() {
         </p>
       </section>
 
-      {/* 나무 그래픽과 활동 목록을 좌우로 배치 */}
+      {/* 나무 그래픽 가운데 배치 */}
       <section style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-        gap: 'var(--grid-gap-md)',
-        marginTop: 'var(--grid-gap-md)',
-        alignItems: 'stretch'
+        display: 'flex',
+        justifyContent: 'center',
+        marginTop: 'var(--grid-gap-md)'
       }}>
-        {/* 왼쪽: 나무 그래픽 */}
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          <div className="treeWrap" style={{ flexShrink: 0 }}>
-            <ClassTree level={level} currentLeaves={currentLeaves} targetLeaves={targetLeaves} />
-          </div>
+        <div className="treeWrap">
+          <ClassTree level={level} currentLeaves={currentLeaves} targetLeaves={targetLeaves} />
+        </div>
+      </section>
 
-          {/* 나무 그래픽 아래: 최근 읽은 책 목록 (각 학생별 1~2권씩, 최대 10권) */}
+      {/* 최근 읽은 책과 활동 목록을 나란히 배치 */}
+      {(recentReadBooks.length > 0 || recentActivities.length > 0) && (
+        <section style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+          gap: 'var(--grid-gap-md)',
+          marginTop: 'var(--grid-gap-md)',
+          alignItems: 'start'
+        }}>
+          {/* 왼쪽: 최근 읽은 책 목록 (각 학생별 1~2권씩, 최대 10권) */}
           {recentReadBooks.length > 0 && (
-            <div className="card" style={{ marginTop: 'var(--grid-gap-md)', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <div className="card">
               <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)' }}>
                 📖 최근 우리 반 친구들이 읽은 책
               </h3>
@@ -367,10 +373,7 @@ export default async function Home() {
                 display: 'grid', 
                 gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
                 gap: 'var(--grid-gap-sm)',
-                maxWidth: '100%',
-                flex: 1,
-                overflowY: 'auto',
-                maxHeight: '600px'
+                maxWidth: '100%'
               }}>
                 {recentReadBooks.map((book) => (
                   <div
@@ -450,59 +453,58 @@ export default async function Home() {
               </div>
             </div>
           )}
-        </div>
 
-        {/* 오른쪽: 우리 반 나무를 자라게 한 활동 목록 */}
-        {recentActivities.length > 0 && (
-          <div className="card" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)' }}>
-              🌱 우리 반 나무를 자라게 한 활동
-            </h3>
-            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)', flex: 1, overflowY: 'auto', maxHeight: '600px' }}>
-              {recentActivities.map((activity) => (
-                <div
-                  key={activity.id}
-                  style={{
-                    padding: 'var(--grid-gap-sm)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: 'var(--radius-small)',
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--grid-gap-sm)'
-                  }}
-                >
-                  <span style={{ fontSize: 'var(--font-size-lg)' }}>
-                    {activity.type === 'book' ? '📚' : '🎯'}
-                  </span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 'var(--font-weight-semibold)', marginBottom: 2 }}>
+          {/* 오른쪽: 우리 반 나무를 자라게 한 활동 목록 (한 줄 표기) */}
+          {recentActivities.length > 0 && (
+            <div className="card">
+              <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)' }}>
+                🌱 우리 반 나무를 자라게 한 활동
+              </h3>
+              <div style={{ 
+                display: 'flex',
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                gap: '6px',
+                rowGap: '6px'
+              }}>
+                {recentActivities.map((activity) => (
+                  <div
+                    key={activity.id}
+                    style={{
+                      padding: '6px 10px',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-small)',
+                      backgroundColor: 'var(--color-bg-secondary)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
+                      fontSize: 'var(--font-size-xs)'
+                    }}
+                  >
+                    <span style={{ fontSize: 'var(--font-size-sm)' }}>
+                      {activity.type === 'book' ? '📚' : '🎯'}
+                    </span>
+                    <span style={{ fontWeight: 'var(--font-weight-semibold)' }}>
                       {activity.studentName}
-                    </div>
-                    <div style={{ 
-                      fontSize: 'var(--font-size-sm)', 
-                      color: 'var(--color-text-secondary)',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {activity.type === 'book' ? '독서 기록 승인' : '미션 완료'}: {activity.content}
-                    </div>
+                    </span>
+                    <span style={{ color: 'var(--color-text-secondary)' }}>
+                      {activity.type === 'book' ? '독서' : '미션'}
+                    </span>
+                    <span style={{ color: 'var(--color-text-tertiary)' }}>
+                      {new Date(activity.timestamp).toLocaleDateString('ko-KR', {
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </span>
                   </div>
-                  <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', whiteSpace: 'nowrap' }}>
-                    {new Date(activity.timestamp).toLocaleDateString('ko-KR', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-      </section>
+          )}
+        </section>
+      )}
     </main>
   )
 }
