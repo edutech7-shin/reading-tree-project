@@ -30,7 +30,10 @@ export default async function MyPage() {
   console.log('[MyPage] Raw profile:', profile)
   console.log('[MyPage] Profile error:', profileError)
 
-  console.error('[MyPage] Profile load error:', profileError)
+  // 프로필 조회 에러가 있으면 로그에 기록
+  if (profileError) {
+    console.error('[MyPage] Profile load error:', profileError)
+  }
 
   const normalizedStatus = (profile?.status ?? '').trim().toLowerCase()
   const normalizedRole = (profile?.role ?? '').trim().toLowerCase()
