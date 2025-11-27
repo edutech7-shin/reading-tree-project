@@ -35,6 +35,9 @@ export default async function MyPage() {
   const normalizedStatus = (profile?.status ?? '').trim().toLowerCase()
   const normalizedRole = (profile?.role ?? '').trim().toLowerCase()
   console.log('[MyPage] Normalized role/status:', normalizedRole, normalizedStatus)
+  
+  // status가 null이거나 빈 문자열이면 'active'로 간주 (기존 사용자 호환성)
+  const effectiveStatus = normalizedStatus || 'active'
 
   const { count: approvedCount } = await supabase
     .from('book_records')
@@ -76,10 +79,12 @@ export default async function MyPage() {
     redirect('/admin/dashboard')
   }
 
-  if (normalizedStatus && !['active', 'approved'].includes(normalizedStatus)) {
+  // status가 'pending' 또는 'suspended'인 경우에만 승인 대기 메시지 표시
+  // null, 빈 문자열, 'active', 'approved'는 정상 사용 가능
+  if (normalizedStatus && !['active', 'approved'].includes(normalizedStatus) && normalizedStatus !== '') {
     return (
       <main className="container">
-        <h1>내 나무</h1>
+        <h1>내 책장</h1>
         <div className="card">
           <p>이메일: {user.email}</p>
           <p style={{ color: '#f97316', marginTop: 12 }}>
