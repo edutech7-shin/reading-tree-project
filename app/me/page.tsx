@@ -1,4 +1,4 @@
-                                                                                                                          import { createSupabaseServerClient } from '../../lib/supabase/server'
+import { createSupabaseServerClient } from '../../lib/supabase/server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import NextDynamic from 'next/dynamic'
@@ -172,6 +172,8 @@ export default async function MyPage() {
       apiUrl.searchParams.set('searchDt', searchDt)
       apiUrl.searchParams.set('format', 'json')
       
+      console.log('[MyPage] Fetching popular books from API:', apiUrl.toString().replace(LIBRARY_API_KEY, '***'))
+      
       const response = await fetch(apiUrl.toString(), {
         method: 'GET',
         headers: {
@@ -180,16 +182,23 @@ export default async function MyPage() {
         cache: 'no-store'
       })
       
+      console.log('[MyPage] API response status:', response.status, response.statusText)
+      
       if (response.ok) {
         const data: any = await response.json()
+        console.log('[MyPage] API response data structure:', JSON.stringify(data).substring(0, 500))
         
         // 응답 데이터 파싱 (API 응답 구조에 따라 조정)
         // 구조 1: response.result.docs
         // 구조 2: response.results.result.docs
+        // 구조 3: response.docs (직접 배열)
         const docs = data.response?.result?.docs || 
                      data.response?.results?.result?.docs || 
                      data.response?.docs || 
+                     (Array.isArray(data.response) ? data.response : []) ||
                      []
+        
+        console.log('[MyPage] Parsed docs count:', docs.length)
         
         for (const item of docs.slice(0, 5)) {
           // item이 { doc?: ... } 형태일 수도 있고, 직접 객체일 수도 있음
@@ -214,16 +223,25 @@ export default async function MyPage() {
           // 제목이 있는 경우만 추가
           if (book.book_title) {
             popularBooks.push(book)
+            console.log('[MyPage] Added book:', book.book_title)
           }
         }
+        
+        console.log('[MyPage] Total popular books from API:', popularBooks.length)
+      } else {
+        const errorText = await response.text()
+        console.error('[MyPage] API response error:', response.status, errorText.substring(0, 500))
       }
-    } catch (error) {
-      console.error('[MyPage] Error fetching popular books from API:', error)
+    } catch (error: any) {
+      console.error('[MyPage] Error fetching popular books from API:', error.message, error.stack)
     }
+  } else {
+    console.warn('[MyPage] LIBRARY_API_KEY is not set')
   }
   
   // API에서 가져온 데이터가 없으면 데이터베이스에서 가져오기 (fallback)
   if (popularBooks.length === 0) {
+    console.log('[MyPage] No books from API, falling back to database')
     const { data: dbBooks } = await supabase
       .from('popular_children_books')
       .select('*')
@@ -231,6 +249,7 @@ export default async function MyPage() {
       .limit(5)
     
     popularBooks = dbBooks || []
+    console.log('[MyPage] Books from database:', popularBooks.length)
   }
 
   // 선생님 추천 도서 가져오기 (최대 5권)
@@ -276,16 +295,10 @@ export default async function MyPage() {
     <main className="container">
       <h1>내 책장</h1>
       
-      {/* 독서 습관 기르기 섹션 */}
-      <div className="card" style={{ marginBottom: 16 }}>
-        <h2 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-md)' }}>📚 독서 습관 기르기</h2>
-        
-        {/* 어린이 인기 도서 */}
-        {popularBooks && popularBooks.length > 0 && (
-          <div style={{ marginBottom: 'var(--grid-gap-lg)' }}>
-            <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)', fontSize: 'var(--font-size-lg)' }}>
-              ⭐ 어린이 인기 도서
-            </h3>
+      {/* 어린이 인기 도서 섹션 */}
+      {popularBooks && popularBooks.length > 0 && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <h2 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-md)' }}>⭐ 어린이 인기 도서</h2>
             <div style={{ 
               display: 'grid', 
               gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
@@ -360,12 +373,12 @@ export default async function MyPage() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+        </div>
+      )}
 
-        {/* 선생님 추천 도서 */}
-        {recommendedBooks.length > 0 && (
-          <div>
+      {/* 선생님 추천 도서 */}
+      {recommendedBooks.length > 0 && (
+        <div className="card" style={{ marginBottom: 16 }}>
             <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)', fontSize: 'var(--font-size-lg)' }}>
               👨‍🏫 선생님 추천 도서
             </h3>
@@ -443,15 +456,14 @@ export default async function MyPage() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+        </div>
+      )}
 
-        {(!popularBooks || popularBooks.length === 0) && recommendedBooks.length === 0 && (
-          <p style={{ color: '#999', textAlign: 'center', padding: 24, fontSize: 14 }}>
-            추천 도서가 없습니다.
-          </p>
-        )}
-      </div>
+      {(!popularBooks || popularBooks.length === 0) && recommendedBooks.length === 0 && (
+        <p style={{ color: '#999', textAlign: 'center', padding: 24, fontSize: 14 }}>
+          추천 도서가 없습니다.
+        </p>
+      )}
       
       {/* 알림 섹션 - 알림이 있거나 없어도 항상 표시 */}
       <div className="card" style={{ marginBottom: 16 }}>
