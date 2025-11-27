@@ -3,7 +3,10 @@
 -- 해결: security definer 함수 내에서도 RLS가 적용되므로, 
 --       profiles 조회를 제거하고 class_students에서 직접 찾기
 
--- 기존 함수 삭제
+-- 먼저 정책을 삭제 (함수에 의존하고 있으므로)
+drop policy if exists "user_books classmates select finished" on public.user_books;
+
+-- 그 다음 함수 삭제
 drop function if exists public.get_user_book_owner_teacher_id(uuid);
 
 -- 수정된 함수: profiles 조회를 제거하고 다른 방법 사용
