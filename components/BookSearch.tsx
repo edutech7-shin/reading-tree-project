@@ -23,6 +23,17 @@ export default function BookSearch({ onSelect }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [pagesByIndex, setPagesByIndex] = useState<Record<number, string>>({})
+  const [coverUrlsByIndex, setCoverUrlsByIndex] = useState<Record<number, string>>({})
+  const [showManualInput, setShowManualInput] = useState(false)
+  const [manualBook, setManualBook] = useState({
+    title: '',
+    author: '',
+    coverUrl: '',
+    isbn: '',
+    publisher: '',
+    publicationYear: '',
+    totalPages: ''
+  })
 
   async function handleSearch() {
     if (!query.trim()) return
@@ -75,17 +86,72 @@ export default function BookSearch({ onSelect }: Props) {
 
   function handleSelect(book: BookResult, idx?: number) {
     let totalPages: number | null | undefined = book.totalPages
+    let coverUrl = book.coverUrl
+    
     if (typeof idx === 'number') {
       const raw = pagesByIndex[idx]
       if (raw && /^\d+$/.test(raw)) {
         totalPages = parseInt(raw, 10)
       }
+      // 표지 URL이 수동으로 입력된 경우 사용
+      if (coverUrlsByIndex[idx]) {
+        coverUrl = coverUrlsByIndex[idx]
+      }
     }
-    onSelect({ ...book, totalPages: totalPages ?? null })
+    
+    onSelect({ ...book, coverUrl: coverUrl || null, totalPages: totalPages ?? null })
     setShowModal(false)
     setQuery('')
     setResults([])
     setPagesByIndex({})
+    setCoverUrlsByIndex({})
+    setShowManualInput(false)
+    setManualBook({
+      title: '',
+      author: '',
+      coverUrl: '',
+      isbn: '',
+      publisher: '',
+      publicationYear: '',
+      totalPages: ''
+    })
+  }
+
+  function handleManualInput() {
+    if (!manualBook.title.trim()) {
+      setError('책 제목을 입력해주세요.')
+      return
+    }
+    
+    const totalPages = manualBook.totalPages && /^\d+$/.test(manualBook.totalPages)
+      ? parseInt(manualBook.totalPages, 10)
+      : null
+    
+    onSelect({
+      title: manualBook.title,
+      author: manualBook.author || null,
+      coverUrl: manualBook.coverUrl.trim() || null,
+      isbn: manualBook.isbn.trim() || null,
+      publisher: manualBook.publisher.trim() || null,
+      publicationYear: manualBook.publicationYear.trim() || null,
+      totalPages: totalPages
+    })
+    
+    setShowModal(false)
+    setQuery('')
+    setResults([])
+    setPagesByIndex({})
+    setCoverUrlsByIndex({})
+    setShowManualInput(false)
+    setManualBook({
+      title: '',
+      author: '',
+      coverUrl: '',
+      isbn: '',
+      publisher: '',
+      publicationYear: '',
+      totalPages: ''
+    })
   }
 
   return (
@@ -337,47 +403,93 @@ export default function BookSearch({ onSelect }: Props) {
                             {book.publisher} {book.publicationYear && `· ${book.publicationYear}`}
                           </div>
                         )}
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 120 }}>
-                            <label htmlFor={`pages-${idx}`} style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'var(--font-weight-semibold)' }}>
-                              전체 페이지 수
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {/* 표지 URL 입력 (표지가 없거나 수정하고 싶은 경우) */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <label htmlFor={`cover-${idx}`} style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'var(--font-weight-semibold)' }}>
+                              📷 표지 이미지 URL {!book.coverUrl && <span style={{ color: '#dc3545' }}>(선택)</span>}
                             </label>
                             <input
-                              id={`pages-${idx}`}
-                              name={`pages-${idx}`}
-                              type="number"
-                              min={1}
-                              value={pagesByIndex[idx] ?? (book.totalPages ?? '')}
+                              id={`cover-${idx}`}
+                              name={`cover-${idx}`}
+                              type="url"
+                              value={coverUrlsByIndex[idx] ?? (book.coverUrl ?? '')}
                               onChange={(e) => {
                                 const value = e.target.value
-                                setPagesByIndex((prev) => ({ ...prev, [idx]: value }))
+                                setCoverUrlsByIndex((prev) => ({ ...prev, [idx]: value }))
                               }}
-                              placeholder="예: 320"
+                              placeholder="https://example.com/book-cover.jpg"
                               style={{
                                 padding: '10px 12px',
                                 border: '1px solid var(--color-border-medium)',
                                 borderRadius: 'var(--radius-small)',
                                 fontSize: 'var(--font-size-sm)',
-                                width: '100%',
-                                minWidth: 120
+                                width: '100%'
                               }}
-                              aria-label="전체 페이지 수 입력"
+                              aria-label="표지 이미지 URL 입력"
                             />
+                            {coverUrlsByIndex[idx] && (
+                              <div style={{ marginTop: 4 }}>
+                                <img
+                                  src={coverUrlsByIndex[idx]}
+                                  alt="표지 미리보기"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none'
+                                  }}
+                                  style={{
+                                    maxWidth: 100,
+                                    maxHeight: 140,
+                                    objectFit: 'cover',
+                                    borderRadius: 'var(--radius-small)',
+                                    border: '1px solid var(--color-border)'
+                                  }}
+                                />
+                              </div>
+                            )}
                           </div>
-                          <button
-                            type="button"
-                            className="btn primary"
-                            onClick={() => handleSelect(book, idx)}
-                            style={{ 
-                              whiteSpace: 'nowrap',
-                              fontSize: 'var(--font-size-md)',
-                              padding: '10px 20px',
-                              minHeight: 44
-                            }}
-                            aria-label={`${book.title} 선택하기`}
-                          >
-                            ✅ 선택하기
-                          </button>
+                          
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 120 }}>
+                              <label htmlFor={`pages-${idx}`} style={{ fontSize: 'var(--font-size-xs)', color: '#666', fontWeight: 'var(--font-weight-semibold)' }}>
+                                전체 페이지 수
+                              </label>
+                              <input
+                                id={`pages-${idx}`}
+                                name={`pages-${idx}`}
+                                type="number"
+                                min={1}
+                                value={pagesByIndex[idx] ?? (book.totalPages ?? '')}
+                                onChange={(e) => {
+                                  const value = e.target.value
+                                  setPagesByIndex((prev) => ({ ...prev, [idx]: value }))
+                                }}
+                                placeholder="예: 320"
+                                style={{
+                                  padding: '10px 12px',
+                                  border: '1px solid var(--color-border-medium)',
+                                  borderRadius: 'var(--radius-small)',
+                                  fontSize: 'var(--font-size-sm)',
+                                  width: '100%',
+                                  minWidth: 120
+                                }}
+                                aria-label="전체 페이지 수 입력"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              className="btn primary"
+                              onClick={() => handleSelect(book, idx)}
+                              style={{ 
+                                whiteSpace: 'nowrap',
+                                fontSize: 'var(--font-size-md)',
+                                padding: '10px 20px',
+                                minHeight: 44
+                              }}
+                              aria-label={`${book.title} 선택하기`}
+                            >
+                              ✅ 선택하기
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -386,7 +498,239 @@ export default function BookSearch({ onSelect }: Props) {
               </>
             )}
 
-            <div style={{ marginTop: 20, textAlign: 'center', paddingTop: 16, borderTop: '1px solid var(--color-border-light)' }}>
+            {/* 수동 입력 옵션 */}
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--color-border-light)' }}>
+              {!showManualInput ? (
+                <div style={{ textAlign: 'center' }}>
+                  <button 
+                    className="btn" 
+                    onClick={() => setShowManualInput(true)}
+                    style={{
+                      fontSize: 'var(--font-size-sm)',
+                      padding: '8px 16px',
+                      marginBottom: 12
+                    }}
+                  >
+                    ✏️ 수동으로 입력하기
+                  </button>
+                  <div style={{ fontSize: 'var(--font-size-xs)', color: '#666', marginTop: 8 }}>
+                    검색 결과에 없는 책은 수동으로 입력할 수 있어요
+                  </div>
+                </div>
+              ) : (
+                <div style={{ 
+                  padding: 16, 
+                  backgroundColor: 'var(--color-background-secondary)', 
+                  borderRadius: 'var(--radius-medium)',
+                  border: '1px solid var(--color-border)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <h4 style={{ margin: 0, fontSize: 'var(--font-size-md)' }}>📝 책 정보 직접 입력</h4>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => {
+                        setShowManualInput(false)
+                        setManualBook({
+                          title: '',
+                          author: '',
+                          coverUrl: '',
+                          isbn: '',
+                          publisher: '',
+                          publicationYear: '',
+                          totalPages: ''
+                        })
+                      }}
+                      style={{ fontSize: 'var(--font-size-xs)', padding: '4px 8px' }}
+                    >
+                      취소
+                    </button>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gap: 12 }}>
+                    <div>
+                      <label htmlFor="manual-title" style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', display: 'block', marginBottom: 4 }}>
+                        책 제목 <span style={{ color: '#dc3545' }}>*</span>
+                      </label>
+                      <input
+                        id="manual-title"
+                        type="text"
+                        value={manualBook.title}
+                        onChange={(e) => setManualBook({ ...manualBook, title: e.target.value })}
+                        placeholder="예: 해리포터와 마법사의 돌"
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid var(--color-border-medium)',
+                          borderRadius: 'var(--radius-small)',
+                          fontSize: 'var(--font-size-sm)'
+                        }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="manual-author" style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', display: 'block', marginBottom: 4 }}>
+                        저자
+                      </label>
+                      <input
+                        id="manual-author"
+                        type="text"
+                        value={manualBook.author}
+                        onChange={(e) => setManualBook({ ...manualBook, author: e.target.value })}
+                        placeholder="예: J.K. 롤링"
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid var(--color-border-medium)',
+                          borderRadius: 'var(--radius-small)',
+                          fontSize: 'var(--font-size-sm)'
+                        }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="manual-cover" style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', display: 'block', marginBottom: 4 }}>
+                        📷 표지 이미지 URL
+                      </label>
+                      <input
+                        id="manual-cover"
+                        type="url"
+                        value={manualBook.coverUrl}
+                        onChange={(e) => setManualBook({ ...manualBook, coverUrl: e.target.value })}
+                        placeholder="https://example.com/book-cover.jpg"
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid var(--color-border-medium)',
+                          borderRadius: 'var(--radius-small)',
+                          fontSize: 'var(--font-size-sm)'
+                        }}
+                      />
+                      {manualBook.coverUrl && (
+                        <div style={{ marginTop: 8 }}>
+                          <img
+                            src={manualBook.coverUrl}
+                            alt="표지 미리보기"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none'
+                            }}
+                            style={{
+                              maxWidth: 100,
+                              maxHeight: 140,
+                              objectFit: 'cover',
+                              borderRadius: 'var(--radius-small)',
+                              border: '1px solid var(--color-border)'
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      <div>
+                        <label htmlFor="manual-isbn" style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', display: 'block', marginBottom: 4 }}>
+                          ISBN
+                        </label>
+                        <input
+                          id="manual-isbn"
+                          type="text"
+                          value={manualBook.isbn}
+                          onChange={(e) => setManualBook({ ...manualBook, isbn: e.target.value })}
+                          placeholder="예: 9788983927665"
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            border: '1px solid var(--color-border-medium)',
+                            borderRadius: 'var(--radius-small)',
+                            fontSize: 'var(--font-size-sm)'
+                          }}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="manual-pages" style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', display: 'block', marginBottom: 4 }}>
+                          전체 페이지 수
+                        </label>
+                        <input
+                          id="manual-pages"
+                          type="number"
+                          min={1}
+                          value={manualBook.totalPages}
+                          onChange={(e) => setManualBook({ ...manualBook, totalPages: e.target.value })}
+                          placeholder="예: 320"
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            border: '1px solid var(--color-border-medium)',
+                            borderRadius: 'var(--radius-small)',
+                            fontSize: 'var(--font-size-sm)'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      <div>
+                        <label htmlFor="manual-publisher" style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', display: 'block', marginBottom: 4 }}>
+                          출판사
+                        </label>
+                        <input
+                          id="manual-publisher"
+                          type="text"
+                          value={manualBook.publisher}
+                          onChange={(e) => setManualBook({ ...manualBook, publisher: e.target.value })}
+                          placeholder="예: 문학수첩"
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            border: '1px solid var(--color-border-medium)',
+                            borderRadius: 'var(--radius-small)',
+                            fontSize: 'var(--font-size-sm)'
+                          }}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="manual-year" style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', display: 'block', marginBottom: 4 }}>
+                          출판연도
+                        </label>
+                        <input
+                          id="manual-year"
+                          type="text"
+                          value={manualBook.publicationYear}
+                          onChange={(e) => setManualBook({ ...manualBook, publicationYear: e.target.value })}
+                          placeholder="예: 2023"
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            border: '1px solid var(--color-border-medium)',
+                            borderRadius: 'var(--radius-small)',
+                            fontSize: 'var(--font-size-sm)'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <button
+                      type="button"
+                      className="btn primary"
+                      onClick={handleManualInput}
+                      disabled={!manualBook.title.trim()}
+                      style={{
+                        width: '100%',
+                        fontSize: 'var(--font-size-md)',
+                        padding: '12px 24px',
+                        marginTop: 8
+                      }}
+                    >
+                      ✅ 추가하기
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginTop: 16, textAlign: 'center', paddingTop: 16, borderTop: '1px solid var(--color-border-light)' }}>
               <button 
                 className="btn" 
                 onClick={() => {
@@ -395,6 +739,17 @@ export default function BookSearch({ onSelect }: Props) {
                   setResults([])
                   setError(null)
                   setPagesByIndex({})
+                  setCoverUrlsByIndex({})
+                  setShowManualInput(false)
+                  setManualBook({
+                    title: '',
+                    author: '',
+                    coverUrl: '',
+                    isbn: '',
+                    publisher: '',
+                    publicationYear: '',
+                    totalPages: ''
+                  })
                 }}
                 style={{
                   fontSize: 'var(--font-size-md)',
