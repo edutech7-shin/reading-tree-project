@@ -29,10 +29,29 @@ export default async function MyPage() {
 
   console.log('[MyPage] Raw profile:', profile)
   console.log('[MyPage] Profile error:', profileError)
+  console.log('[MyPage] User ID:', user.id)
 
   // 프로필 조회 에러가 있으면 로그에 기록
   if (profileError) {
     console.error('[MyPage] Profile load error:', profileError)
+    console.error('[MyPage] Profile error code:', profileError.code)
+    console.error('[MyPage] Profile error message:', profileError.message)
+    console.error('[MyPage] Profile error details:', profileError.details)
+  }
+
+  // 프로필이 없거나 조회 실패한 경우 처리
+  // RLS 정책 문제일 수 있으므로, 프로필이 없어도 기본값으로 진행
+  if (!profile) {
+    // 프로필 조회 에러가 있고, 에러 코드가 권한 관련이면 RLS 문제일 가능성
+    if (profileError && (profileError.code === 'PGRST301' || profileError.message?.includes('permission') || profileError.message?.includes('policy'))) {
+      console.error('[MyPage] RLS policy may be blocking profile access')
+      // RLS 문제인 경우에도 기본값으로 진행 (프로필은 존재하지만 조회가 안 되는 경우)
+    }
+    
+    // 프로필이 정말 없는 경우에만 /setup으로 리다이렉트
+    // 하지만 프로필은 자동 생성되므로 이 경우는 거의 없음
+    // 일단 기본값으로 진행하고, 나중에 필요하면 리다이렉트
+    console.warn('[MyPage] Profile not found, using default values')
   }
 
   const normalizedStatus = (profile?.status ?? '').trim().toLowerCase()
@@ -59,14 +78,15 @@ export default async function MyPage() {
     .order('created_at', { ascending: false })
     .limit(20)
 
+  // 프로필이 없으면 기본값 사용 (프로필은 자동 생성되므로 이 경우는 거의 없음)
+  // 실제로 프로필이 없는 경우에만 /setup으로 리다이렉트
+  // 하지만 RLS 문제로 조회가 안 되는 경우도 있으므로, 일단 기본값으로 진행
+  const profileName = profile?.name || user.email?.split('@')[0] || '사용자'
+  const profileRole = normalizedRole || 'student'
+  const profileLevel = profile?.level || 1
+  const profilePoints = profile?.points || 0
 
-  // 프로필이 없으면 설정 페이지로 리다이렉트
-  // (프로필이 없으면 자동으로 생성되므로 이 경우는 거의 발생하지 않음)
-  if (!profile) {
-    redirect('/setup')
-  }
-
-  if (normalizedRole === 'admin') {
+  if (profileRole === 'admin') {
     redirect('/admin/dashboard')
   }
 
@@ -98,12 +118,12 @@ export default async function MyPage() {
     classmateCount: number
   } | null = null
 
-  if (normalizedRole === 'student' && profile?.name) {
+  if (profileRole === 'student' && profileName) {
     // class_students에서 자신의 teacher_id 찾기
     const { data: classStudent } = await supabase
       .from('class_students')
       .select('teacher_id')
-      .eq('name', profile.name)
+      .eq('name', profileName)
       .limit(1)
       .maybeSingle()
 
@@ -138,11 +158,11 @@ export default async function MyPage() {
       <div className="card">
         <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)' }}>내 정보</h3>
         <div>이메일: {user.email}</div>
-        <div>이름: {profile.name}</div>
-        <div>역할: {normalizedRole === 'admin' ? '관리자' : normalizedRole === 'teacher' ? '교사' : '학생'}</div>
-        <div>개인 레벨: {profile.level}</div>
+        <div>이름: {profileName}</div>
+        <div>역할: {profileRole === 'admin' ? '관리자' : profileRole === 'teacher' ? '교사' : '학생'}</div>
+        <div>개인 레벨: {profileLevel}</div>
         <div>내 잎사귀: 🍃 {approvedCount ?? 0}개</div>
-        <div>내 물방울: 💧 {profile.points}점</div>
+        <div>내 물방울: 💧 {profilePoints}점</div>
       </div>
 
       {/* 우리 반 정보 (학생인 경우만 표시) */}
