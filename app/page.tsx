@@ -14,11 +14,24 @@ type Activity = {
 
 export default async function Home() {
   const supabase = createSupabaseServerClient()
-  const { data: classTree } = await supabase
-    .from('class_trees')
-    .select('class_name, current_level, current_leaves, level_up_target')
-    .limit(1)
-    .maybeSingle()
+  
+  // 클래스 트리 정보 가져오기 (에러 처리)
+  let classTree = null
+  try {
+    const { data, error } = await supabase
+      .from('class_trees')
+      .select('class_name, current_level, current_leaves, level_up_target')
+      .limit(1)
+      .maybeSingle()
+    
+    if (error) {
+      console.error('[Home] Error fetching class tree:', error)
+    } else {
+      classTree = data
+    }
+  } catch (error) {
+    console.error('[Home] Exception fetching class tree:', error)
+  }
 
   const level = classTree?.current_level ?? 1
   const currentLeaves = classTree?.current_leaves ?? 0
@@ -28,84 +41,96 @@ export default async function Home() {
   // 우리 반 나무를 자라게 한 활동 가져오기 (학생별 최대 2개씩)
   const allActivities: Activity[] = []
 
-  // 1. 승인된 독서 기록 가져오기
-  const { data: approvedRecords } = await supabase
-    .from('book_records')
-    .select(`
-      id,
-      book_title,
-      approved_at,
-      profiles!book_records_user_id_fkey (
-        name
-      )
-    `)
-    .eq('status', 'approved')
-    .not('approved_at', 'is', null)
-    .order('approved_at', { ascending: false })
+  // 1. 승인된 독서 기록 가져오기 (에러 처리)
+  try {
+    const { data: approvedRecords, error } = await supabase
+      .from('book_records')
+      .select(`
+        id,
+        book_title,
+        approved_at,
+        profiles!book_records_user_id_fkey (
+          name
+        )
+      `)
+      .eq('status', 'approved')
+      .not('approved_at', 'is', null)
+      .order('approved_at', { ascending: false })
 
-  if (approvedRecords) {
-    approvedRecords.forEach((record: any) => {
-      const profile = Array.isArray(record.profiles) ? record.profiles[0] : record.profiles
-      if (profile?.name && record.approved_at) {
-        allActivities.push({
-          id: `book-${record.id}`,
-          type: 'book',
-          studentName: profile.name,
-          content: record.book_title || '독서 기록',
-          timestamp: record.approved_at
-        })
-      }
-    })
+    if (error) {
+      console.error('[Home] Error fetching approved records:', error)
+    } else if (approvedRecords) {
+      approvedRecords.forEach((record: any) => {
+        const profile = Array.isArray(record.profiles) ? record.profiles[0] : record.profiles
+        if (profile?.name && record.approved_at) {
+          allActivities.push({
+            id: `book-${record.id}`,
+            type: 'book',
+            studentName: profile.name,
+            content: record.book_title || '독서 기록',
+            timestamp: record.approved_at
+          })
+        }
+      })
+    }
+  } catch (error) {
+    console.error('[Home] Exception fetching approved records:', error)
   }
 
-  // 2. 완료된 미션 가져오기
-  const { data: completedMissions } = await supabase
-    .from('mission_completions')
-    .select(`
-      id,
-      completed_at,
-      verified_at,
-      mission_assignments!mission_completions_assignment_id_fkey (
-        missions!mission_assignments_mission_id_fkey (
-          title
+  // 2. 완료된 미션 가져오기 (에러 처리)
+  try {
+    const { data: completedMissions, error } = await supabase
+      .from('mission_completions')
+      .select(`
+        id,
+        completed_at,
+        verified_at,
+        mission_assignments!mission_completions_assignment_id_fkey (
+          missions!mission_assignments_mission_id_fkey (
+            title
+          )
+        ),
+        class_students!mission_completions_student_id_fkey (
+          name
         )
-      ),
-      class_students!mission_completions_student_id_fkey (
-        name
-      )
-    `)
-    .eq('verification_status', 'approved')
-    .order('completed_at', { ascending: false })
+      `)
+      .eq('verification_status', 'approved')
+      .order('completed_at', { ascending: false })
 
-  if (completedMissions) {
-    completedMissions.forEach((completion: any) => {
-      // class_students 처리
-      const student = Array.isArray(completion.class_students) 
-        ? completion.class_students[0] 
-        : completion.class_students
-      
-      // mission_assignments 처리 (배열일 수 있음)
-      const assignment = Array.isArray(completion.mission_assignments)
-        ? completion.mission_assignments[0]
-        : completion.mission_assignments
-      
-      // missions 처리 (배열일 수 있음)
-      const mission = assignment 
-        ? (Array.isArray(assignment.missions)
-            ? assignment.missions[0]
-            : assignment.missions)
-        : null
-      
-      if (student?.name && (completion.verified_at || completion.completed_at)) {
-        allActivities.push({
-          id: `mission-${completion.id}`,
-          type: 'mission',
-          studentName: student.name,
-          content: mission?.title || '미션 완료',
-          timestamp: completion.verified_at || completion.completed_at
-        })
-      }
-    })
+    if (error) {
+      console.error('[Home] Error fetching completed missions:', error)
+    } else if (completedMissions) {
+      completedMissions.forEach((completion: any) => {
+        // class_students 처리
+        const student = Array.isArray(completion.class_students) 
+          ? completion.class_students[0] 
+          : completion.class_students
+        
+        // mission_assignments 처리 (배열일 수 있음)
+        const assignment = Array.isArray(completion.mission_assignments)
+          ? completion.mission_assignments[0]
+          : completion.mission_assignments
+        
+        // missions 처리 (배열일 수 있음)
+        const mission = assignment 
+          ? (Array.isArray(assignment.missions)
+              ? assignment.missions[0]
+              : assignment.missions)
+          : null
+        
+        if (student?.name && (completion.verified_at || completion.completed_at)) {
+          allActivities.push({
+            id: `mission-${completion.id}`,
+            type: 'mission',
+            studentName: student.name,
+            content: mission?.title || '미션 완료',
+            timestamp: completion.verified_at || completion.completed_at
+          })
+        }
+      })
+    }
+  } catch (error) {
+    console.error('[Home] Exception fetching completed missions:', error)
   }
 
   // 최신 순으로 정렬
@@ -144,93 +169,122 @@ export default async function Home() {
   // 최근 우리 반 친구들이 읽은 책 목록 가져오기
   // 1. book_records에서 승인된 독서 기록
   // 2. user_books에서 다 읽은 책 (status='finished')
-  // 각 학생별 최근 1권씩, 최대 9명
+  // 각 학생별 최근 1~2권씩, 최대 20권
 
-  // 1. 승인된 독서 기록 가져오기 (책 목록용)
-  const { data: approvedRecordsForBooks } = await supabase
-    .from('book_records')
-    .select(`
-      id,
-      book_title,
-      book_author,
-      book_cover_url,
-      approved_at,
-      profiles!book_records_user_id_fkey (
-        name
-      )
-    `)
-    .eq('status', 'approved')
-    .not('approved_at', 'is', null)
-    .order('approved_at', { ascending: false })
+  // 각 학생별로 최근 1~2권씩 추출
+  const studentBookMap = new Map<string, any[]>()
+  const allBooks: any[] = []
 
-  // 2. 다 읽은 책 가져오기 (user_books)
-  const { data: finishedBooks } = await supabase
-    .from('user_books')
-    .select(`
-      id,
-      book_title,
-      book_author,
-      book_cover_url,
-      created_at,
-      profiles!user_books_user_id_fkey (
-        name
-      )
-    `)
-    .eq('status', 'finished')
-    .order('created_at', { ascending: false })
+  // 1. 승인된 독서 기록 가져오기 (책 목록용, 에러 처리)
+  try {
+    const { data: approvedRecordsForBooks, error } = await supabase
+      .from('book_records')
+      .select(`
+        id,
+        book_title,
+        book_author,
+        book_cover_url,
+        approved_at,
+        profiles!book_records_user_id_fkey (
+          name
+        )
+      `)
+      .eq('status', 'approved')
+      .not('approved_at', 'is', null)
+      .order('approved_at', { ascending: false })
 
-  // 각 학생별로 최근 1권씩만 추출
-  const studentBookMap = new Map<string, any>()
-  
-  // 먼저 승인된 독서 기록 추가
-  if (approvedRecordsForBooks) {
-    approvedRecordsForBooks.forEach((record: any) => {
-      const profile = Array.isArray(record.profiles) ? record.profiles[0] : record.profiles
-      const studentName = profile?.name
-      
-      if (studentName && !studentBookMap.has(studentName)) {
-        studentBookMap.set(studentName, {
-          id: `record-${record.id}`,
-          title: record.book_title,
-          author: record.book_author,
-          coverUrl: record.book_cover_url,
-          studentName: studentName,
-          timestamp: record.approved_at,
-          source: 'approved_record'
-        })
-      }
-    })
+    if (error) {
+      console.error('[Home] Error fetching approved records for books:', error)
+    } else if (approvedRecordsForBooks) {
+      approvedRecordsForBooks.forEach((record: any) => {
+        const profile = Array.isArray(record.profiles) ? record.profiles[0] : record.profiles
+        const studentName = profile?.name
+        
+        if (studentName) {
+          if (!studentBookMap.has(studentName)) {
+            studentBookMap.set(studentName, [])
+          }
+          const studentBooks = studentBookMap.get(studentName)!
+          if (studentBooks.length < 2) {
+            studentBooks.push({
+              id: `record-${record.id}`,
+              title: record.book_title,
+              author: record.book_author,
+              coverUrl: record.book_cover_url,
+              studentName: studentName,
+              timestamp: record.approved_at,
+              source: 'approved_record'
+            })
+          }
+        }
+      })
+    }
+  } catch (error) {
+    console.error('[Home] Exception fetching approved records for books:', error)
   }
 
-  // 다 읽은 책 추가 (승인된 기록이 없는 학생만)
-  if (finishedBooks) {
-    finishedBooks.forEach((book: any) => {
-      const profile = Array.isArray(book.profiles) ? book.profiles[0] : book.profiles
-      const studentName = profile?.name
-      
-      // 이미 승인된 기록이 있는 학생은 건너뛰기
-      if (studentName && !studentBookMap.has(studentName)) {
-        studentBookMap.set(studentName, {
-          id: `book-${book.id}`,
-          title: book.book_title,
-          author: book.book_author,
-          coverUrl: book.book_cover_url,
-          studentName: studentName,
-          timestamp: book.created_at,
-          source: 'finished_book'
-        })
-      }
-    })
+  // 2. 다 읽은 책 가져오기 (user_books, 에러 처리)
+  // 승인된 기록이 없는 학생이거나, 승인된 기록이 1개만 있는 학생에게 추가
+  try {
+    const { data: finishedBooks, error } = await supabase
+      .from('user_books')
+      .select(`
+        id,
+        book_title,
+        book_author,
+        book_cover_url,
+        created_at,
+        profiles!user_books_user_id_fkey (
+          name
+        )
+      `)
+      .eq('status', 'finished')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('[Home] Error fetching finished books:', error)
+    } else if (finishedBooks) {
+      finishedBooks.forEach((book: any) => {
+        const profile = Array.isArray(book.profiles) ? book.profiles[0] : book.profiles
+        const studentName = profile?.name
+        
+        if (studentName) {
+          if (!studentBookMap.has(studentName)) {
+            studentBookMap.set(studentName, [])
+          }
+          const studentBooks = studentBookMap.get(studentName)!
+          // 각 학생별로 최대 2권까지 (승인된 기록 + 다 읽은 책)
+          if (studentBooks.length < 2) {
+            studentBooks.push({
+              id: `book-${book.id}`,
+              title: book.book_title,
+              author: book.book_author,
+              coverUrl: book.book_cover_url,
+              studentName: studentName,
+              timestamp: book.created_at,
+              source: 'finished_book'
+            })
+          }
+        }
+      })
+    }
+  } catch (error) {
+    console.error('[Home] Exception fetching finished books:', error)
   }
 
-  // 학생별로 추출한 책들을 시간 순으로 정렬하고 최대 9권만 선택
-  const recentReadBooks = Array.from(studentBookMap.values())
+  // 모든 학생의 책들을 합쳐서 최신 순으로 정렬
+  studentBookMap.forEach((books) => {
+    allBooks.push(...books)
+  })
+
+  // 시간 순으로 정렬하고 최대 20권만 선택
+  const recentReadBooks = allBooks
     .sort((a, b) => {
       const dateA = new Date(a.timestamp).getTime()
       const dateB = new Date(b.timestamp).getTime()
       return dateB - dateA
     })
-    .slice(0, 9)
+    .slice(0, 20)
 
   return (
     <main className="container">
@@ -257,7 +311,7 @@ export default async function Home() {
             <ClassTree level={level} currentLeaves={currentLeaves} targetLeaves={targetLeaves} />
           </div>
 
-          {/* 나무 그래픽 아래: 최근 읽은 책 목록 (가로 3권, 세로 3줄) */}
+          {/* 나무 그래픽 아래: 최근 읽은 책 목록 (각 학생별 1~2권씩, 최대 20권) */}
           {recentReadBooks.length > 0 && (
             <div className="card" style={{ marginTop: 'var(--grid-gap-md)' }}>
               <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)' }}>
@@ -265,8 +319,9 @@ export default async function Home() {
               </h3>
               <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: 'var(--grid-gap-sm)'
+                gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+                gap: 'var(--grid-gap-sm)',
+                maxWidth: '100%'
               }}>
                 {recentReadBooks.map((book) => (
                   <div
