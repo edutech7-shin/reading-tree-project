@@ -57,7 +57,7 @@ export default function RecommendedBooksManager() {
 
   async function handleAddBook(book: {
     title: string
-    author: string
+    author: string | null
     coverUrl: string | null
     isbn?: string | null
     publisher?: string | null

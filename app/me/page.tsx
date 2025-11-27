@@ -192,8 +192,12 @@ export default async function MyPage() {
                      []
         
         for (const item of docs.slice(0, 5)) {
-          const doc = item.doc || item
-          if (!doc) continue
+          // item이 { doc?: ... } 형태일 수도 있고, 직접 객체일 수도 있음
+          const rawDoc = item && typeof item === 'object' && 'doc' in item ? item.doc : item
+          if (!rawDoc) continue
+          
+          // 타입 안전성을 위해 any로 처리 (API 응답 구조가 다양할 수 있음)
+          const doc = rawDoc as any
           
           const book = {
             id: `api-${doc.isbn13 || doc.isbn || Math.random()}`,

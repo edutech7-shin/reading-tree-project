@@ -206,7 +206,7 @@ export default function RecordPage() {
 
   function handleBookSelect(book: { 
     title: string
-    author: string
+    author: string | null
     coverUrl: string | null
     isbn?: string | null
     publisher?: string | null
@@ -214,7 +214,7 @@ export default function RecordPage() {
     totalPages?: number | null
   }) {
     setBookTitle(book.title)
-    setBookAuthor(book.author)
+    setBookAuthor(book.author || '')
     setBookCoverUrl(book.coverUrl)
     setBookPublisher(book.publisher || '')
     setBookIsbn(book.isbn || '')

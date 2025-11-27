@@ -111,8 +111,12 @@ export async function GET(request: NextRequest) {
                    []
       
       for (const item of docs.slice(0, 5)) {
-        const doc = item.doc || item
-        if (!doc) continue
+        // item이 { doc?: HotTrendBook } 형태일 수도 있고, 직접 HotTrendBook일 수도 있음
+        const rawDoc = 'doc' in item ? item.doc : item
+        if (!rawDoc) continue
+        
+        // 타입 단언: rawDoc이 HotTrendBook 타입임을 명시
+        const doc = rawDoc as HotTrendBook
         
         const book = {
           title: doc.bookname || '',

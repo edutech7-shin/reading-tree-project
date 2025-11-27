@@ -92,9 +92,9 @@ export default function EditRecordPage() {
     loadRecord()
   }, [recordId])
 
-  function handleBookSelect(book: { title: string; author: string; coverUrl: string | null }) {
+  function handleBookSelect(book: { title: string; author: string | null; coverUrl: string | null }) {
     setBookTitle(book.title)
-    setBookAuthor(book.author)
+    setBookAuthor(book.author || '')
     setBookCoverUrl(book.coverUrl)
   }
 
