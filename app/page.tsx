@@ -323,14 +323,14 @@ export default async function Home() {
     allBooks.push(...books)
   })
 
-  // 시간 순으로 정렬하고 최대 20권만 선택
+  // 시간 순으로 정렬하고 최대 10권만 선택
   const recentReadBooks = allBooks
     .sort((a, b) => {
       const dateA = new Date(a.timestamp).getTime()
       const dateB = new Date(b.timestamp).getTime()
       return dateB - dateA
     })
-    .slice(0, 20)
+    .slice(0, 10)
 
   return (
     <main className="container">
@@ -349,17 +349,17 @@ export default async function Home() {
         gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
         gap: 'var(--grid-gap-md)',
         marginTop: 'var(--grid-gap-md)',
-        alignItems: 'start'
+        alignItems: 'stretch'
       }}>
         {/* 왼쪽: 나무 그래픽 */}
-        <div>
-          <div className="treeWrap">
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <div className="treeWrap" style={{ flexShrink: 0 }}>
             <ClassTree level={level} currentLeaves={currentLeaves} targetLeaves={targetLeaves} />
           </div>
 
-          {/* 나무 그래픽 아래: 최근 읽은 책 목록 (각 학생별 1~2권씩, 최대 20권) */}
+          {/* 나무 그래픽 아래: 최근 읽은 책 목록 (각 학생별 1~2권씩, 최대 10권) */}
           {recentReadBooks.length > 0 && (
-            <div className="card" style={{ marginTop: 'var(--grid-gap-md)' }}>
+            <div className="card" style={{ marginTop: 'var(--grid-gap-md)', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
               <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)' }}>
                 📖 최근 우리 반 친구들이 읽은 책
               </h3>
@@ -367,7 +367,10 @@ export default async function Home() {
                 display: 'grid', 
                 gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
                 gap: 'var(--grid-gap-sm)',
-                maxWidth: '100%'
+                maxWidth: '100%',
+                flex: 1,
+                overflowY: 'auto',
+                maxHeight: '600px'
               }}>
                 {recentReadBooks.map((book) => (
                   <div
@@ -451,11 +454,11 @@ export default async function Home() {
 
         {/* 오른쪽: 우리 반 나무를 자라게 한 활동 목록 */}
         {recentActivities.length > 0 && (
-          <div className="card">
+          <div className="card" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)' }}>
               🌱 우리 반 나무를 자라게 한 활동
             </h3>
-            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)', maxHeight: '600px', overflowY: 'auto' }}>
+            <div style={{ display: 'grid', gap: 'var(--grid-gap-xs)', flex: 1, overflowY: 'auto', maxHeight: '600px' }}>
               {recentActivities.map((activity) => (
                 <div
                   key={activity.id}

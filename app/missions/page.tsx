@@ -189,9 +189,212 @@ export default async function MissionsPage() {
 
   const unreadCount = notifications?.filter(n => !n.is_read).length ?? 0
 
+  // 어린이 인기 도서 가져오기 (최대 5권)
+  const { data: popularBooks } = await supabase
+    .from('popular_children_books')
+    .select('*')
+    .order('display_order', { ascending: true })
+    .limit(5)
+
+  // 선생님 추천 도서 가져오기 (최대 5권)
+  let recommendedBooks: any[] = []
+  if (profile.role === 'student' && profile.name) {
+    // class_students에서 teacher_id 찾기
+    const { data: classStudent } = await supabase
+      .from('class_students')
+      .select('teacher_id')
+      .eq('name', profile.name)
+      .limit(1)
+      .maybeSingle()
+
+    if (classStudent?.teacher_id) {
+      const { data: teacherBooks } = await supabase
+        .from('teacher_recommended_books')
+        .select('*')
+        .eq('teacher_id', classStudent.teacher_id)
+        .order('display_order', { ascending: true })
+        .limit(5)
+      
+      recommendedBooks = teacherBooks || []
+    }
+  }
+
   return (
     <main className="container">
       <h1>독서 습관 기르기</h1>
+
+      {/* 어린이 인기 도서 및 선생님 추천 도서 섹션 */}
+      {(popularBooks && popularBooks.length > 0) || recommendedBooks.length > 0 ? (
+        <div className="card" style={{ marginBottom: 16, marginTop: 'var(--grid-gap-md)' }}>
+          <h2 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-md)' }}>📚 추천 도서</h2>
+          
+          {/* 어린이 인기 도서 */}
+          {popularBooks && popularBooks.length > 0 && (
+            <div style={{ marginBottom: 'var(--grid-gap-lg)' }}>
+              <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)', fontSize: 'var(--font-size-lg)' }}>
+                ⭐ 어린이 인기 도서
+              </h3>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                gap: 'var(--grid-gap-sm)'
+              }}>
+                {popularBooks.map((book: any) => (
+                  <div
+                    key={book.id}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      padding: 'var(--grid-gap-xs)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-small)',
+                      backgroundColor: 'var(--color-bg-secondary)',
+                      textAlign: 'center'
+                    }}
+                  >
+                    {book.book_cover_url ? (
+                      <img
+                        src={book.book_cover_url}
+                        alt={book.book_title || ''}
+                        style={{
+                          width: '100%',
+                          aspectRatio: '3/4',
+                          objectFit: 'cover',
+                          borderRadius: 'var(--radius-small)',
+                          marginBottom: 'var(--grid-gap-xs)'
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '100%',
+                        aspectRatio: '3/4',
+                        backgroundColor: 'var(--color-border-light)',
+                        borderRadius: 'var(--radius-small)',
+                        marginBottom: 'var(--grid-gap-xs)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--color-text-tertiary)',
+                        fontSize: 'var(--font-size-xs)'
+                      }}>
+                        표지 없음
+                      </div>
+                    )}
+                    <div style={{ width: '100%' }}>
+                      <div style={{ 
+                        fontWeight: 'var(--font-weight-semibold)', 
+                        fontSize: 'var(--font-size-xs)',
+                        marginBottom: 4,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        lineHeight: 1.4
+                      }}>
+                        {book.book_title || '(제목 없음)'}
+                      </div>
+                      {book.book_author && (
+                        <div style={{ 
+                          fontSize: 'var(--font-size-xs)', 
+                          color: 'var(--color-text-secondary)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {book.book_author}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 선생님 추천 도서 */}
+          {recommendedBooks.length > 0 && (
+            <div>
+              <h3 style={{ marginTop: 0, marginBottom: 'var(--grid-gap-sm)', fontSize: 'var(--font-size-lg)' }}>
+                👨‍🏫 선생님 추천 도서
+              </h3>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                gap: 'var(--grid-gap-sm)'
+              }}>
+                {recommendedBooks.map((book: any) => (
+                  <div
+                    key={book.id}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      padding: 'var(--grid-gap-xs)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-small)',
+                      backgroundColor: 'var(--color-bg-secondary)',
+                      textAlign: 'center'
+                    }}
+                  >
+                    {book.book_cover_url ? (
+                      <img
+                        src={book.book_cover_url}
+                        alt={book.book_title || ''}
+                        style={{
+                          width: '100%',
+                          aspectRatio: '3/4',
+                          objectFit: 'cover',
+                          borderRadius: 'var(--radius-small)',
+                          marginBottom: 'var(--grid-gap-xs)'
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '100%',
+                        aspectRatio: '3/4',
+                        backgroundColor: 'var(--color-border-light)',
+                        borderRadius: 'var(--radius-small)',
+                        marginBottom: 'var(--grid-gap-xs)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--color-text-tertiary)',
+                        fontSize: 'var(--font-size-xs)'
+                      }}>
+                        표지 없음
+                      </div>
+                    )}
+                    <div style={{ width: '100%' }}>
+                      <div style={{ 
+                        fontWeight: 'var(--font-weight-semibold)', 
+                        fontSize: 'var(--font-size-xs)',
+                        marginBottom: 4,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        lineHeight: 1.4
+                      }}>
+                        {book.book_title || '(제목 없음)'}
+                      </div>
+                      {book.book_author && (
+                        <div style={{ 
+                          fontSize: 'var(--font-size-xs)', 
+                          color: 'var(--color-text-secondary)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {book.book_author}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : null}
 
       {/* 알림 섹션 - 알림이 있거나 없어도 항상 표시 */}
       <div className="card" style={{ marginBottom: 16, marginTop: 'var(--grid-gap-md)' }}>
