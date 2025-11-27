@@ -42,6 +42,7 @@ export default async function Home() {
   const allActivities: Activity[] = []
 
   // 1. 승인된 독서 기록 가져오기 (에러 처리)
+  // profiles 조인을 제거하고 user_id만 가져온 후, class_students에서 이름 조회
   try {
     const { data: approvedRecords, error } = await supabase
       .from('book_records')
@@ -49,9 +50,7 @@ export default async function Home() {
         id,
         book_title,
         approved_at,
-        profiles!book_records_user_id_fkey (
-          name
-        )
+        user_id
       `)
       .eq('status', 'approved')
       .not('approved_at', 'is', null)
@@ -59,19 +58,39 @@ export default async function Home() {
 
     if (error) {
       console.error('[Home] Error fetching approved records:', error)
-    } else if (approvedRecords) {
-      approvedRecords.forEach((record: any) => {
-        const profile = Array.isArray(record.profiles) ? record.profiles[0] : record.profiles
-        if (profile?.name && record.approved_at) {
-          allActivities.push({
-            id: `book-${record.id}`,
-            type: 'book',
-            studentName: profile.name,
-            content: record.book_title || '독서 기록',
-            timestamp: record.approved_at
+    } else if (approvedRecords && approvedRecords.length > 0) {
+      // user_id 목록 수집
+      const userIds = [...new Set(approvedRecords.map((r: any) => r.user_id))]
+      
+      // profiles에서 이름 가져오기 (한 번에 조회, classmates 정책 사용)
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', userIds)
+      
+      if (profilesError) {
+        console.error('[Home] Error fetching profiles:', profilesError)
+      } else {
+        const profileMap = new Map<string, string>()
+        if (profiles) {
+          profiles.forEach((p: any) => {
+            profileMap.set(p.id, p.name)
           })
         }
-      })
+        
+        approvedRecords.forEach((record: any) => {
+          const studentName = profileMap.get(record.user_id)
+          if (studentName && record.approved_at) {
+            allActivities.push({
+              id: `book-${record.id}`,
+              type: 'book',
+              studentName: studentName,
+              content: record.book_title || '독서 기록',
+              timestamp: record.approved_at
+            })
+          }
+        })
+      }
     }
   } catch (error) {
     console.error('[Home] Exception fetching approved records:', error)
@@ -176,6 +195,7 @@ export default async function Home() {
   const allBooks: any[] = []
 
   // 1. 승인된 독서 기록 가져오기 (책 목록용, 에러 처리)
+  // profiles 조인을 제거하고 user_id만 가져온 후, 별도로 이름 조회
   try {
     const { data: approvedRecordsForBooks, error } = await supabase
       .from('book_records')
@@ -185,9 +205,7 @@ export default async function Home() {
         book_author,
         book_cover_url,
         approved_at,
-        profiles!book_records_user_id_fkey (
-          name
-        )
+        user_id
       `)
       .eq('status', 'approved')
       .not('approved_at', 'is', null)
@@ -196,9 +214,24 @@ export default async function Home() {
     if (error) {
       console.error('[Home] Error fetching approved records for books:', error)
     } else if (approvedRecordsForBooks) {
+      // user_id 목록 수집
+      const userIds = [...new Set(approvedRecordsForBooks.map((r: any) => r.user_id))]
+      
+      // profiles에서 이름 가져오기 (한 번에 조회)
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', userIds)
+      
+      const profileMap = new Map<string, string>()
+      if (profiles) {
+        profiles.forEach((p: any) => {
+          profileMap.set(p.id, p.name)
+        })
+      }
+      
       approvedRecordsForBooks.forEach((record: any) => {
-        const profile = Array.isArray(record.profiles) ? record.profiles[0] : record.profiles
-        const studentName = profile?.name
+        const studentName = profileMap.get(record.user_id)
         
         if (studentName) {
           if (!studentBookMap.has(studentName)) {
@@ -234,9 +267,7 @@ export default async function Home() {
         book_author,
         book_cover_url,
         created_at,
-        profiles!user_books_user_id_fkey (
-          name
-        )
+        user_id
       `)
       .eq('status', 'finished')
       .order('created_at', { ascending: false })
@@ -244,9 +275,24 @@ export default async function Home() {
     if (error) {
       console.error('[Home] Error fetching finished books:', error)
     } else if (finishedBooks) {
+      // user_id 목록 수집
+      const userIds = [...new Set(finishedBooks.map((b: any) => b.user_id))]
+      
+      // profiles에서 이름 가져오기 (한 번에 조회)
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', userIds)
+      
+      const profileMap = new Map<string, string>()
+      if (profiles) {
+        profiles.forEach((p: any) => {
+          profileMap.set(p.id, p.name)
+        })
+      }
+      
       finishedBooks.forEach((book: any) => {
-        const profile = Array.isArray(book.profiles) ? book.profiles[0] : book.profiles
-        const studentName = profile?.name
+        const studentName = profileMap.get(book.user_id)
         
         if (studentName) {
           if (!studentBookMap.has(studentName)) {
