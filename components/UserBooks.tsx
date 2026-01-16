@@ -307,7 +307,7 @@ export default function UserBooks() {
                   ) : (
                     <div className="bookshelf-grid" style={{ 
                       display: 'grid', 
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', 
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(84px, 1fr))', 
                       gap: 'var(--grid-gap-md)'
                     }}>
                       {reading.map((b) => (
@@ -352,7 +352,7 @@ export default function UserBooks() {
                   ) : (
                     <div className="bookshelf-grid" style={{ 
                       display: 'grid', 
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', 
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(84px, 1fr))', 
                       gap: 'var(--grid-gap-md)'
                     }}>
                       {finished.map((b) => (
@@ -387,7 +387,7 @@ export default function UserBooks() {
                 ) : (
                   <div className="bookshelf-grid" style={{ 
                     display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', 
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(84px, 1fr))', 
                     gap: 'var(--grid-gap-md)'
                   }}>
                     {getFilteredBooks().map((b) => (
@@ -467,7 +467,7 @@ function BookCard({
         backgroundColor: 'white',
         cursor: 'pointer',
         transition: 'all 0.2s',
-        minHeight: 280
+        minHeight: 168
       }}
       onClick={onSelect}
       onMouseEnter={(e) => {
@@ -529,16 +529,20 @@ function BookCard({
           alt={book.book_title ?? ''} 
           style={{ 
             width: '100%', 
-            height: 200, 
-            objectFit: 'cover', 
+            height: 'auto',
+            aspectRatio: '2 / 3',
+            objectFit: 'contain', 
+            backgroundColor: 'var(--color-background-secondary)',
             borderRadius: 'var(--radius-small)',
-            boxShadow: 'var(--shadow-card)'
+            boxShadow: 'var(--shadow-card)',
+            border: '1px solid var(--color-border-light)'
           }} 
         />
       ) : (
         <div style={{
           width: '100%',
-          height: 200,
+          height: 'auto',
+          aspectRatio: '2 / 3',
           backgroundColor: 'var(--color-background-secondary)',
           borderRadius: 'var(--radius-small)',
           display: 'flex',
@@ -563,7 +567,7 @@ function BookCard({
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
           lineHeight: 1.3,
-          minHeight: 40
+          minHeight: 24
         }}>
           {book.book_title || '제목 없음'}
         </div>
