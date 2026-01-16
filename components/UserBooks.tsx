@@ -32,6 +32,9 @@ export default function UserBooks() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<UserBook | null>(null)
   const [sortOption, setSortOption] = useState<SortOption>('recent')
   const [filterStatus, setFilterStatus] = useState<'all' | 'reading' | 'finished'>('all')
+  const [readingPage, setReadingPage] = useState(1)
+  const [finishedPage, setFinishedPage] = useState(1)
+  const [filteredPage, setFilteredPage] = useState(1)
 
   async function load() {
     setLoading(true)
@@ -88,6 +91,11 @@ export default function UserBooks() {
   useEffect(() => {
     load()
   }, [sortOption])
+
+  // 필터 변경 시 페이지 초기화
+  useEffect(() => {
+    setFilteredPage(1)
+  }, [filterStatus])
 
   async function addBook(book: { 
     title: string
@@ -160,25 +168,49 @@ export default function UserBooks() {
     return [...reading, ...finished]
   }
 
+  // 페이지네이션 상수
+  const BOOKS_PER_PAGE = 5
+
+  // 페이지네이션된 책 목록
+  const getPaginatedReading = () => {
+    const start = (readingPage - 1) * BOOKS_PER_PAGE
+    return reading.slice(start, start + BOOKS_PER_PAGE)
+  }
+
+  const getPaginatedFinished = () => {
+    const start = (finishedPage - 1) * BOOKS_PER_PAGE
+    return finished.slice(start, start + BOOKS_PER_PAGE)
+  }
+
+  const getPaginatedFiltered = () => {
+    const books = getFilteredBooks()
+    const start = (filteredPage - 1) * BOOKS_PER_PAGE
+    return books.slice(start, start + BOOKS_PER_PAGE)
+  }
+
+  // 총 페이지 수 계산
+  const getTotalPages = (books: UserBook[]) => Math.max(1, Math.ceil(books.length / BOOKS_PER_PAGE))
+
   return (
     <>
       <style dangerouslySetInnerHTML={{__html: `
-        @media (max-width: 768px) {
+        .bookshelf-grid {
+          grid-template-columns: repeat(5, 174px) !important;
+          justify-content: flex-start;
+        }
+        @media (max-width: 1200px) {
           .bookshelf-grid {
-            grid-template-columns: repeat(auto-fill, minmax(174px, 174px)) !important;
-            justify-content: center;
+            grid-template-columns: repeat(4, 174px) !important;
           }
         }
-        @media (min-width: 769px) and (max-width: 1024px) {
+        @media (max-width: 900px) {
           .bookshelf-grid {
-            grid-template-columns: repeat(auto-fill, minmax(174px, 174px)) !important;
-            justify-content: center;
+            grid-template-columns: repeat(3, 174px) !important;
           }
         }
-        @media (min-width: 1025px) {
+        @media (max-width: 600px) {
           .bookshelf-grid {
-            grid-template-columns: repeat(auto-fill, minmax(174px, 174px)) !important;
-            justify-content: flex-start;
+            grid-template-columns: repeat(2, 174px) !important;
           }
         }
         button:focus-visible {
@@ -308,22 +340,31 @@ export default function UserBooks() {
                       </p>
                     </div>
                   ) : (
-                    <div className="bookshelf-grid" style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(174px, 1fr))', 
-                      gap: 'var(--grid-gap-md)'
-                    }}>
-                      {reading.map((b) => (
-                        <BookCard 
-                          key={b.id} 
-                          book={b} 
-                          onSelect={() => setSelectedBook(b)}
-                          onToggleStatus={() => toggleStatus(b)}
-                          onDelete={() => setShowDeleteConfirm(b)}
-                          onWriteRecord={() => goToRecord(b)}
+                    <>
+                      <div className="bookshelf-grid" style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(5, 174px)', 
+                        gap: 'var(--grid-gap-md)'
+                      }}>
+                        {getPaginatedReading().map((b) => (
+                          <BookCard 
+                            key={b.id} 
+                            book={b} 
+                            onSelect={() => setSelectedBook(b)}
+                            onToggleStatus={() => toggleStatus(b)}
+                            onDelete={() => setShowDeleteConfirm(b)}
+                            onWriteRecord={() => goToRecord(b)}
+                          />
+                        ))}
+                      </div>
+                      {getTotalPages(reading) > 1 && (
+                        <Pagination 
+                          currentPage={readingPage}
+                          totalPages={getTotalPages(reading)}
+                          onPageChange={setReadingPage}
                         />
-                      ))}
-                    </div>
+                      )}
+                    </>
                   )}
                 </section>
 
@@ -353,22 +394,31 @@ export default function UserBooks() {
                       </p>
                     </div>
                   ) : (
-                    <div className="bookshelf-grid" style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(174px, 1fr))', 
-                      gap: 'var(--grid-gap-md)'
-                    }}>
-                      {finished.map((b) => (
-                        <BookCard 
-                          key={b.id} 
-                          book={b} 
-                          onSelect={() => setSelectedBook(b)}
-                          onToggleStatus={() => toggleStatus(b)}
-                          onDelete={() => setShowDeleteConfirm(b)}
-                          onWriteRecord={() => goToRecord(b)}
+                    <>
+                      <div className="bookshelf-grid" style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(5, 174px)', 
+                        gap: 'var(--grid-gap-md)'
+                      }}>
+                        {getPaginatedFinished().map((b) => (
+                          <BookCard 
+                            key={b.id} 
+                            book={b} 
+                            onSelect={() => setSelectedBook(b)}
+                            onToggleStatus={() => toggleStatus(b)}
+                            onDelete={() => setShowDeleteConfirm(b)}
+                            onWriteRecord={() => goToRecord(b)}
+                          />
+                        ))}
+                      </div>
+                      {getTotalPages(finished) > 1 && (
+                        <Pagination 
+                          currentPage={finishedPage}
+                          totalPages={getTotalPages(finished)}
+                          onPageChange={setFinishedPage}
                         />
-                      ))}
-                    </div>
+                      )}
+                    </>
                   )}
                 </section>
               </>
@@ -388,22 +438,31 @@ export default function UserBooks() {
                     </p>
                   </div>
                 ) : (
-                  <div className="bookshelf-grid" style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(174px, 1fr))', 
-                    gap: 'var(--grid-gap-md)'
-                  }}>
-                    {getFilteredBooks().map((b) => (
-                      <BookCard 
-                        key={b.id} 
-                        book={b} 
-                        onSelect={() => setSelectedBook(b)}
-                        onToggleStatus={() => toggleStatus(b)}
-                        onDelete={() => setShowDeleteConfirm(b)}
-                        onWriteRecord={() => goToRecord(b)}
+                  <>
+                    <div className="bookshelf-grid" style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(5, 174px)', 
+                      gap: 'var(--grid-gap-md)'
+                    }}>
+                      {getPaginatedFiltered().map((b) => (
+                        <BookCard 
+                          key={b.id} 
+                          book={b} 
+                          onSelect={() => setSelectedBook(b)}
+                          onToggleStatus={() => toggleStatus(b)}
+                          onDelete={() => setShowDeleteConfirm(b)}
+                          onWriteRecord={() => goToRecord(b)}
+                        />
+                      ))}
+                    </div>
+                    {getTotalPages(getFilteredBooks()) > 1 && (
+                      <Pagination 
+                        currentPage={filteredPage}
+                        totalPages={getTotalPages(getFilteredBooks())}
+                        onPageChange={setFilteredPage}
                       />
-                    ))}
-                  </div>
+                    )}
+                  </>
                 )}
               </section>
             )}
