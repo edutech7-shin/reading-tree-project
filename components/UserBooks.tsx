@@ -942,4 +942,127 @@ function DeleteConfirmModal({
   )
 }
 
+// 페이지네이션 컴포넌트
+function Pagination({
+  currentPage,
+  totalPages,
+  onPageChange
+}: {
+  currentPage: number
+  totalPages: number
+  onPageChange: (page: number) => void
+}) {
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = []
+    const maxVisible = 7
+    
+    if (totalPages <= maxVisible) {
+      // 전체 페이지가 적으면 모두 표시
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      // 첫 페이지
+      pages.push(1)
+      
+      if (currentPage > 3) {
+        pages.push('...')
+      }
+      
+      // 현재 페이지 주변
+      const start = Math.max(2, currentPage - 1)
+      const end = Math.min(totalPages - 1, currentPage + 1)
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i)
+      }
+      
+      if (currentPage < totalPages - 2) {
+        pages.push('...')
+      }
+      
+      // 마지막 페이지
+      pages.push(totalPages)
+    }
+    
+    return pages
+  }
+
+  return (
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center',
+      gap: 8,
+      marginTop: 'var(--grid-gap-md)',
+      flexWrap: 'wrap'
+    }}>
+      <button
+        className="btn"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        style={{
+          padding: '8px 12px',
+          fontSize: 'var(--font-size-sm)',
+          opacity: currentPage === 1 ? 0.5 : 1,
+          cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+        }}
+        aria-label="이전 페이지"
+      >
+        ‹
+      </button>
+      
+      {getPageNumbers().map((page, index) => {
+        if (page === '...') {
+          return (
+            <span key={`ellipsis-${index}`} style={{ 
+              padding: '8px 4px',
+              color: '#999',
+              fontSize: 'var(--font-size-sm)'
+            }}>
+              ...
+            </span>
+          )
+        }
+        
+        const pageNum = page as number
+        const isActive = pageNum === currentPage
+        
+        return (
+          <button
+            key={pageNum}
+            className={isActive ? 'btn primary' : 'btn'}
+            onClick={() => onPageChange(pageNum)}
+            style={{
+              padding: '8px 12px',
+              fontSize: 'var(--font-size-sm)',
+              minWidth: 40,
+              fontWeight: isActive ? 'var(--font-weight-bold)' : 'normal'
+            }}
+            aria-label={`${pageNum}페이지로 이동`}
+            aria-current={isActive ? 'page' : undefined}
+          >
+            {pageNum}
+          </button>
+        )
+      })}
+      
+      <button
+        className="btn"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        style={{
+          padding: '8px 12px',
+          fontSize: 'var(--font-size-sm)',
+          opacity: currentPage === totalPages ? 0.5 : 1,
+          cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+        }}
+        aria-label="다음 페이지"
+      >
+        ›
+      </button>
+    </div>
+  )
+}
+
 
