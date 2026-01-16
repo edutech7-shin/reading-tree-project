@@ -524,26 +524,46 @@ function BookCard({
       </button>
 
       {/* 책 표지 */}
-      <div style={{ width: 150, height: 210, flexShrink: 0, alignSelf: 'center' }}>
+      <div style={{ 
+        width: 150, 
+        height: 210, 
+        minWidth: 150,
+        maxWidth: 150,
+        minHeight: 210,
+        maxHeight: 210,
+        flexShrink: 0, 
+        alignSelf: 'center',
+        overflow: 'hidden',
+        boxSizing: 'border-box'
+      }}>
         {book.book_cover_url ? (
           <img 
             src={book.book_cover_url} 
             alt={book.book_title ?? ''} 
             style={{ 
-              width: 150, 
-              height: 210,
+              width: '100%', 
+              height: '100%',
+              minWidth: 150,
+              maxWidth: 150,
+              minHeight: 210,
+              maxHeight: 210,
               objectFit: 'contain', 
               backgroundColor: 'var(--color-background-secondary)',
               borderRadius: 'var(--radius-small)',
               boxShadow: 'var(--shadow-card)',
               border: '1px solid var(--color-border-light)',
-              display: 'block'
+              display: 'block',
+              boxSizing: 'border-box'
             }} 
           />
         ) : (
           <div style={{
-            width: 150,
-            height: 210,
+            width: '100%',
+            height: '100%',
+            minWidth: 150,
+            maxWidth: 150,
+            minHeight: 210,
+            maxHeight: 210,
             backgroundColor: 'var(--color-background-secondary)',
             borderRadius: 'var(--radius-small)',
             display: 'flex',
@@ -551,7 +571,8 @@ function BookCard({
             justifyContent: 'center',
             color: '#999',
             fontSize: 'var(--font-size-sm)',
-            border: '2px dashed var(--color-border-medium)'
+            border: '2px dashed var(--color-border-medium)',
+            boxSizing: 'border-box'
           }}>
             표지 없음
           </div>
