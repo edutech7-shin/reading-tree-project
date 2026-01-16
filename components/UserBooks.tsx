@@ -165,17 +165,20 @@ export default function UserBooks() {
       <style dangerouslySetInnerHTML={{__html: `
         @media (max-width: 768px) {
           .bookshelf-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
+            grid-template-columns: repeat(auto-fill, minmax(174px, 174px)) !important;
+            justify-content: center;
           }
         }
         @media (min-width: 769px) and (max-width: 1024px) {
           .bookshelf-grid {
-            grid-template-columns: repeat(3, 1fr) !important;
+            grid-template-columns: repeat(auto-fill, minmax(174px, 174px)) !important;
+            justify-content: center;
           }
         }
         @media (min-width: 1025px) {
           .bookshelf-grid {
-            grid-template-columns: repeat(4, 1fr) !important;
+            grid-template-columns: repeat(auto-fill, minmax(174px, 174px)) !important;
+            justify-content: flex-start;
           }
         }
         button:focus-visible {
@@ -468,7 +471,10 @@ function BookCard({
         cursor: 'pointer',
         transition: 'all 0.2s',
         width: 174,
-        minHeight: 320
+        minWidth: 174,
+        maxWidth: 174,
+        minHeight: 320,
+        boxSizing: 'border-box'
       }}
       onClick={onSelect}
       onMouseEnter={(e) => {
@@ -525,28 +531,30 @@ function BookCard({
 
       {/* 책 표지 */}
       <div style={{ 
-        width: 150, 
-        height: 210, 
-        minWidth: 150,
-        maxWidth: 150,
-        minHeight: 210,
-        maxHeight: 210,
+        width: '150px', 
+        height: '210px', 
+        minWidth: '150px',
+        maxWidth: '150px',
+        minHeight: '210px',
+        maxHeight: '210px',
         flexShrink: 0, 
+        flexGrow: 0,
         alignSelf: 'center',
         overflow: 'hidden',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        margin: '0 auto'
       }}>
         {book.book_cover_url ? (
           <img 
             src={book.book_cover_url} 
             alt={book.book_title ?? ''} 
             style={{ 
-              width: '100%', 
-              height: '100%',
-              minWidth: 150,
-              maxWidth: 150,
-              minHeight: 210,
-              maxHeight: 210,
+              width: '150px', 
+              height: '210px',
+              minWidth: '150px',
+              maxWidth: '150px',
+              minHeight: '210px',
+              maxHeight: '210px',
               objectFit: 'contain', 
               backgroundColor: 'var(--color-background-secondary)',
               borderRadius: 'var(--radius-small)',
@@ -558,12 +566,12 @@ function BookCard({
           />
         ) : (
           <div style={{
-            width: '100%',
-            height: '100%',
-            minWidth: 150,
-            maxWidth: 150,
-            minHeight: 210,
-            maxHeight: 210,
+            width: '150px',
+            height: '210px',
+            minWidth: '150px',
+            maxWidth: '150px',
+            minHeight: '210px',
+            maxHeight: '210px',
             backgroundColor: 'var(--color-background-secondary)',
             borderRadius: 'var(--radius-small)',
             display: 'flex',
