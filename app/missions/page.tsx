@@ -223,18 +223,19 @@ export default async function MissionsPage() {
         )}
       </div>
 
-      {!studentId ? (
-        <div className="card" style={{ marginTop: 'var(--grid-gap-md)' }}>
-          <p>학급에 등록되지 않은 학생입니다. 교사에게 문의해주세요.</p>
-        </div>
-      ) : missions.length === 0 ? (
-        <div className="card" style={{ marginTop: 'var(--grid-gap-md)' }}>
-          <p>현재 할당된 미션이 없습니다.</p>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gap: 'var(--grid-gap-md)', marginTop: 'var(--grid-gap-md)' }}>
-          {missions.map((mission) => (
-            <div key={mission.assignmentId} className="card">
+      <div id="missions-list">
+        {!studentId ? (
+          <div className="card" style={{ marginTop: 'var(--grid-gap-md)' }}>
+            <p>학급에 등록되지 않은 학생입니다. 교사에게 문의해주세요.</p>
+          </div>
+        ) : missions.length === 0 ? (
+          <div className="card" style={{ marginTop: 'var(--grid-gap-md)' }}>
+            <p>현재 할당된 미션이 없습니다.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: 'var(--grid-gap-md)', marginTop: 'var(--grid-gap-md)' }}>
+            {missions.map((mission) => (
+              <div key={mission.assignmentId} className="card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--grid-gap-sm)' }}>
                 <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)' }}>
                   {mission.mission?.title || '제목 없음'}
@@ -342,10 +343,11 @@ export default async function MissionsPage() {
                   </Link>
                 </div>
               )}
-            </div>
-          ))}
-        </div>
-      )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </main>
   )
 }

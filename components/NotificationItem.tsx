@@ -13,7 +13,8 @@ type NotificationItemProps = {
 }
 
 export default function NotificationItem({ notification }: NotificationItemProps) {
-  const isMissionNotification = notification.title === '📚 오늘의 미션'
+  const isMissionNotification = notification.title.includes('오늘의 미션')
+  const missionLink = '/missions#missions-list'
   
   const baseStyle: React.CSSProperties = {
     padding: 12,
@@ -55,7 +56,7 @@ export default function NotificationItem({ notification }: NotificationItemProps
 
   if (isMissionNotification) {
     return (
-      <Link href="/missions" style={baseStyle}>
+      <Link href={missionLink} style={baseStyle}>
         {content}
       </Link>
     )
