@@ -307,7 +307,7 @@ export default function UserBooks() {
                   ) : (
                     <div className="bookshelf-grid" style={{ 
                       display: 'grid', 
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', 
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(174px, 1fr))', 
                       gap: 'var(--grid-gap-md)'
                     }}>
                       {reading.map((b) => (
@@ -352,7 +352,7 @@ export default function UserBooks() {
                   ) : (
                     <div className="bookshelf-grid" style={{ 
                       display: 'grid', 
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', 
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(174px, 1fr))', 
                       gap: 'var(--grid-gap-md)'
                     }}>
                       {finished.map((b) => (
@@ -387,7 +387,7 @@ export default function UserBooks() {
                 ) : (
                   <div className="bookshelf-grid" style={{ 
                     display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', 
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(174px, 1fr))', 
                     gap: 'var(--grid-gap-md)'
                   }}>
                     {getFilteredBooks().map((b) => (
@@ -467,7 +467,7 @@ function BookCard({
         backgroundColor: 'white',
         cursor: 'pointer',
         transition: 'all 0.2s',
-        width: 150,
+        width: 174,
         minHeight: 320
       }}
       onClick={onSelect}
@@ -524,39 +524,42 @@ function BookCard({
       </button>
 
       {/* 책 표지 */}
-      {book.book_cover_url ? (
-        <img 
-          src={book.book_cover_url} 
-          alt={book.book_title ?? ''} 
-          style={{ 
-            width: 150, 
+      <div style={{ width: 150, height: 210, flexShrink: 0, alignSelf: 'center' }}>
+        {book.book_cover_url ? (
+          <img 
+            src={book.book_cover_url} 
+            alt={book.book_title ?? ''} 
+            style={{ 
+              width: 150, 
+              height: 210,
+              objectFit: 'contain', 
+              backgroundColor: 'var(--color-background-secondary)',
+              borderRadius: 'var(--radius-small)',
+              boxShadow: 'var(--shadow-card)',
+              border: '1px solid var(--color-border-light)',
+              display: 'block'
+            }} 
+          />
+        ) : (
+          <div style={{
+            width: 150,
             height: 210,
-            objectFit: 'contain', 
             backgroundColor: 'var(--color-background-secondary)',
             borderRadius: 'var(--radius-small)',
-            boxShadow: 'var(--shadow-card)',
-            border: '1px solid var(--color-border-light)'
-          }} 
-        />
-      ) : (
-        <div style={{
-          width: 150,
-          height: 210,
-          backgroundColor: 'var(--color-background-secondary)',
-          borderRadius: 'var(--radius-small)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#999',
-          fontSize: 'var(--font-size-sm)',
-          border: '2px dashed var(--color-border-medium)'
-        }}>
-          표지 없음
-        </div>
-      )}
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#999',
+            fontSize: 'var(--font-size-sm)',
+            border: '2px dashed var(--color-border-medium)'
+          }}>
+            표지 없음
+          </div>
+        )}
+      </div>
 
       {/* 책 정보 */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, width: 150 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
         <div style={{ 
           fontWeight: 'var(--font-weight-semibold)', 
           fontSize: 'var(--font-size-sm)',
