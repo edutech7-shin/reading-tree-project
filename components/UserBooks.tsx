@@ -194,25 +194,6 @@ export default function UserBooks() {
   return (
     <>
       <style dangerouslySetInnerHTML={{__html: `
-        .bookshelf-grid {
-          grid-template-columns: repeat(5, 174px) !important;
-          justify-content: flex-start;
-        }
-        @media (max-width: 1200px) {
-          .bookshelf-grid {
-            grid-template-columns: repeat(4, 174px) !important;
-          }
-        }
-        @media (max-width: 900px) {
-          .bookshelf-grid {
-            grid-template-columns: repeat(3, 174px) !important;
-          }
-        }
-        @media (max-width: 600px) {
-          .bookshelf-grid {
-            grid-template-columns: repeat(2, 174px) !important;
-          }
-        }
         button:focus-visible {
           outline: 3px solid var(--color-primary);
           outline-offset: 2px;
@@ -341,10 +322,11 @@ export default function UserBooks() {
                     </div>
                   ) : (
                     <>
-                      <div className="bookshelf-grid" style={{ 
+                      <div style={{ 
                         display: 'grid', 
                         gridTemplateColumns: 'repeat(5, 174px)', 
-                        gap: 'var(--grid-gap-md)'
+                        gap: 'var(--grid-gap-md)',
+                        justifyContent: 'flex-start'
                       }}>
                         {getPaginatedReading().map((b) => (
                           <BookCard 
@@ -357,7 +339,7 @@ export default function UserBooks() {
                           />
                         ))}
                       </div>
-                      {getTotalPages(reading) > 1 && (
+                      {reading.length > BOOKS_PER_PAGE && (
                         <Pagination 
                           currentPage={readingPage}
                           totalPages={getTotalPages(reading)}
@@ -395,10 +377,11 @@ export default function UserBooks() {
                     </div>
                   ) : (
                     <>
-                      <div className="bookshelf-grid" style={{ 
+                      <div style={{ 
                         display: 'grid', 
                         gridTemplateColumns: 'repeat(5, 174px)', 
-                        gap: 'var(--grid-gap-md)'
+                        gap: 'var(--grid-gap-md)',
+                        justifyContent: 'flex-start'
                       }}>
                         {getPaginatedFinished().map((b) => (
                           <BookCard 
@@ -411,7 +394,7 @@ export default function UserBooks() {
                           />
                         ))}
                       </div>
-                      {getTotalPages(finished) > 1 && (
+                      {finished.length > BOOKS_PER_PAGE && (
                         <Pagination 
                           currentPage={finishedPage}
                           totalPages={getTotalPages(finished)}
@@ -439,10 +422,11 @@ export default function UserBooks() {
                   </div>
                 ) : (
                   <>
-                    <div className="bookshelf-grid" style={{ 
+                    <div style={{ 
                       display: 'grid', 
                       gridTemplateColumns: 'repeat(5, 174px)', 
-                      gap: 'var(--grid-gap-md)'
+                      gap: 'var(--grid-gap-md)',
+                      justifyContent: 'flex-start'
                     }}>
                       {getPaginatedFiltered().map((b) => (
                         <BookCard 
@@ -455,7 +439,7 @@ export default function UserBooks() {
                         />
                       ))}
                     </div>
-                    {getTotalPages(getFilteredBooks()) > 1 && (
+                    {getFilteredBooks().length > BOOKS_PER_PAGE && (
                       <Pagination 
                         currentPage={filteredPage}
                         totalPages={getTotalPages(getFilteredBooks())}
