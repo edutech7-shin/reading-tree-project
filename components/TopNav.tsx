@@ -251,6 +251,7 @@ export default function TopNav() {
           <>
             <Link href="/teacher">학급 관리</Link>
             <Link href="/teacher/missions">미션 관리</Link>
+            <Link href="/teacher/badges">배지 부여</Link>
           </>
         )}
         <span className="spacer" />

@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import BookPicker from '../../components/BookPicker'
+import { BadgeEarnedModal, type BadgeEarned } from '../../components/BadgeEarnedModal'
 
 export default function RecordPage() {
   // 오늘 날짜를 YYYY-MM-DD 형식으로 가져오기 (한국 표준시)
@@ -55,6 +56,7 @@ export default function RecordPage() {
   const [selectedBookId, setSelectedBookId] = useState<number | ''>('')
   const [pickerOpen, setPickerOpen] = useState(false)
   const [currentStep, setCurrentStep] = useState(1) // 1: 책 선택, 2: 기본 정보, 3: 감상평, 4: 확인
+  const [badgeEarned, setBadgeEarned] = useState<BadgeEarned | null>(null)
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
@@ -346,44 +348,51 @@ export default function RecordPage() {
     // 작성 날짜를 date 형식으로 변환
     const recordDateValue = recordDate || getTodayDate()
 
-    const { error: insertError } = await supabase.from('book_records').insert({
-      user_id: user.id,
-      book_title: bookTitle || null,
-      book_author: bookAuthor || null,
-      book_cover_url: bookCoverUrl,
-      book_publisher: bookPublisher || null,
-      book_isbn: bookIsbn || null,
-      book_publication_date: publicationDateValue,
-      book_total_pages: totalPagesValue,
-      record_date: recordDateValue,
-      short_comment: shortComment || null,
-      content_text: contentText || null,
-      content_image_url: contentImageUrl,
-      rating: rating || null,
-      status: 'pending'
+    const res = await fetch('/api/records', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        book_title: bookTitle || null,
+        book_author: bookAuthor || null,
+        book_cover_url: bookCoverUrl || null,
+        book_publisher: bookPublisher || null,
+        book_isbn: bookIsbn || null,
+        book_publication_date: publicationDateValue,
+        book_total_pages: totalPagesValue,
+        record_date: recordDateValue,
+        short_comment: shortComment || null,
+        content_text: contentText || null,
+        content_image_url: contentImageUrl,
+        rating: rating || null,
+      }),
     })
 
+    const data = await res.json().catch(() => ({}))
     setSubmitting(false)
-    if (insertError) setMessage(`제출 실패: ${insertError.message}`)
-    else {
-      setBookTitle('')
-      setBookAuthor('')
-      setBookCoverUrl(null)
-      setBookPublisher('')
-      setBookIsbn('')
-      setBookPublicationYear('')
-      setBookTotalPages('')
-      setRecordDate(getTodayDate())
-      setShortComment('')
-      setContentText('')
-      setRating(null)
-      setImageFile(null)
-      setMessage('제출되었습니다. 승인 대기 중입니다!')
-      // 최근 기록 다시 로드 (loadRecentRecords 함수 재사용)
-      await loadRecentRecords()
-      // 단계 초기화
-      setCurrentStep(1)
+
+    if (!res.ok) {
+      setMessage(data?.error || `제출 실패: ${res.status}`)
+      return
     }
+
+    if (data.badge_earned) setBadgeEarned(data.badge_earned)
+
+    setBookTitle('')
+    setBookAuthor('')
+    setBookCoverUrl(null)
+    setBookPublisher('')
+    setBookIsbn('')
+    setBookPublicationYear('')
+    setBookTotalPages('')
+    setRecordDate(getTodayDate())
+    setShortComment('')
+    setContentText('')
+    setRating(null)
+    setImageFile(null)
+    setMessage('제출되었습니다. 승인 대기 중입니다!')
+    await loadRecentRecords()
+    setCurrentStep(1)
   }
 
   return (
@@ -1021,6 +1030,10 @@ export default function RecordPage() {
           )}
       </form>
       </div>
+
+      {badgeEarned && (
+        <BadgeEarnedModal badge={badgeEarned} onClose={() => setBadgeEarned(null)} />
+      )}
     </main>
   )
 }

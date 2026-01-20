@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import NextDynamic from 'next/dynamic'
 const UserBooksClient = NextDynamic(() => import('../../components/UserBooks'), { ssr: false })
+const MyBadgeForest = NextDynamic(() => import('../../components/MyBadgeForest').then((m) => ({ default: m.MyBadgeForest })), { ssr: false })
 
 export const dynamic = 'force-dynamic'
 
@@ -175,6 +176,16 @@ export default async function MyPage() {
     }
   }
 
+  // 배지: 전체 목록 + 내가 획득한 배지 (나의 배지 숲)
+  const { data: badges = [] } = await supabase
+    .from('badges')
+    .select('id, code, name, description, image_url, badge_type, acquisition_hint, sort_order')
+    .order('sort_order', { ascending: true })
+  const { data: userBadges = [] } = await supabase
+    .from('user_badges')
+    .select('id, badge_id, earned_at, teacher_comment')
+    .eq('user_id', user.id)
+
   return (
     <main className="container">
       <h1>내 책장</h1>
@@ -290,6 +301,8 @@ export default async function MyPage() {
           <div>반 친구 수: 👥 {classInfo.classmateCount}명</div>
         </div>
       )}
+
+      <MyBadgeForest badges={badges || []} userBadges={userBadges || []} />
 
       {/** 책장 (읽고 있어요 / 다 읽었어요) */}
       {/* Client 컴포넌트를 동적 import하여 CSR로 렌더링 */}
